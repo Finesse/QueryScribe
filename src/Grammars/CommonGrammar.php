@@ -18,7 +18,7 @@ class CommonGrammar implements GrammarInterface
     /**
      * {@inheritDoc}
      */
-    public function makeSelect(Query $query): StatementInterface
+    public function compileSelect(Query $query): StatementInterface
     {
         $text = [];
         $bindings = [];
@@ -27,7 +27,7 @@ class CommonGrammar implements GrammarInterface
         $text[] = 'SELECT';
         $columns = [];
         foreach ($query->select as $alias => $column) {
-            $columns[] = $this->symbolToText($column, $bindings).(is_string($alias) ? ' AS '.$alias : '');
+            $columns[] = $this->symbolToSQL($column, $bindings).(is_string($alias) ? ' AS '.$alias : '');
         }
         $text[] = implode(', ', $columns);
 
@@ -35,9 +35,34 @@ class CommonGrammar implements GrammarInterface
         if ($query->from === null) {
             throw new InvalidQueryException('The FROM table is not set');
         }
-        $text[] = 'FROM '.$this->symbolToText($query->from, $bindings);
+        $text[] = 'FROM '.$this->symbolToSQL($query->from, $bindings);
+
+        // Offset and limit
+        $text[] = $this->compileOffsetAndLimit($query, $bindings);
 
         return new Raw($this->implodeSQL($text), $bindings);
+    }
+
+    /**
+     * Compiles a offset'n'limit SQL query part (if the query has it).
+     *
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function compileOffsetAndLimit(Query $query, array &$bindings): string
+    {
+        $parts = [];
+
+        if ($query->offset !== null) {
+            $parts[] = 'OFFSET '.$this->valueToSQL($query->offset, $bindings);
+        }
+
+        if ($query->limit !== null) {
+            $parts[] = 'LIMIT '.$this->valueToSQL($query->limit, $bindings);
+        }
+
+        return $this->implodeSQL($parts);
     }
 
     /**
@@ -47,7 +72,7 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
-    protected function symbolToText($symbol, array &$bindings): string
+    protected function symbolToSQL($symbol, array &$bindings): string
     {
         if ($symbol instanceof StatementInterface) {
             $this->mergeBindings($bindings, $symbol->getBindings());
@@ -55,6 +80,24 @@ class CommonGrammar implements GrammarInterface
         }
 
         return $this->wrapSymbol($symbol);
+    }
+
+    /**
+     * Converts a value to a part of a SQL query text. Actually it sends all the values to the bindings.
+     *
+     * @param string|StatementInterface $value Value
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function valueToSQL($value, array &$bindings): string
+    {
+        if ($value instanceof StatementInterface) {
+            $this->mergeBindings($bindings, $value->getBindings());
+            return '('.$value->getSQL().')';
+        }
+
+        $bindings[] = $value;
+        return '?';
     }
 
     /**

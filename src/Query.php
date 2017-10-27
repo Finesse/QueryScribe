@@ -27,6 +27,16 @@ class Query
     public $from = null;
 
     /**
+     * @var int|StatementInterface|null Offset
+     */
+    public $offset = null;
+
+    /**
+     * @var int|StatementInterface|null Limit
+     */
+    public $limit = null;
+
+    /**
      * @var GrammarInterface Query to SQL converter
      */
     protected $grammar;
@@ -113,12 +123,52 @@ class Query
     }
 
     /**
+     * Sets the offset.
+     *
+     * @param int|StatementInterface|null $offset Offset. Null removes the offset.
+     * @return self
+     */
+    public function offset($offset): self
+    {
+        if ($offset !== null && !is_numeric($offset) && !($offset instanceof StatementInterface)) {
+            throw InvalidArgumentException::create(
+                'Argument $limit',
+                $offset,
+                ['integer', 'null', StatementInterface::class]
+            );
+        }
+
+        $this->offset = is_numeric($offset) ? (int)$offset : $offset;
+        return $this;
+    }
+
+    /**
+     * Sets the limit.
+     *
+     * @param int|StatementInterface|null $limit Limit. Null removes the limit.
+     * @return self
+     */
+    public function limit($limit): self
+    {
+        if ($limit !== null && !is_numeric($limit) && !($limit instanceof StatementInterface)) {
+            throw InvalidArgumentException::create(
+                'Argument $limit',
+                $limit,
+                ['integer', 'null', StatementInterface::class]
+            );
+        }
+
+        $this->limit = is_numeric($limit) ? (int)$limit : $limit;
+        return $this;
+    }
+
+    /**
      * Compiles SELECT query.
      *
      * @return StatementInterface
      */
     public function get(): StatementInterface
     {
-        return $this->grammar->makeSelect($this);
+        return $this->grammar->compileSelect($this);
     }
 }

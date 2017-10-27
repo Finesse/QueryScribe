@@ -19,5 +19,5 @@ interface GrammarInterface
      * @return StatementInterface
      * @throws ExceptionInterface
      */
-    public function makeSelect(Query $query): StatementInterface;
+    public function compileSelect(Query $query): StatementInterface;
 }
