@@ -13,7 +13,7 @@ use Finesse\QueryScribe\Raw;
  *
  * @author Surgie
  */
-class CommonGrammarInterface implements GrammarInterface
+class CommonGrammar implements GrammarInterface
 {
     /**
      * {@inheritDoc}
@@ -27,7 +27,7 @@ class CommonGrammarInterface implements GrammarInterface
         $text[] = 'SELECT';
         $columns = [];
         foreach ($query->select as $alias => $column) {
-            $columns[] = $this->symbolToSQL($column, $bindings).(is_string($alias) ? ' AS '.$alias : '');
+            $columns[] = $this->symbolToText($column, $bindings).(is_string($alias) ? ' AS '.$alias : '');
         }
         $text[] = implode(', ', $columns);
 
@@ -35,17 +35,19 @@ class CommonGrammarInterface implements GrammarInterface
         if ($query->from === null) {
             throw new InvalidQueryException('The FROM table is not set');
         }
-        $text[] = 'FROM '.$this->symbolToSQL($query->from, $bindings);
+        $text[] = 'FROM '.$this->symbolToText($query->from, $bindings);
 
         return new Raw($this->implodeSQL($text), $bindings);
     }
 
     /**
-     * @param $symbol
-     * @param array $bindings
-     * @return string
+     * Converts a symbol (table, column, database, etc.) to a part of a SQL query text. Screens all the stuff.
+     *
+     * @param string|StatementInterface $symbol Symbol
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
      */
-    protected function symbolToSQL($symbol, array &$bindings): string
+    protected function symbolToText($symbol, array &$bindings): string
     {
         if ($symbol instanceof StatementInterface) {
             $this->mergeBindings($bindings, $symbol->getBindings());

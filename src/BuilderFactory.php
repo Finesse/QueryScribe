@@ -4,7 +4,7 @@ namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Common\AddTablePrefixTrait;
 use Finesse\QueryScribe\Common\MakeRawTrait;
-use Finesse\QueryScribe\Grammars\CommonGrammarInterface;
+use Finesse\QueryScribe\Grammars\CommonGrammar;
 
 /**
  * Creates Query objects and keeps the Query dependencies.
@@ -26,7 +26,7 @@ class BuilderFactory
      */
     public function __construct(GrammarInterface $grammar = null, string $tablePrefix = '')
     {
-        $this->grammar = $grammar ?? new CommonGrammarInterface();
+        $this->grammar = $grammar ?? new CommonGrammar();
         $this->tablePrefix = $tablePrefix;
     }
 
