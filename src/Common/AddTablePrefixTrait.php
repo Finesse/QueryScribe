@@ -7,7 +7,7 @@ namespace Finesse\QueryScribe\Common;
  *
  * @author Surgie
  */
-trait TAddTablePrefix
+trait AddTablePrefixTrait
 {
     /**
      * @var string Tables prefix

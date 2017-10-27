@@ -7,7 +7,7 @@ namespace Finesse\QueryScribe\Common;
  *
  * @author Surgie
  */
-interface IQueryable
+interface StatementInterface
 {
     /**
      * @return string SQL query text

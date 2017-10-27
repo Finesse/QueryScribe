@@ -2,9 +2,9 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\IQueryable;
-use Finesse\QueryScribe\Common\TAddTablePrefix;
-use Finesse\QueryScribe\Common\TMakeRaw;
+use Finesse\QueryScribe\Common\StatementInterface;
+use Finesse\QueryScribe\Common\AddTablePrefixTrait;
+use Finesse\QueryScribe\Common\MakeRawTrait;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 
 /**
@@ -14,28 +14,28 @@ use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
  */
 class Query
 {
-    use TAddTablePrefix, TMakeRaw;
+    use AddTablePrefixTrait, MakeRawTrait;
 
     /**
-     * @var string[]|IQueryable[] Columns names to select. The string indexes are the aliases names.
+     * @var string[]|StatementInterface[] Columns names to select. The string indexes are the aliases names.
      */
     public $select = ['*'];
 
     /**
-     * @var string|IQueryable|null Query target table name (prefixed)
+     * @var string|StatementInterface|null Query target table name (prefixed)
      */
     public $from = null;
 
     /**
-     * @var IGrammar Query to SQL converter
+     * @var GrammarInterface Query to SQL converter
      */
     protected $grammar;
 
     /**
-     * @param IGrammar $grammar Query to SQL converter
+     * @param GrammarInterface $grammar Query to SQL converter
      * @param string $tablePrefix Tables prefix
      */
-    public function __construct(IGrammar $grammar, string $tablePrefix = '')
+    public function __construct(GrammarInterface $grammar, string $tablePrefix = '')
     {
         $this->grammar = $grammar;
         $this->tablePrefix = $tablePrefix;
@@ -44,14 +44,14 @@ class Query
     /**
      * Sets the target table.
      *
-     * @param string|IQueryable $table Table name
+     * @param string|StatementInterface $table Table name
      * @return self
      * @throws InvalidArgumentException
      */
     public function from($table): self
     {
-        if (!is_string($table) && !($table instanceof IQueryable)) {
-            throw InvalidArgumentException::create('Argument $table', $table, ['string', IQueryable::class]);
+        if (!is_string($table) && !($table instanceof StatementInterface)) {
+            throw InvalidArgumentException::create('Argument $table', $table, ['string', StatementInterface::class]);
         }
 
         $this->from = $this->addTablePrefix($table);
@@ -61,7 +61,7 @@ class Query
     /**
      * Sets column or columns of the SELECT section.
      *
-     * @param string|IQueryable|string[]|IQueryable[] $columns Columns to set. If string or raw, one column is set.
+     * @param string|StatementInterface|string[]|StatementInterface[] $columns Columns to set. If string or raw, one column is set.
      *     If array, many columns are set and string indexes are treated as aliases.
      * @param string|null $alias Column alias name. Used only if the first argument is not an array.
      * @return self
@@ -75,7 +75,7 @@ class Query
     /**
      * Adds column or columns to the SELECT section.
      *
-     * @param string|IQueryable|string[]|IQueryable[] $columns Columns to add. If string or raw, one column is added.
+     * @param string|StatementInterface|string[]|StatementInterface[] $columns Columns to add. If string or raw, one column is added.
      *     If array, many columns are added and string indexes are treated as aliases.
      * @param string|null $alias Column alias name. Used only if the first argument is not an array.
      * @return self
@@ -93,12 +93,12 @@ class Query
         foreach ($columns as $alias => $column) {
             if (is_string($column)) {
                 $column = $this->addTablePrefixToColumn($column);
-            } elseif ($column instanceof IQueryable) {
+            } elseif ($column instanceof StatementInterface) {
             } else {
                 throw InvalidArgumentException::create(
                     'Argument $columns['.$alias.']',
                     $column,
-                    ['string', IQueryable::class]
+                    ['string', StatementInterface::class]
                 );
             }
 
@@ -115,9 +115,9 @@ class Query
     /**
      * Compiles SELECT query.
      *
-     * @return IQueryable
+     * @return StatementInterface
      */
-    public function get(): IQueryable
+    public function get(): StatementInterface
     {
         return $this->grammar->makeSelect($this);
     }

@@ -2,14 +2,14 @@
 
 namespace Finesse\QueryScribe\Exceptions;
 
-use Finesse\QueryScribe\IException;
+use Finesse\QueryScribe\ExceptionInterface;
 
 /**
  * {@inheritDoc}
  *
  * @author Surgie
  */
-class InvalidArgumentException extends \InvalidArgumentException implements IException
+class InvalidArgumentException extends \InvalidArgumentException implements ExceptionInterface
 {
     /**
      * Makes an exception instance.

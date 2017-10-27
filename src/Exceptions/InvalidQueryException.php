@@ -2,11 +2,11 @@
 
 namespace Finesse\QueryScribe\Exceptions;
 
-use Finesse\QueryScribe\IException;
+use Finesse\QueryScribe\ExceptionInterface;
 
 /**
  * The query object has incorrect content.
  *
  * @author Surgie
  */
-class InvalidQueryException extends \RuntimeException implements IException {}
+class InvalidQueryException extends \RuntimeException implements ExceptionInterface {}

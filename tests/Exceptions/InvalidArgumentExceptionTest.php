@@ -3,7 +3,7 @@
 namespace Finesse\QueryScribe\Tests\Exceptions;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
-use Finesse\QueryScribe\IGrammar;
+use Finesse\QueryScribe\GrammarInterface;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\Tests\TestCase;
 
@@ -19,9 +19,9 @@ class InvalidArgumentExceptionTest extends TestCase
      */
     public function testCreate()
     {
-        $exception = InvalidArgumentException::create('tested value', 123.456, ['string', IGrammar::class]);
+        $exception = InvalidArgumentException::create('tested value', 123.456, ['string', GrammarInterface::class]);
         $this->assertEquals(
-            'Tested value expected to be string or Finesse\QueryScribe\IGrammar, double given',
+            'Tested value expected to be string or Finesse\QueryScribe\GrammarInterface, double given',
             $exception->getMessage()
         );
 

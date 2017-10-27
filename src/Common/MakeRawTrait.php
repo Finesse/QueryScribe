@@ -9,7 +9,7 @@ use Finesse\QueryScribe\Raw;
  *
  * @author Surgie
  */
-trait TMakeRaw
+trait MakeRawTrait
 {
     /**
      * Creates a raw SQL subquery.

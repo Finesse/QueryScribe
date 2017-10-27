@@ -2,14 +2,14 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\IQueryable;
+use Finesse\QueryScribe\Common\StatementInterface;
 
 /**
  * Represents a raw SQL subquery.
  *
  * @author Surgie
  */
-class Raw implements IQueryable
+class Raw implements StatementInterface
 {
     /**
      * @var string SQL statement

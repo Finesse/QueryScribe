@@ -2,14 +2,14 @@
 
 namespace Finesse\QueryScribe\Tests;
 
-use Finesse\QueryScribe\Common\TAddTablePrefix;
+use Finesse\QueryScribe\Common\AddTablePrefixTrait;
 
 /**
  * Tests the TAddTablePrefix trait
  *
  * @author Surgie
  */
-class TAddTablePrefixTest extends TestCase
+class AddTablePrefixTraitTest extends TestCase
 {
     /**
      * Tests the addTablePrefixMethod method
@@ -52,7 +52,7 @@ class TAddTablePrefixTest extends TestCase
     protected function createTestObject(string $prefix)
     {
         return new class ($prefix) {
-            use TAddTablePrefix;
+            use AddTablePrefixTrait;
             public function __construct($prefix)
             {
                 $this->tablePrefix = $prefix;

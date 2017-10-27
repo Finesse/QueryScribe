@@ -7,4 +7,4 @@ namespace Finesse\QueryScribe;
  *
  * @author Surgie
  */
-interface IException {}
+interface ExceptionInterface {}

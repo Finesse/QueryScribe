@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests;
 
-use Finesse\QueryScribe\Common\TMakeRaw;
+use Finesse\QueryScribe\Common\MakeRawTrait;
 use Finesse\QueryScribe\Raw;
 
 /**
@@ -10,7 +10,7 @@ use Finesse\QueryScribe\Raw;
  *
  * @author Surgie
  */
-class TMakeRawTest extends TestCase
+class MakeRawTraitTest extends TestCase
 {
     /**
      * Tests the raw method
@@ -31,7 +31,7 @@ class TMakeRawTest extends TestCase
     protected function createTestObject()
     {
         return new class () {
-            use TMakeRaw;
+            use MakeRawTrait;
         };
     }
 }

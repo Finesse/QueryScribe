@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\IQueryable;
+use Finesse\QueryScribe\Common\StatementInterface;
 
 /**
  * Converts query data to a SQL text. Implementing classes should adapt SQL text for different DBMS (database management
@@ -10,14 +10,14 @@ use Finesse\QueryScribe\Common\IQueryable;
  *
  * @author Surgie
  */
-interface IGrammar
+interface GrammarInterface
 {
     /**
      * Compiles a query object to a SELECT SQL query.
      *
      * @param Query $query
-     * @return IQueryable
-     * @throws IException
+     * @return StatementInterface
+     * @throws ExceptionInterface
      */
-    public function makeSelect(Query $query): IQueryable;
+    public function makeSelect(Query $query): StatementInterface;
 }

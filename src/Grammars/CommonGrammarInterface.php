@@ -2,8 +2,9 @@
 
 namespace Finesse\QueryScribe\Grammars;
 
-use Finesse\QueryScribe\Common\IQueryable;
-use Finesse\QueryScribe\IGrammar;
+use Finesse\QueryScribe\Common\StatementInterface;
+use Finesse\QueryScribe\Exceptions\InvalidQueryException;
+use Finesse\QueryScribe\GrammarInterface;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\Raw;
 
@@ -12,30 +13,31 @@ use Finesse\QueryScribe\Raw;
  *
  * @author Surgie
  */
-class CommonGrammar implements IGrammar
+class CommonGrammarInterface implements GrammarInterface
 {
     /**
      * {@inheritDoc}
      */
-    public function makeSelect(Query $query): IQueryable
+    public function makeSelect(Query $query): StatementInterface
     {
-        $sql = [];
+        $text = [];
         $bindings = [];
 
         // Select
-        $sql[] = 'SELECT';
+        $text[] = 'SELECT';
         $columns = [];
         foreach ($query->select as $alias => $column) {
             $columns[] = $this->symbolToSQL($column, $bindings).(is_string($alias) ? ' AS '.$alias : '');
         }
-        $sql[] = implode(', ', $columns);
+        $text[] = implode(', ', $columns);
 
         // From
-        if ($query->from !== null) {
-            $sql[] = 'FROM '.$this->symbolToSQL($query->from, $bindings);
+        if ($query->from === null) {
+            throw new InvalidQueryException('The FROM table is not set');
         }
+        $text[] = 'FROM '.$this->symbolToSQL($query->from, $bindings);
 
-        return new Raw($this->implodeSQL($sql), $bindings);
+        return new Raw($this->implodeSQL($text), $bindings);
     }
 
     /**
@@ -45,7 +47,7 @@ class CommonGrammar implements IGrammar
      */
     protected function symbolToSQL($symbol, array &$bindings): string
     {
-        if ($symbol instanceof IQueryable) {
+        if ($symbol instanceof StatementInterface) {
             $this->mergeBindings($bindings, $symbol->getBindings());
             return '('.$symbol->getSQL().')';
         }

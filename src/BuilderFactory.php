@@ -2,9 +2,9 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\TAddTablePrefix;
-use Finesse\QueryScribe\Common\TMakeRaw;
-use Finesse\QueryScribe\Grammars\CommonGrammar;
+use Finesse\QueryScribe\Common\AddTablePrefixTrait;
+use Finesse\QueryScribe\Common\MakeRawTrait;
+use Finesse\QueryScribe\Grammars\CommonGrammarInterface;
 
 /**
  * Creates Query objects and keeps the Query dependencies.
@@ -13,20 +13,20 @@ use Finesse\QueryScribe\Grammars\CommonGrammar;
  */
 class BuilderFactory
 {
-    use TAddTablePrefix, TMakeRaw;
+    use AddTablePrefixTrait, MakeRawTrait;
 
     /**
-     * @var IGrammar Query to SQL converter
+     * @var GrammarInterface Query to SQL converter
      */
     protected $grammar;
 
     /**
-     * @param IGrammar|null $grammar Query to SQL converter. If null, the default converter is used.
+     * @param GrammarInterface|null $grammar Query to SQL converter. If null, the default converter is used.
      * @param string $tablePrefix Tables prefix
      */
-    public function __construct(IGrammar $grammar = null, string $tablePrefix = '')
+    public function __construct(GrammarInterface $grammar = null, string $tablePrefix = '')
     {
-        $this->grammar = $grammar ?? new CommonGrammar();
+        $this->grammar = $grammar ?? new CommonGrammarInterface();
         $this->tablePrefix = $tablePrefix;
     }
 

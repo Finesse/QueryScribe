@@ -3,6 +3,8 @@
 namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\BuilderFactory;
+use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Raw;
 
 /**
@@ -27,6 +29,11 @@ class QueryTest extends TestCase
         // Specify a column
         $compiled = $builderFactory->table('items')->select('items.id')->get();
         $this->assertEquals($this->plainSQL('SELECT `pref_items`.`id` FROM `pref_items`'), $this->plainSQL($compiled->getSQL()));
+        $this->assertEquals([], $compiled->getBindings());
+
+        // Specify a column with alias
+        $compiled = $builderFactory->table('items')->select('name', 'n')->get();
+        $this->assertEquals($this->plainSQL('SELECT `name` AS n FROM `pref_items`'), $this->plainSQL($compiled->getSQL()));
         $this->assertEquals([], $compiled->getBindings());
 
         // Specify columns
@@ -55,6 +62,24 @@ class QueryTest extends TestCase
             FROM `pref_items`
         '), $this->plainSQL($compiled->getSQL()));
         $this->assertEquals([], $compiled->getBindings());
+
+        // Incorrect from argument error
+        $this->assertException(InvalidArgumentException::class, function () use ($builderFactory) {
+            $builderFactory->builder()->from(['foo', 'bar'])->get();
+        });
+
+        // Incorrect select arguments error
+        $this->assertException(InvalidArgumentException::class, function () use ($builderFactory) {
+            $builderFactory->table('table')->select(new \stdClass())->get();
+        });
+        $this->assertException(InvalidArgumentException::class, function () use ($builderFactory) {
+            $builderFactory->table('table')->select(['foo' => [1, 2, 3]])->get();
+        });
+
+        // No from error
+        $this->assertException(InvalidQueryException::class, function () use ($builderFactory) {
+            $builderFactory->builder()->select(['id', 'name'])->get();
+        });
     }
 
     /**
