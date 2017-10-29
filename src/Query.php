@@ -4,6 +4,7 @@ namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\QueryBricks\SelectTrait;
+use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
  * Represents a built query. It contains only a basic query data, not a SQL text.
@@ -17,7 +18,7 @@ use Finesse\QueryScribe\QueryBricks\SelectTrait;
 class Query
 {
     use AddTablePrefixTrait, MakeRawTrait;
-    use SelectTrait;
+    use SelectTrait, WhereTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name (prefixed)
@@ -89,22 +90,12 @@ class Query
     }
 
     /**
-     * Makes a self copy with dependencies and without query properties.
-     *
-     * @return Query
-     */
-    public function makeEmptyCopy(): self
-    {
-        return new static($this->tablePrefix);
-    }
-
-    /**
      * Check that value is suitable for being a "string or subquery" property of a query. Retrieves the callable
      * subquery.
      *
      * @param string $name Value name
-     * @param string|callable|Query|StatementInterface $value
-     * @return string|Query|StatementInterface
+     * @param string|callable|self|StatementInterface $value
+     * @return string|self|StatementInterface
      * @throws InvalidArgumentException
      */
     protected function checkStringValue(string $name, $value)
@@ -123,7 +114,7 @@ class Query
         }
 
         if (is_callable($value)) {
-            return $this->retrieveCallableSubQuery($value);
+            return $this->retrieveCallableQuery($value, $this->makeCopyForSubQuery());
         }
 
         return $value;
@@ -134,8 +125,8 @@ class Query
      * subquery.
      *
      * @param string $name Value name
-     * @param int|callable|Query|StatementInterface|null $value
-     * @return int|Query|StatementInterface|null
+     * @param int|callable|self|StatementInterface|null $value
+     * @return int|self|StatementInterface|null
      * @throws InvalidArgumentException
      */
     protected function checkIntOrNullValue(string $name, $value)
@@ -157,21 +148,71 @@ class Query
         if (is_numeric($value)) {
             $value = (int)$value;
         } elseif (is_callable($value)) {
-            return $this->retrieveCallableSubQuery($value);
+            return $this->retrieveCallableQuery($value, $this->makeCopyForSubQuery());
         }
 
         return $value;
     }
 
     /**
+     * Check that value is suitable for being a "scalar or null or subquery" property of a query. Retrieves the callable
+     * subquery.
+     *
+     * @param string $name Value name
+     * @param mixed|callable|self|StatementInterface|null $value
+     * @return mixed|self|StatementInterface|null
+     * @throws InvalidArgumentException
+     */
+    protected function checkScalarOrNullValue(string $name, $value)
+    {
+        if (
+            $value !== null &&
+            !is_scalar($value) &&
+            !is_callable($value) &&
+            !($value instanceof self) &&
+            !($value instanceof StatementInterface)
+        ) {
+            throw InvalidArgumentException::create(
+                $name,
+                $value,
+                ['scalar', 'callable', self::class, StatementInterface::class, 'null']
+            );
+        }
+
+        if (is_callable($value)) {
+            return $this->retrieveCallableQuery($value, $this->makeCopyForSubQuery());
+        }
+
+        return $value;
+    }
+
+    /**
+     * Check that value is suitable for being a column name of a query. Retrieves the callable subquery. Adds a table
+     * prefix to a column name (if it contains a table name).
+     *
+     * @param string $name Value name
+     * @param string|callable|self|StatementInterface $column
+     * @return string|self|StatementInterface
+     * @throws InvalidArgumentException
+     */
+    protected function checkAndPrepareColumn(string $name, $column)
+    {
+        $column = $this->checkStringValue($name, $column);
+        if (is_string($column)) {
+            $column = $this->addTablePrefixToColumn($column);
+        }
+        return $column;
+    }
+
+    /**
      * Retrieves the subquery from a callable.
      *
      * @param callable $callback
-     * @return Query
+     * @param self $emptyQuery Empty query object suitable for the callback
+     * @return self
      */
-    protected function retrieveCallableSubQuery(callable $callback): self
+    protected function retrieveCallableQuery(callable $callback, self $emptyQuery): self
     {
-        $emptyQuery = $this->makeEmptyCopy();
         $result = $callback($emptyQuery);
 
         if ($result instanceof self) {
@@ -179,5 +220,25 @@ class Query
         } else {
             return $emptyQuery;
         }
+    }
+
+    /**
+     * Makes a self copy with dependencies for passing to a subquery callback.
+     *
+     * @return self
+     */
+    protected function makeCopyForSubQuery(): self
+    {
+        return new static($this->tablePrefix);
+    }
+
+    /**
+     * Makes a self copy with dependencies for passing to a criteria group callback.
+     *
+     * @return self
+     */
+    protected function makeCopyForCriteriaGroup(): self
+    {
+        return (new static($this->tablePrefix))->from($this->from);
     }
 }

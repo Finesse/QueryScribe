@@ -233,28 +233,6 @@ class QueryTest extends TestCase
     }
 
     /**
-     * Tests the makeEmptyCopy method
-     */
-    public function testMakeEmptyCopy()
-    {
-        $query = (new Query('test_'))
-            ->from('table')
-            ->select('column')
-            ->offset(150)
-            ->limit(10);
-
-        $emptyQuery = $query->makeEmptyCopy();
-        $this->assertInstanceOf(Query::class, $emptyQuery);
-        foreach (get_object_vars($query) as $property => $value) {
-            if ($property === 'select') {
-                $this->assertEquals([], $emptyQuery->$property);
-            } else {
-                $this->assertNull($emptyQuery->$property);
-            }
-        }
-    }
-
-    /**
      * Tests that the trait methods are available
      */
     public function testTraits()

@@ -1,0 +1,45 @@
+<?php
+
+namespace Finesse\QueryScribe\QueryBricks\Criteria;
+
+use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Criterion;
+use Finesse\QueryScribe\StatementInterface;
+
+/**
+ * Criterion which compares a column with a value
+ *
+ * @author Surgie
+ */
+class ValueCriterion extends Criterion
+{
+    /**
+     * @var string|Query|StatementInterface Target column (with prefix)
+     */
+    public $column;
+
+    /**
+     * @var string Compare rule (=, >, etc.)
+     */
+    public $rule;
+
+    /**
+     * @var mixed|Query|StatementInterface|null Value
+     */
+    public $value;
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param $column string|Query|StatementInterface Target column (with prefix)
+     * @param $rule string Compare rule (=, >, etc.)
+     * @param $value mixed|Query|StatementInterface|null Value
+     */
+    public function __construct($column, string $rule, $value, int $appendRule)
+    {
+        parent::__construct($appendRule);
+        $this->column = $column;
+        $this->rule = $rule;
+        $this->value = $value;
+    }
+}
