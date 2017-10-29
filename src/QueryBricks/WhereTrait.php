@@ -263,7 +263,7 @@ trait WhereTrait
             throw InvalidArgumentException::create(
                 'The IN value',
                 $values,
-                ['array', 'callable', self::class, StatementInterface::class, 'null']
+                ['array', 'callable', Query::class, StatementInterface::class, 'null']
             );
         }
 
@@ -285,7 +285,7 @@ trait WhereTrait
      * @return self Itself
      * @throws InvalidArgumentException
      */
-    public function orWhereIn($column, $values, bool $not = false)
+    public function orWhereIn($column, $values, bool $not = false): self
     {
         return $this->whereIn($column, $values, $not, Criterion::APPEND_RULE_OR);
     }
@@ -344,7 +344,7 @@ trait WhereTrait
      * @return self Itself
      * @throws InvalidArgumentException
      */
-    public function orWhereNull($column, bool $not = false)
+    public function orWhereNull($column, bool $not = false): self
     {
         return $this->whereNull($column, $not, Criterion::APPEND_RULE_OR);
     }
@@ -458,7 +458,7 @@ trait WhereTrait
             throw InvalidArgumentException::create(
                 'Argument $subQuery',
                 $subQuery,
-                ['callable', self::class, StatementInterface::class, 'null']
+                ['callable', Query::class, StatementInterface::class, 'null']
             );
         }
 
@@ -480,7 +480,7 @@ trait WhereTrait
      * @return self Itself
      * @throws InvalidArgumentException
      */
-    public function orWhereExists($subQuery, bool $not = false)
+    public function orWhereExists($subQuery, bool $not = false): self
     {
         return $this->whereExists($subQuery, $not, Criterion::APPEND_RULE_OR);
     }
