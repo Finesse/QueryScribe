@@ -2,6 +2,7 @@
 
 namespace Finesse\QueryScribe\Grammars;
 
+use Finesse\QueryScribe\QueryBricks\Aggregate;
 use Finesse\QueryScribe\StatementInterface;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\GrammarInterface;
@@ -50,8 +51,13 @@ class CommonGrammar implements GrammarInterface
         $columns = [];
 
         foreach (($query->select ?: ['*']) as $alias => $column) {
-            $columns[] = $this->symbolToSQL($column, $bindings)
-                . (is_string($alias) ? ' AS '.$this->wrapPlainSymbol($alias) : '');
+            if ($column instanceof Aggregate) {
+                $column = $this->aggregateToSQL($column, $bindings);
+            } else {
+                $column = $this->symbolToSQL($column, $bindings);
+            }
+
+            $columns[] = $column.(is_string($alias) ? ' AS '.$this->wrapPlainSymbol($alias) : '');
         }
 
         return 'SELECT '.implode(', ', $columns);
@@ -145,6 +151,18 @@ class CommonGrammar implements GrammarInterface
 
         $this->mergeBindings($bindings, $subQuery->getBindings());
         return '('.$subQuery->getSQL().')';
+    }
+
+    /**
+     * Converts an aggregate object to a SQL query text.
+     *
+     * @param Aggregate $aggregate Aggregate
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function aggregateToSQL(Aggregate $aggregate, array &$bindings): string
+    {
+        return $aggregate->function.'('.$this->symbolToSQL($aggregate->column, $bindings).')';
     }
 
     /**

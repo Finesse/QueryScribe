@@ -3,7 +3,7 @@
 namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
-use Finesse\QueryScribe\Exceptions\InvalidQueryException;
+use Finesse\QueryScribe\QueryBricks\SelectTrait;
 
 /**
  * Represents a built query. It contains only a basic query data, not a SQL text.
@@ -17,12 +17,7 @@ use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 class Query
 {
     use AddTablePrefixTrait, MakeRawTrait;
-
-    /**
-     * @var (string|self|StatementInterface)[] Columns names to select (prefixed). The string indexes are the
-     *    aliases names. If no columns are provided, all columns should be selected.
-     */
-    public $select = [];
+    use SelectTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name (prefixed)
@@ -45,7 +40,7 @@ class Query
     public $limit = null;
 
     /**
-     * @param string $tablePrefix Tables prefix
+     * @param string $tablePrefix Prefix for all the tables (except raws)
      */
     public function __construct(string $tablePrefix = '')
     {
@@ -66,40 +61,6 @@ class Query
 
         $this->from = is_string($table) ? $this->addTablePrefix($table) : $table;
         $this->fromAlias = $alias;
-        return $this;
-    }
-
-    /**
-     * Adds column or columns to the SELECT section.
-     *
-     * @param string|callable|self|StatementInterface|(string|callable|self|StatementInterface)[] $columns Columns to
-     *     add. If string or raw, one column is added. If array, many columns are added and string indexes are treated
-     *     as aliases.
-     * @param string|null $alias Column alias name. Used only if the first argument is not an array.
-     * @return self Itself
-     */
-    public function select($columns, string $alias = null): self
-    {
-        if (!is_array($columns)) {
-            if ($alias === null) {
-                $columns = [$columns];
-            } else {
-                $columns = [$alias => $columns];
-            }
-        }
-
-        foreach ($columns as $alias => $column) {
-            $column = $this->checkStringValue('Argument $columns['.$alias.']', $column);
-            if (is_string($column)) {
-                $column = $this->addTablePrefixToColumn($column);
-            }
-            if (is_string($alias)) {
-                $this->select[$alias] = $column;
-            } else {
-                $this->select[] = $column;
-            }
-        }
-
         return $this;
     }
 
@@ -144,7 +105,7 @@ class Query
      * @param string $name Value name
      * @param string|callable|Query|StatementInterface $value
      * @return string|Query|StatementInterface
-     * @throws InvalidQueryException
+     * @throws InvalidArgumentException
      */
     protected function checkStringValue(string $name, $value)
     {
@@ -175,7 +136,7 @@ class Query
      * @param string $name Value name
      * @param int|callable|Query|StatementInterface|null $value
      * @return int|Query|StatementInterface|null
-     * @throws InvalidQueryException
+     * @throws InvalidArgumentException
      */
     protected function checkIntOrNullValue(string $name, $value)
     {

@@ -4,6 +4,7 @@ namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Aggregate;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -102,12 +103,54 @@ class QueryTest extends TestCase
         $this->assertEquals('AVG(price) + ?', $query->select['price']->getSQL());
         $this->assertEquals([14], $query->select['price']->getBindings());
 
+        // Multiple select calls
+        $query = (new Query('pref_'))->select('id')->select('name');
+        $this->assertEquals(['id', 'name'], $query->select);
+
         // Wrong argument
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query())->select([
                 'value',
                 ['column', 'alias']
             ]);
+        });
+    }
+
+    /**
+     * Tests the aggregate methods
+     */
+    public function testAggregates()
+    {
+        $query = (new Query('test_'))
+            ->count()
+            ->avg('table.price', 'price')
+            ->sum(new Raw('price * ?', [1.6]))
+            ->min(function (Query $query) {
+                $query->from('items');
+            })
+            ->max((new Query('foo_'))->from('bar'));
+
+        $this->assertCount(5, $query->select);
+        foreach ($query->select as $column) {
+            $this->assertInstanceOf(Aggregate::class, $column);
+        }
+        $this->assertEquals('COUNT', $query->select[0]->function);
+        $this->assertEquals('*', $query->select[0]->column);
+        $this->assertEquals('AVG', $query->select['price']->function);
+        $this->assertEquals('test_table.price', $query->select['price']->column);
+        $this->assertEquals('SUM', $query->select[1]->function);
+        $this->assertInstanceOf(StatementInterface::class, $query->select[1]->column);
+        $this->assertEquals('price * ?', $query->select[1]->column->getSQL());
+        $this->assertEquals([1.6], $query->select[1]->column->getBindings());
+        $this->assertEquals('MIN', $query->select[2]->function);
+        $this->assertInstanceOf(Query::class, $query->select[2]->column);
+        $this->assertEquals('test_items', $query->select[2]->column->from);
+        $this->assertEquals('MAX', $query->select[3]->function);
+        $this->assertInstanceOf(Query::class, $query->select[3]->column);
+        $this->assertEquals('foo_bar', $query->select[3]->column->from);
+
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->avg(['foo', 'bar']);
         });
     }
 

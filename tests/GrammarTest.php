@@ -43,6 +43,7 @@ class GrammarTest extends TestCase
     {
         $grammar = new CommonGrammar();
 
+        // Comprehensive case
         $statement = $grammar->compileSelect(
             (new Query('prefix_'))
                 ->select([
@@ -52,6 +53,11 @@ class GrammarTest extends TestCase
                     'r' => new Raw('t.column'),
                     'sub`query' => (new Query('test_'))->select('foo')->from('bar')
                 ])
+                ->count('*', 'count')
+                ->min('table.bar')
+                ->max('baz')
+                ->avg('boo', 'avg')
+                ->sum(new Raw('baz * boo'))
                 ->from('table', 't')
                 ->offset(140)
                 ->limit(12)
@@ -63,7 +69,12 @@ class GrammarTest extends TestCase
                     `prefix_table`.`foo` AS `f`, 
                     `prefix_table`.`bar` AS `b`, 
                     (t.column) AS `r`,
-                    (SELECT `foo` FROM `test_bar`) AS `sub``query`
+                    (SELECT `foo` FROM `test_bar`) AS `sub``query`,
+                    COUNT(*) AS `count`,
+                    MIN(`prefix_table`.`bar`),
+                    MAX(`baz`),
+                    AVG(`boo`) AS `avg`,
+                    SUM((baz * boo))
                 FROM `prefix_table` AS `t`
                 OFFSET ?
                 LIMIT ?
@@ -71,6 +82,16 @@ class GrammarTest extends TestCase
             $this->plainSQL($statement->getSQL())
         );
         $this->assertEquals([140, 12], $statement->getBindings());
+
+        // Simple count
+        $statement = $grammar->compileSelect(
+            (new Query('prefix_'))->from('table')->count()
+        );
+        $this->assertEquals(
+            $this->plainSQL('SELECT COUNT(*) FROM `prefix_table`'),
+            $this->plainSQL($statement->getSQL())
+        );
+        $this->assertEquals([], $statement->getBindings());
 
         // No columns
         $statement = $grammar->compileSelect(

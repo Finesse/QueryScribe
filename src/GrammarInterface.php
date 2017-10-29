@@ -2,8 +2,6 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\StatementInterface;
-
 /**
  * Converts query data to a SQL text. Implementing classes should adapt SQL text for different DBMS (database management
  * systems).
