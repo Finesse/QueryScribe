@@ -1,8 +1,6 @@
 <?php
 
-namespace Finesse\QueryScribe\Common;
-
-use Finesse\QueryScribe\Raw;
+namespace Finesse\QueryScribe;
 
 /**
  * Helps to create raw query objects.

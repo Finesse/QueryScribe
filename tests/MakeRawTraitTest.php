@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests;
 
-use Finesse\QueryScribe\Common\MakeRawTrait;
+use Finesse\QueryScribe\MakeRawTrait;
 use Finesse\QueryScribe\Raw;
 
 /**

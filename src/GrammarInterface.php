@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\StatementInterface;
+use Finesse\QueryScribe\StatementInterface;
 
 /**
  * Converts query data to a SQL text. Implementing classes should adapt SQL text for different DBMS (database management
@@ -12,6 +12,15 @@ use Finesse\QueryScribe\Common\StatementInterface;
  */
 interface GrammarInterface
 {
+    /**
+     * Compiles a query object guessing it's type.
+     *
+     * @param Query $query
+     * @return StatementInterface
+     * @throws ExceptionInterface
+     */
+    public function compile(Query $query): StatementInterface;
+
     /**
      * Compiles a query object to a SELECT SQL query.
      *

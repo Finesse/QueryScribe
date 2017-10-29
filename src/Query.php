@@ -2,13 +2,15 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\StatementInterface;
-use Finesse\QueryScribe\Common\AddTablePrefixTrait;
-use Finesse\QueryScribe\Common\MakeRawTrait;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 
 /**
  * Represents a built query. It contains only a basic query data, not a SQL text.
+ *
+ * All the callable mentioned here as a value type are the function of the following type (if other is not specified):
+ *  - Takes an empty query the first argument;
+ *  - Returns a SELECT query object or modifies the given object by link.
  *
  * @author Surgie
  */
@@ -17,80 +19,66 @@ class Query
     use AddTablePrefixTrait, MakeRawTrait;
 
     /**
-     * @var string[]|StatementInterface[] Columns names to select. The string indexes are the aliases names.
+     * @var (string|self|StatementInterface)[] Columns names to select (prefixed). The string indexes are the
+     *    aliases names. If no columns are provided, all columns should be selected.
      */
-    public $select = ['*'];
+    public $select = [];
 
     /**
-     * @var string|StatementInterface|null Query target table name (prefixed)
+     * @var string|self|StatementInterface|null Query target table name (prefixed)
      */
     public $from = null;
 
     /**
-     * @var int|StatementInterface|null Offset
+     * @var string|null Target table alias
+     */
+    public $fromAlias = null;
+
+    /**
+     * @var int|self|StatementInterface|null Offset
      */
     public $offset = null;
 
     /**
-     * @var int|StatementInterface|null Limit
+     * @var int|self|StatementInterface|null Limit
      */
     public $limit = null;
 
     /**
-     * @var GrammarInterface Query to SQL converter
-     */
-    protected $grammar;
-
-    /**
-     * @param GrammarInterface $grammar Query to SQL converter
      * @param string $tablePrefix Tables prefix
      */
-    public function __construct(GrammarInterface $grammar, string $tablePrefix = '')
+    public function __construct(string $tablePrefix = '')
     {
-        $this->grammar = $grammar;
         $this->tablePrefix = $tablePrefix;
     }
 
     /**
      * Sets the target table.
      *
-     * @param string|StatementInterface $table Table name
-     * @return self
+     * @param string|callable|Query|StatementInterface $table Not prefixed table name without quotes
+     * @param string|null Table alias
+     * @return self Itself
      * @throws InvalidArgumentException
      */
-    public function from($table): self
+    public function from($table, string $alias = null): self
     {
-        if (!is_string($table) && !($table instanceof StatementInterface)) {
-            throw InvalidArgumentException::create('Argument $table', $table, ['string', StatementInterface::class]);
-        }
+        $table = $this->checkStringValue('Argument $table', $table);
 
-        $this->from = $this->addTablePrefix($table);
+        $this->from = is_string($table) ? $this->addTablePrefix($table) : $table;
+        $this->fromAlias = $alias;
         return $this;
-    }
-
-    /**
-     * Sets column or columns of the SELECT section.
-     *
-     * @param string|StatementInterface|string[]|StatementInterface[] $columns Columns to set. If string or raw, one column is set.
-     *     If array, many columns are set and string indexes are treated as aliases.
-     * @param string|null $alias Column alias name. Used only if the first argument is not an array.
-     * @return self
-     */
-    public function select($columns, string $alias = null): self
-    {
-        $this->select = [];
-        return $this->addSelect($columns, $alias);
     }
 
     /**
      * Adds column or columns to the SELECT section.
      *
-     * @param string|StatementInterface|string[]|StatementInterface[] $columns Columns to add. If string or raw, one column is added.
-     *     If array, many columns are added and string indexes are treated as aliases.
+     * @param string|callable|self|StatementInterface|(string|callable|self|StatementInterface)[] $columns Columns to
+     *     add. If string or raw, one column is added. If array, many columns are added and string indexes are treated
+     *     as aliases.
      * @param string|null $alias Column alias name. Used only if the first argument is not an array.
-     * @return self
+     * @return self Itself
      */
-    public function addSelect($columns, string $alias = null): self
+    public function select($columns, string $alias = null): self
     {
         if (!is_array($columns)) {
             if ($alias === null) {
@@ -101,17 +89,10 @@ class Query
         }
 
         foreach ($columns as $alias => $column) {
+            $column = $this->checkStringValue('Argument $columns['.$alias.']', $column);
             if (is_string($column)) {
                 $column = $this->addTablePrefixToColumn($column);
-            } elseif ($column instanceof StatementInterface) {
-            } else {
-                throw InvalidArgumentException::create(
-                    'Argument $columns['.$alias.']',
-                    $column,
-                    ['string', StatementInterface::class]
-                );
             }
-
             if (is_string($alias)) {
                 $this->select[$alias] = $column;
             } else {
@@ -125,50 +106,117 @@ class Query
     /**
      * Sets the offset.
      *
-     * @param int|StatementInterface|null $offset Offset. Null removes the offset.
-     * @return self
+     * @param int|callable|self|StatementInterface|null $offset Offset. Null removes the offset.
+     * @return self Itself
      */
     public function offset($offset): self
     {
-        if ($offset !== null && !is_numeric($offset) && !($offset instanceof StatementInterface)) {
-            throw InvalidArgumentException::create(
-                'Argument $limit',
-                $offset,
-                ['integer', 'null', StatementInterface::class]
-            );
-        }
-
-        $this->offset = is_numeric($offset) ? (int)$offset : $offset;
+        $this->offset = $this->checkIntOrNullValue('Argument $offset', $offset);
         return $this;
     }
 
     /**
      * Sets the limit.
      *
-     * @param int|StatementInterface|null $limit Limit. Null removes the limit.
-     * @return self
+     * @param int|callable|self|StatementInterface|null $limit Limit. Null removes the limit.
+     * @return self Itself
      */
     public function limit($limit): self
     {
-        if ($limit !== null && !is_numeric($limit) && !($limit instanceof StatementInterface)) {
-            throw InvalidArgumentException::create(
-                'Argument $limit',
-                $limit,
-                ['integer', 'null', StatementInterface::class]
-            );
-        }
-
-        $this->limit = is_numeric($limit) ? (int)$limit : $limit;
+        $this->limit = $this->checkIntOrNullValue('Argument $limit', $limit);
         return $this;
     }
 
     /**
-     * Compiles SELECT query.
+     * Makes a self copy with dependencies and without query properties.
      *
-     * @return StatementInterface
+     * @return Query
      */
-    public function get(): StatementInterface
+    public function makeEmptyCopy(): self
     {
-        return $this->grammar->compileSelect($this);
+        return new static($this->tablePrefix);
+    }
+
+    /**
+     * Check that value is suitable for being a "string or subquery" property of a query. Retrieves the callable
+     * subquery.
+     *
+     * @param string $name Value name
+     * @param string|callable|Query|StatementInterface $value
+     * @return string|Query|StatementInterface
+     * @throws InvalidQueryException
+     */
+    protected function checkStringValue(string $name, $value)
+    {
+        if (
+            !is_string($value) &&
+            !is_callable($value) &&
+            !($value instanceof self) &&
+            !($value instanceof StatementInterface)
+        ) {
+            throw InvalidArgumentException::create(
+                $name,
+                $value,
+                ['string', 'callable', self::class, StatementInterface::class]
+            );
+        }
+
+        if (is_callable($value)) {
+            return $this->retrieveCallableSubQuery($value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Check that value is suitable for being a "int or null or subquery" property of a query. Retrieves the callable
+     * subquery.
+     *
+     * @param string $name Value name
+     * @param int|callable|Query|StatementInterface|null $value
+     * @return int|Query|StatementInterface|null
+     * @throws InvalidQueryException
+     */
+    protected function checkIntOrNullValue(string $name, $value)
+    {
+        if (
+            $value !== null &&
+            !is_numeric($value) &&
+            !is_callable($value) &&
+            !($value instanceof self) &&
+            !($value instanceof StatementInterface)
+        ) {
+            throw InvalidArgumentException::create(
+                $name,
+                $value,
+                ['integer', 'callable', self::class, StatementInterface::class, 'null']
+            );
+        }
+
+        if (is_numeric($value)) {
+            $value = (int)$value;
+        } elseif (is_callable($value)) {
+            return $this->retrieveCallableSubQuery($value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * Retrieves the subquery from a callable.
+     *
+     * @param callable $callback
+     * @return Query
+     */
+    protected function retrieveCallableSubQuery(callable $callback): self
+    {
+        $emptyQuery = $this->makeEmptyCopy();
+        $result = $callback($emptyQuery);
+
+        if ($result instanceof self) {
+            return $result;
+        } else {
+            return $emptyQuery;
+        }
     }
 }

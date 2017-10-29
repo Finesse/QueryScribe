@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe;
 
-use Finesse\QueryScribe\Common\StatementInterface;
+use Finesse\QueryScribe\StatementInterface;
 
 /**
  * Represents a raw SQL subquery.

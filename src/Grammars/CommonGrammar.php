@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe\Grammars;
 
-use Finesse\QueryScribe\Common\StatementInterface;
+use Finesse\QueryScribe\StatementInterface;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\GrammarInterface;
 use Finesse\QueryScribe\Query;
@@ -18,29 +18,61 @@ class CommonGrammar implements GrammarInterface
     /**
      * {@inheritDoc}
      */
+    public function compile(Query $query): StatementInterface
+    {
+        return $this->compileSelect($query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function compileSelect(Query $query): StatementInterface
     {
-        $text = [];
         $bindings = [];
+        $sql = [
+            $this->compileSelectPart($query, $bindings),
+            $this->compileFromPart($query, $bindings),
+            $this->compileOffsetAndLimitPart($query, $bindings)
+        ];
 
-        // Select
-        $text[] = 'SELECT';
+        return new Raw($this->implodeSQL($sql), $bindings);
+    }
+
+    /**
+     * Compiles a SELECT part of a SQL query.
+     *
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function compileSelectPart(Query $query, array &$bindings): string
+    {
         $columns = [];
-        foreach ($query->select as $alias => $column) {
-            $columns[] = $this->symbolToSQL($column, $bindings).(is_string($alias) ? ' AS '.$alias : '');
-        }
-        $text[] = implode(', ', $columns);
 
-        // From
+        foreach (($query->select ?: ['*']) as $alias => $column) {
+            $columns[] = $this->symbolToSQL($column, $bindings)
+                . (is_string($alias) ? ' AS '.$this->wrapPlainSymbol($alias) : '');
+        }
+
+        return 'SELECT '.implode(', ', $columns);
+    }
+
+    /**
+     * Compiles a FROM part of a SQL query.
+     *
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     * @throws InvalidQueryException
+     */
+    protected function compileFromPart(Query $query, array &$bindings): string
+    {
         if ($query->from === null) {
             throw new InvalidQueryException('The FROM table is not set');
         }
-        $text[] = 'FROM '.$this->symbolToSQL($query->from, $bindings);
 
-        // Offset and limit
-        $text[] = $this->compileOffsetAndLimit($query, $bindings);
-
-        return new Raw($this->implodeSQL($text), $bindings);
+        return 'FROM '.$this->symbolToSQL($query->from, $bindings)
+            . ($query->fromAlias === null ? '' : ' AS '.$this->wrapPlainSymbol($query->fromAlias));
     }
 
     /**
@@ -50,7 +82,7 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
-    protected function compileOffsetAndLimit(Query $query, array &$bindings): string
+    protected function compileOffsetAndLimitPart(Query $query, array &$bindings): string
     {
         $parts = [];
 
@@ -68,15 +100,14 @@ class CommonGrammar implements GrammarInterface
     /**
      * Converts a symbol (table, column, database, etc.) to a part of a SQL query text. Screens all the stuff.
      *
-     * @param string|StatementInterface $symbol Symbol
+     * @param string|Query|StatementInterface $symbol Symbol
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
     protected function symbolToSQL($symbol, array &$bindings): string
     {
-        if ($symbol instanceof StatementInterface) {
-            $this->mergeBindings($bindings, $symbol->getBindings());
-            return '('.$symbol->getSQL().')';
+        if ($symbol instanceof Query || $symbol instanceof StatementInterface) {
+            return $this->subQueryToSQL($symbol, $bindings);
         }
 
         return $this->wrapSymbol($symbol);
@@ -85,19 +116,35 @@ class CommonGrammar implements GrammarInterface
     /**
      * Converts a value to a part of a SQL query text. Actually it sends all the values to the bindings.
      *
-     * @param string|StatementInterface $value Value
+     * @param mixed|Query|\Finesse\QueryScribe\StatementInterface $value Value (a scalar value or a subquery)
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
     protected function valueToSQL($value, array &$bindings): string
     {
-        if ($value instanceof StatementInterface) {
-            $this->mergeBindings($bindings, $value->getBindings());
-            return '('.$value->getSQL().')';
+        if ($value instanceof Query || $value instanceof StatementInterface) {
+            return $this->subQueryToSQL($value, $bindings);
         }
 
-        $bindings[] = $value;
+        $this->mergeBindings($bindings, [$value]);
         return '?';
+    }
+
+    /**
+     * Converts a subquery to a SQL query text.
+     *
+     * @param Query|StatementInterface $subQuery Subquery
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function subQueryToSQL($subQuery, array &$bindings): string
+    {
+        if ($subQuery instanceof Query) {
+            $subQuery = $this->compile($subQuery);
+        }
+
+        $this->mergeBindings($bindings, $subQuery->getBindings());
+        return '('.$subQuery->getSQL().')';
     }
 
     /**
@@ -111,6 +158,10 @@ class CommonGrammar implements GrammarInterface
         $components = explode('.', $name);
 
         foreach ($components as $index => $component) {
+            if ($component === '*') {
+                continue;
+            }
+
             $components[$index] = $this->wrapPlainSymbol($component);
         }
 
@@ -118,22 +169,18 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Wraps a plain (without dots) symbol (table, column, database, etc.) name with quotes.
+     * Wraps a plain (without nesting by dots) symbol (table, column, database, etc.) name with quotes.
      *
      * @param string $name
      * @return string
      */
     protected function wrapPlainSymbol(string $name): string
     {
-        if ($name === '*') {
-            return $name;
-        }
-
-        return '`'.$name.'`';
+        return '`'.str_replace('`', '``', $name).'`';
     }
 
     /**
-     * Merges two arrays of binding values.
+     * Merges two arrays of bound values.
      *
      * @param array $target Where to add values. The values are added by link.
      * @param array $source Values to add

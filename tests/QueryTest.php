@@ -2,143 +2,213 @@
 
 namespace Finesse\QueryScribe\Tests;
 
-use Finesse\QueryScribe\BuilderFactory;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
-use Finesse\QueryScribe\Exceptions\InvalidQueryException;
+use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\Raw;
+use Finesse\QueryScribe\StatementInterface;
 
 /**
- * Tests the Query class. Also tests the SQL compiling.
+ * Tests the Query class
  *
  * @author Surgie
  */
 class QueryTest extends TestCase
 {
     /**
-     * Tests the select queries
+     * Tests the from method
      */
-    public function testSelect()
+    public function testFrom()
     {
-        $builder = new BuilderFactory(null, 'pref_');
+        // No from
+        $query = new Query('pref_');
+        $this->assertNull($query->from);
+        $this->assertNull($query->fromAlias);
 
-        // Simple
-        $compiled = $builder->table('items')->get();
-        $this->assertEquals($this->plainSQL('SELECT * FROM `pref_items`'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
+        // Simple from
+        $query->from('foo', 'f');
+        $this->assertEquals('pref_foo', $query->from);
+        $this->assertEquals('f', $query->fromAlias);
 
-        // Specify a column
-        $compiled = $builder->table('items')->select('items.id')->get();
-        $this->assertEquals($this->plainSQL('SELECT `pref_items`.`id` FROM `pref_items`'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Specify a column with alias
-        $compiled = $builder->table('items')->select('name', 'n')->get();
-        $this->assertEquals($this->plainSQL('SELECT `name` AS n FROM `pref_items`'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Specify columns
-        $compiled = $builder->table('items')->select(['id', 'p' => 'price'])->addSelect(['q' => 'quantity'])->get();
-        $this->assertEquals($this->plainSQL('
-            SELECT `id`, `price` AS p, `quantity` AS q 
-            FROM `pref_items`
-        '), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Specify column as a raw SQL
-        $compiled = $builder->table('items')->select(new Raw('SELECT id, ? AS value FROM temp', [13]))->get();
-        $this->assertEquals($this->plainSQL('
-            SELECT (
-                SELECT id, ? AS value
-                FROM temp
-            )
-            FROM `pref_items`
-        '), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([13], $compiled->getBindings());
-
-        // Wipe the columns list using the select method
-        $compiled = $builder->table('items')->addSelect(['quantity'])->select(['id', 'price'])->get();
-        $this->assertEquals($this->plainSQL('
-            SELECT `id`, `price`
-            FROM `pref_items`
-        '), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Incorrect from argument error
-        $this->assertException(InvalidArgumentException::class, function () use ($builder) {
-            $builder->builder()->from(['foo', 'bar'])->get();
+        // From with callback subquery
+        $query->from(function (Query $query) {
+            $query->select('foo')->from('bar');
         });
+        $this->assertInstanceOf(Query::class, $query->from);
+        $this->assertEquals('pref_bar', $query->from->from);
+        $this->assertNull($query->from->fromAlias);
+        $this->assertNull($query->fromAlias);
 
-        // Incorrect select arguments error
-        $this->assertException(InvalidArgumentException::class, function () use ($builder) {
-            $builder->table('table')->select(new \stdClass())->get();
+        // From with another type of callback
+        $query->from(function () {
+            return (new Query('test_'))->select('foo2')->from('bar');
         });
-        $this->assertException(InvalidArgumentException::class, function () use ($builder) {
-            $builder->table('table')->select(['foo' => [1, 2, 3]])->get();
-        });
+        $this->assertInstanceOf(Query::class, $query->from);
+        $this->assertEquals('test_bar', $query->from->from);
+        $this->assertNull($query->from->fromAlias);
+        $this->assertNull($query->fromAlias);
 
-        // No from error
-        $this->assertException(InvalidQueryException::class, function () use ($builder) {
-            $builder->builder()->select(['id', 'name'])->get();
+        // From with subquery
+        $query->from((new Query('sub_'))->from('table', 't'), 's');
+        $this->assertInstanceOf(Query::class, $query->from);
+        $this->assertEquals('sub_table', $query->from->from);
+        $this->assertEquals('t', $query->from->fromAlias);
+        $this->assertEquals('s', $query->fromAlias);
+
+        // Raw from
+        $query->from(new Raw('TABLES()'));
+        $this->assertInstanceOf(StatementInterface::class, $query->from);
+        $this->assertEquals('TABLES()', $query->from->getSQL());
+        $this->assertEquals([], $query->from->getBindings());
+
+        // Wrong argument
+        $this->assertException(InvalidArgumentException::class, function () use ($query) {
+            $query->from(['foo', 'bar']);
         });
     }
 
     /**
-     * Tests the offset and the limit features
+     * Tests the select method
      */
-    public function testOffsetAndLimit()
+    public function testSelect()
     {
-        $builder = new BuilderFactory();
+        // No select
+        $query = (new Query('pref_'));
+        $this->assertEquals([], $query->select);
 
-        // Simple offset
-        $compiled = $builder->table('users')->offset(15)->get();
-        $this->assertEquals($this->plainSQL('SELECT * FROM `users` OFFSET ?'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([15], $compiled->getBindings());
+        // One column
+        $query = (new Query('pref_'))->select('name', 'n');
+        $this->assertEquals(['n' => 'name'], $query->select);
 
-        // Reset offset
-        $compiled = $builder->table('users')->offset(15)->offset(null)->get();
-        $this->assertEquals($this->plainSQL('SELECT * FROM `users`'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
+        // Many columns with different cases
+        $query = (new Query('pref_'))->select([
+            'value',
+            't' => 'table.title',
+            function (Query $query) {
+                $query->select('foo')->from('bar');
+            },
+            (new Query('pref2_'))->select('foo')->from('bar'),
+            'price' => new Raw('AVG(price) + ?', [14])
+        ]);
+        $this->assertCount(5, $query->select);
+        $this->assertEquals('value', $query->select[0]);
+        $this->assertEquals('pref_table.title', $query->select['t']);
+        $this->assertInstanceOf(Query::class, $query->select[1]);
+        $this->assertEquals('pref_bar', $query->select[1]->from);
+        $this->assertEquals(['foo'], $query->select[1]->select);
+        $this->assertInstanceOf(Query::class, $query->select[2]);
+        $this->assertEquals('pref2_bar', $query->select[2]->from);
+        $this->assertEquals(['foo'], $query->select[2]->select);
+        $this->assertInstanceOf(StatementInterface::class, $query->select['price']);
+        $this->assertEquals('AVG(price) + ?', $query->select['price']->getSQL());
+        $this->assertEquals([14], $query->select['price']->getBindings());
 
-        // Offset with raw SQL
-        $compiled = $builder->table('users')->offset(new Raw('SELECT foo FROM bar'))->get();
-        $this->assertEquals($this->plainSQL('
-            SELECT * 
-            FROM `users`
-            OFFSET (SELECT foo FROM bar)
-        '), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Simple limit
-        $compiled = $builder->table('users')->limit(10)->get();
-        $this->assertEquals($this->plainSQL('SELECT * FROM `users` LIMIT ?'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([10], $compiled->getBindings());
-
-        // Reset limit
-        $compiled = $builder->table('users')->limit(10)->limit(null)->get();
-        $this->assertEquals($this->plainSQL('SELECT * FROM `users`'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Limit with raw SQL
-        $compiled = $builder->table('users')->limit(new Raw('SELECT foo FROM bar'))->get();
-        $this->assertEquals($this->plainSQL('
-            SELECT * 
-            FROM `users`
-            LIMIT (SELECT foo FROM bar)
-        '), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([], $compiled->getBindings());
-
-        // Both offset and limit
-        $compiled = $builder->table('users')->limit(10)->offset(20)->get();
-        $this->assertEquals($this->plainSQL('SELECT * FROM `users` OFFSET ? LIMIT ?'), $this->plainSQL($compiled->getSQL()));
-        $this->assertEquals([20, 10], $compiled->getBindings());
-
-        // Wrong arguments
-        $this->assertException(InvalidArgumentException::class, function () use ($builder) {
-            $builder->table('users')->offset('foofoobar')->get();
+        // Wrong argument
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->select([
+                'value',
+                ['column', 'alias']
+            ]);
         });
-        $this->assertException(InvalidArgumentException::class, function () use ($builder) {
-            $builder->table('users')->limit('foofoobar')->get();
+    }
+
+    /**
+     * Tests the offset method
+     */
+    public function testOffset()
+    {
+        // No offset
+        $query = new Query('pref_');
+        $this->assertNull($query->offset);
+
+        // Integer offset
+        $query->offset(14);
+        $this->assertEquals(14, $query->offset);
+
+        // Callback offset
+        $query->offset(function (Query $query) {
+            $query->select('foo')->from('bar');
         });
+        $this->assertInstanceOf(Query::class, $query->offset);
+        $this->assertEquals('pref_bar', $query->offset->from);
+
+        // Subquery offset
+        $query->offset((new Query('sub_'))->from('table'));
+        $this->assertInstanceOf(Query::class, $query->offset);
+        $this->assertEquals('sub_table', $query->offset->from);
+
+        // Raw offset
+        $query->offset(new Raw('AVG(price)'));
+        $this->assertInstanceOf(StatementInterface::class, $query->offset);
+        $this->assertEquals('AVG(price)', $query->offset->getSQL());
+
+        // Wrong argument
+        $this->assertException(InvalidArgumentException::class, function () use ($query) {
+            $query->offset(['foo', 'bar']);
+        });
+
+        // How is limit doing?
+        $this->assertNull($query->limit);
+    }
+
+    /**
+     * Tests the offset method
+     */
+    public function testLimit()
+    {
+        // No limit
+        $query = new Query('pref_');
+        $this->assertNull($query->limit);
+
+        // Integer limit
+        $query->limit(7);
+        $this->assertEquals(7, $query->limit);
+
+        // Callback limit
+        $query->limit(function (Query $query) {
+            $query->select('foo')->from('bar');
+        });
+        $this->assertInstanceOf(Query::class, $query->limit);
+        $this->assertEquals('pref_bar', $query->limit->from);
+
+        // Subquery limit
+        $query->limit((new Query('sub_'))->from('table'));
+        $this->assertInstanceOf(Query::class, $query->limit);
+        $this->assertEquals('sub_table', $query->limit->from);
+
+        // Raw limit
+        $query->limit(new Raw('AVG(price)'));
+        $this->assertInstanceOf(StatementInterface::class, $query->limit);
+        $this->assertEquals('AVG(price)', $query->limit->getSQL());
+
+        // Wrong argument
+        $this->assertException(InvalidArgumentException::class, function () use ($query) {
+            $query->limit(['foo', 'bar']);
+        });
+
+        // How is offset doing?
+        $this->assertNull($query->offset);
+    }
+
+    /**
+     * Tests the makeEmptyCopy method
+     */
+    public function testMakeEmptyCopy()
+    {
+        $query = (new Query('test_'))
+            ->from('table')
+            ->select('column')
+            ->offset(150)
+            ->limit(10);
+
+        $emptyQuery = $query->makeEmptyCopy();
+        $this->assertInstanceOf(Query::class, $emptyQuery);
+        foreach (get_object_vars($query) as $property => $value) {
+            if ($property === 'select') {
+                $this->assertEquals([], $emptyQuery->$property);
+            } else {
+                $this->assertNull($emptyQuery->$property);
+            }
+        }
     }
 
     /**
@@ -146,7 +216,7 @@ class QueryTest extends TestCase
      */
     public function testTraits()
     {
-        $query = (new BuilderFactory(null, 'prefix_'))->builder();
+        $query = new Query('prefix_');
 
         $this->assertEquals('prefix_table', $query->addTablePrefix('table'));
 

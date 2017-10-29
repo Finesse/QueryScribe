@@ -1,6 +1,6 @@
 <?php
 
-namespace Finesse\QueryScribe\Common;
+namespace Finesse\QueryScribe;
 
 /**
  * Helps to add table prefix to table names

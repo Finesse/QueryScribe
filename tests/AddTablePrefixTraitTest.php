@@ -2,7 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests;
 
-use Finesse\QueryScribe\Common\AddTablePrefixTrait;
+use Finesse\QueryScribe\AddTablePrefixTrait;
 
 /**
  * Tests the TAddTablePrefix trait
