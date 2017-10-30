@@ -153,4 +153,18 @@ class QueryTest extends TestCase
         $this->assertInstanceOf(Raw::class, $raw);
         $this->assertStatement('`column` = ?', ['orange'], $raw);
     }
+
+    /**
+     * Tests that string values are not treated as callables.
+     */
+    public function testCallableColumnName()
+    {
+        $query = (new Query('pref_'))
+            ->from('date')
+            ->select('is_array')
+            ->where('sprintf', 'ucfirst');
+
+        $this->assertAttributes(['from' => 'pref_date', 'select' => ['is_array']], $query);
+        $this->assertAttributes(['column' => 'sprintf', 'value' => 'ucfirst'], $query->where[0]);
+    }
 }

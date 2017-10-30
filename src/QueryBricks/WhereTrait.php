@@ -18,7 +18,6 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * Contains properties and methods that add a possibility to use the WHERE section in a query.
  *
- * @todo Test it all
  * @todo Teach grammar to compile it all
  * @author Surgie
  */
@@ -327,7 +326,7 @@ trait WhereTrait
     {
         $column = $this->checkAndPrepareColumn('Argument $column', $column);
 
-        $this->where[] = new NullCriterion($column, $not, $appendRule);
+        $this->where[] = new NullCriterion($column, !$not, $appendRule);
         return $this;
     }
 
@@ -376,14 +375,14 @@ trait WhereTrait
      * first argument (they are appended with the AND rule).
      *
      * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
-     * @param string|\Closure|Query|StatementInterface $rule Rule or target column 2
+     * @param string|\Closure|Query|StatementInterface|null $rule Rule or target column 2
      * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
      */
-    public function whereColumn($column1, $rule, $column2 = null, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereColumn($column1, $rule = null, $column2 = null, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
         if (is_array($column1)) {
             return $this->where(

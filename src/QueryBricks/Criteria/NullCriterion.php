@@ -19,14 +19,14 @@ class NullCriterion extends Criterion
     public $column;
 
     /**
-     * @var bool Should a value be null
+     * @var bool Should a value be null (true) or not null (false)
      */
     public $isNull;
 
     /**
      * {@inheritDoc}
      *
-     * @param bool $isNull Should a value be null
+     * @param bool $isNull Should a value be null (true) or not null (false)
      */
     public function __construct($column, bool $isNull, int $appendRule)
     {
