@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\Tests\Grammars;
 
 use Finesse\QueryScribe\Exceptions\InvalidCriterionException;
+use Finesse\QueryScribe\Exceptions\InvalidOrderException;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Grammars\CommonGrammar;
 use Finesse\QueryScribe\Query;
@@ -57,6 +58,7 @@ class CommonGrammarTest extends TestCase
                 SUM((baz * boo))
             FROM `prefix_table` AS `t`
             WHERE `price` > ?
+            ORDER BY `position` ASC
             OFFSET ?
             LIMIT ?
         ', [100, 140, 12], $grammar->compileSelect(
@@ -75,6 +77,7 @@ class CommonGrammarTest extends TestCase
                 ->sum(new Raw('baz * boo'))
                 ->from('table', 't')
                 ->where('price', '>', 100)
+                ->orderBy('position')
                 ->offset(140)
                 ->limit(12)
         ));
@@ -134,7 +137,7 @@ class CommonGrammarTest extends TestCase
     /**
      * Tests the WHERE part compilation
      */
-    public function testWhere()
+    public function testCompileWhere()
     {
         $grammar = new CommonGrammar();
 
@@ -222,9 +225,42 @@ class CommonGrammarTest extends TestCase
     }
 
     /**
+     * Tests the ORDER part compilation
+     */
+    public function testCompileOrder()
+    {
+        $grammar = new CommonGrammar();
+
+        $this->assertStatement('
+            SELECT *
+            FROM `test_stories`
+            ORDER BY
+                `category` ASC,
+                (
+                    SELECT `foo`
+                    FROM `test2_bar`
+                    WHERE `foo` > ?
+                ) DESC,
+                RANDOM()
+        ', [3], $grammar->compileSelect(
+            (new Query('test_'))
+                ->from('stories')
+                ->orderBy('category', 'asc')
+                ->orderBy((new Query('test2_'))->select('foo')->from('bar')->where('foo', '>', 3), 'DESC')
+                ->inRandomOrder()
+        ));
+
+        $this->assertException(InvalidOrderException::class, function () use ($grammar) {
+            $query = (new Query())->from('table');
+            $query->order[] = 'foo ASC';
+            $grammar->compileSelect($query);
+        });
+    }
+
+    /**
      * Tests the OFFSET and the LIMIT parts compilation
      */
-    public function testOffsetAndLimit()
+    public function testCompileOffsetAndLimit()
     {
         $grammar = new CommonGrammar();
 

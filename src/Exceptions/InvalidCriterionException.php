@@ -9,4 +9,4 @@ use Finesse\QueryScribe\ExceptionInterface;
  *
  * @author Surgie
  */
-class InvalidCriterionException extends \RuntimeException implements ExceptionInterface {}
+class InvalidCriterionException extends InvalidQueryException implements ExceptionInterface {}

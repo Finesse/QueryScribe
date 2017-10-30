@@ -2,6 +2,8 @@
 
 namespace Finesse\QueryScribe;
 
+use Finesse\QueryScribe\Exceptions\InvalidQueryException;
+
 /**
  * Converts query data to a SQL text. Implementing classes should adapt SQL text for different DBMS (database management
  * systems).
@@ -15,7 +17,7 @@ interface GrammarInterface
      *
      * @param Query $query
      * @return StatementInterface
-     * @throws ExceptionInterface
+     * @throws InvalidQueryException
      */
     public function compile(Query $query): StatementInterface;
 
@@ -24,7 +26,7 @@ interface GrammarInterface
      *
      * @param Query $query
      * @return StatementInterface
-     * @throws ExceptionInterface
+     * @throws InvalidQueryException
      */
     public function compileSelect(Query $query): StatementInterface;
 }

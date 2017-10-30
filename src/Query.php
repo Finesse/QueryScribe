@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
@@ -17,10 +18,10 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  * todo order by
  *  * todo insert
  *  * todo update
  *  * todo delete
+ *  * todo support of different SQL dialects
  *  * todo join
  *  * todo union
  *  * todo group by and having
@@ -41,6 +42,11 @@ class Query
      * @var string|null Target table alias
      */
     public $fromAlias = null;
+
+    /**
+     * @var Order[]|string[] Orders. String value `random` means that the order should be random.
+     */
+    public $order = [];
 
     /**
      * @var int|self|StatementInterface|null Offset
@@ -74,6 +80,31 @@ class Query
 
         $this->from = is_string($table) ? $this->addTablePrefix($table) : $table;
         $this->fromAlias = $alias;
+        return $this;
+    }
+
+    /**
+     * Adds an order to the orders list.
+     *
+     * @param string|\Closure|self|StatementInterface $column Column to order by
+     * @param string $direction Order direction: `asc` - ascending, `desc` - descending
+     * @return self Itself
+     */
+    public function orderBy($column, string $direction = 'asc'): self
+    {
+        $column = $this->checkAndPrepareColumn('Argument $column', $column);
+        $this->order[] = new Order($column, strtolower($direction) === 'desc');
+        return $this;
+    }
+
+    /**
+     * Adds a random order to the orders list.
+     *
+     * @return self Itself
+     */
+    public function inRandomOrder(): self
+    {
+        $this->order[] = 'random';
         return $this;
     }
 

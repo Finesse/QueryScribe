@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\Grammars;
 
 use Finesse\QueryScribe\Exceptions\InvalidCriterionException;
+use Finesse\QueryScribe\Exceptions\InvalidOrderException;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\GrammarInterface;
 use Finesse\QueryScribe\QueryBricks\Aggregate;
@@ -16,6 +17,7 @@ use Finesse\QueryScribe\QueryBricks\Criteria\RawCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -44,6 +46,7 @@ class CommonGrammar implements GrammarInterface
             $this->compileSelectPart($query, $bindings),
             $this->compileFromPart($query, $bindings),
             $this->compileWherePart($query, $bindings),
+            $this->compileOrderPart($query, $bindings),
             $this->compileOffsetAndLimitPart($query, $bindings)
         ];
 
@@ -130,6 +133,33 @@ class CommonGrammar implements GrammarInterface
         }
 
         return $sql;
+    }
+
+    /**
+     * Compiles a ORDER part of a SQL query.
+     *
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     * @throws InvalidOrderException
+     */
+    protected function compileOrderPart(Query $query, array &$bindings): string
+    {
+        $ordersSQL = [];
+
+        foreach ($query->order as $order) {
+            $orderSQL = $this->orderToSQL($order, $bindings);
+
+            if ($orderSQL !== '') {
+                $ordersSQL[] = $orderSQL;
+            }
+        }
+
+        if ($ordersSQL) {
+            return 'ORDER BY '.implode(', ', $ordersSQL);
+        } else {
+            return '';
+        }
     }
 
     /**
@@ -335,6 +365,30 @@ class CommonGrammar implements GrammarInterface
         }
 
         throw new InvalidCriterionException('The given criterion '.get_class($criterion).' is unknown');
+    }
+
+    /**
+     * Converts a single order to a SQL query text.
+     *
+     * @param Order|string $order Order. String `random` means that the order should be random.
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text or empty string
+     * @throws InvalidOrderException
+     */
+    protected function orderToSQL($order, array &$bindings): string
+    {
+        if ($order instanceof Order) {
+            return $this->symbolToSQL($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
+        }
+
+        if ($order === 'random') {
+            return 'RANDOM()';
+        }
+
+        throw new InvalidOrderException(sprintf(
+            'The given order %s is unknown',
+            is_string($order) ? $order : gettype($order)
+        ));
     }
 
     /**

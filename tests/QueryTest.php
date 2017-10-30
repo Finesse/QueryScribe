@@ -4,6 +4,7 @@ namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -15,7 +16,7 @@ use Finesse\QueryScribe\StatementInterface;
 class QueryTest extends TestCase
 {
     /**
-     * Tests the from method
+     * Tests the `from` method
      */
     public function testFrom()
     {
@@ -63,7 +64,33 @@ class QueryTest extends TestCase
     }
 
     /**
-     * Tests the offset method
+     * Tests the ordering methods
+     */
+    public function testOrder()
+    {
+        $query = (new Query('pref_'))
+            ->from('post')
+            ->orderBy('name')
+            ->inRandomOrder()
+            ->orderBy(function (Query $query) {
+                $query
+                    ->avg('price')
+                    ->from('products')
+                    ->whereColumn('post.category_id', 'price.category_id');
+            }, 'desc');
+
+        $this->assertCount(3, $query->order);
+        $this->assertInstanceOf(Order::class, $query->order[0]);
+        $this->assertAttributes(['column' => 'name', 'isDescending' => false], $query->order[0]);
+        $this->assertEquals('random', $query->order[1]);
+        $this->assertInstanceOf(Order::class, $query->order[2]);
+        $this->assertEquals(true, $query->order[2]->isDescending);
+        $this->assertInstanceOf(Query::class, $query->order[2]->column);
+        $this->assertEquals('pref_products', $query->order[2]->column->from);
+    }
+
+    /**
+     * Tests the `offset` method
      */
     public function testOffset()
     {
@@ -102,7 +129,7 @@ class QueryTest extends TestCase
     }
 
     /**
-     * Tests the offset method
+     * Tests the `limit` method
      */
     public function testLimit()
     {
@@ -141,7 +168,7 @@ class QueryTest extends TestCase
     }
 
     /**
-     * Tests that the trait methods are available
+     * Tests that the other trait methods are available
      */
     public function testTraits()
     {

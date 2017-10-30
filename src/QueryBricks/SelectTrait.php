@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\QueryBricks;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
@@ -13,7 +14,7 @@ use Finesse\QueryScribe\StatementInterface;
 trait SelectTrait
 {
     /**
-     * @var (string|Aggregate|self|StatementInterface)[] Columns names to select (prefixed). The string indexes are the
+     * @var string[]|Aggregate[]|Query[]|StatementInterface[] Columns names to select (prefixed). The string indexes are the
      *    aliases names. If no columns are provided, all columns should be selected.
      */
     public $select = [];
@@ -21,9 +22,9 @@ trait SelectTrait
     /**
      * Adds column or columns to the SELECT section.
      *
-     * @param string|\Closure|self|StatementInterface|(string|\Closure|self|StatementInterface)[] $columns Columns to
-     *     add. If string or raw, one column is added. If array, many columns are added and string indexes are treated
-     *     as aliases.
+     * @param string|\Closure|Query|StatementInterface|string[]|\Closure[]|Query[]|StatementInterface[] $columns Columns
+     *     to add. If string or raw, one column is added. If array, many columns are added and string indexes are
+     *     treated as aliases.
      * @param string|null $alias Column alias name. Used only if the first argument is not an array.
      * @return self Itself
      */
@@ -53,7 +54,7 @@ trait SelectTrait
     /**
      * Adds a COUNT aggregate to the SELECT section.
      *
-     * @param string|\Closure|self|StatementInterface $column Column to count
+     * @param string|\Closure|Query|StatementInterface $column Column to count
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
@@ -66,7 +67,7 @@ trait SelectTrait
     /**
      * Adds a AVG aggregate to the SELECT section.
      *
-     * @param string|\Closure|self|StatementInterface $column Column to get average
+     * @param string|\Closure|Query|StatementInterface $column Column to get average
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
@@ -79,7 +80,7 @@ trait SelectTrait
     /**
      * Adds a SUM aggregate to the SELECT section.
      *
-     * @param string|\Closure|self|StatementInterface $column Column to get sum
+     * @param string|\Closure|Query|StatementInterface $column Column to get sum
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
@@ -92,7 +93,7 @@ trait SelectTrait
     /**
      * Adds a MIN aggregate to the SELECT section.
      *
-     * @param string|\Closure|self|StatementInterface $column Column to get min
+     * @param string|\Closure|Query|StatementInterface $column Column to get min
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
@@ -105,7 +106,7 @@ trait SelectTrait
     /**
      * Adds a MAX aggregate to the SELECT section.
      *
-     * @param string|\Closure|self|StatementInterface $column Column to get max
+     * @param string|\Closure|Query|StatementInterface $column Column to get max
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
@@ -119,7 +120,7 @@ trait SelectTrait
      * Adds an arbitrary aggregate to the SELECT section.
      *
      * @param string $function Aggregate function name
-     * @param string|\Closure|self|StatementInterface $column Column to count (not prefixed)
+     * @param string|\Closure|Query|StatementInterface $column Column to count (not prefixed)
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
