@@ -209,6 +209,10 @@ class CommonGrammar implements GrammarInterface
 
         foreach ($criteria as $criterion) {
             $criterionSQL = $this->criterionToSQL($criterion, $bindings);
+            if ($criterionSQL === '') {
+                continue;
+            }
+
             $appendRule = $criterion->appendRule;
 
             if ($previousAppendRule === null) {

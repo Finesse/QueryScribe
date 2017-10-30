@@ -192,6 +192,7 @@ class CommonGrammarTest extends TestCase
                 })
                 ->whereIn(new Raw('MONTH(date)'), [1, 4, 6])
                 ->whereNull('position')
+                ->where(function () {}) // Empty group
         ));
 
         // Unknown criterion type
