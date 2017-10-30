@@ -219,7 +219,9 @@ class WhereTraitTest extends TestCase
             )
             ->orWhereNotIn(
                 (new Query('demo_'))->select('name')->from('users'),
-                [1, 4, 10, 20]
+                [4, new Raw('foo'), function (Query $query) {
+                    $query->avg('price')->from('products');
+                }]
             );
 
         $this->assertCount(4, $query->where);
@@ -232,8 +234,12 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
         $this->assertInstanceOf(Query::class, $query->where[2]->column);
         $this->assertInstanceOf(Query::class, $query->where[2]->values);
-        $this->assertAttributes(['values' => [1, 4, 10, 20], 'not' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[3]);
+        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[3]);
         $this->assertInstanceOf(Query::class, $query->where[3]->column);
+        $this->assertCount(3, $query->where[3]->values);
+        $this->assertEquals(4, $query->where[3]->values[0]);
+        $this->assertInstanceOf(Raw::class, $query->where[3]->values[1]);
+        $this->assertInstanceOf(Query::class, $query->where[3]->values[2]);
 
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query('test_'))->whereIn('name', 'foo');

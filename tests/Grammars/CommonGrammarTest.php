@@ -1,18 +1,19 @@
 <?php
 
-namespace Finesse\QueryScribe\Tests;
+namespace Finesse\QueryScribe\Tests\Grammars;
 
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Grammars\CommonGrammar;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\Raw;
+use Finesse\QueryScribe\Tests\TestCase;
 
 /**
  * Tests the grammars (how queries are compiled to SQL)
  *
  * @author Surgie
  */
-class GrammarTest extends TestCase
+class CommonGrammarTest extends TestCase
 {
     /**
      * Tests the compile method

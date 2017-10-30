@@ -2,12 +2,22 @@
 
 namespace Finesse\QueryScribe\Grammars;
 
-use Finesse\QueryScribe\QueryBricks\Aggregate;
-use Finesse\QueryScribe\StatementInterface;
+use Finesse\QueryScribe\Exceptions\InvalidCriterionException;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\GrammarInterface;
+use Finesse\QueryScribe\QueryBricks\Aggregate;
+use Finesse\QueryScribe\QueryBricks\Criteria\BetweenCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\ColumnsCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\CriteriaCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\ExistsCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\InCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\RawCriterion;
+use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
+use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\Raw;
+use Finesse\QueryScribe\StatementInterface;
 
 /**
  * A grammar that covers most common DBMS syntax features.
@@ -33,7 +43,8 @@ class CommonGrammar implements GrammarInterface
         $sql = [
             $this->compileSelectPart($query, $bindings),
             $this->compileFromPart($query, $bindings),
-            $this->compileOffsetAndLimitPart($query, $bindings)
+            $this->compileOffsetAndLimitPart($query, $bindings),
+            $this->compileWherePart($query, $bindings)
         ];
 
         return new Raw($this->implodeSQL($sql), $bindings);
@@ -104,6 +115,25 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
+     * Compiles a WHERE part of a SQL query.
+     *
+     * @todo Test it
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     * @throws InvalidCriterionException
+     */
+    protected function compileWherePart(Query $query, array &$bindings): string
+    {
+        $sql = $this->criteriaToSQL($query->where, $bindings);
+        if ($sql !== '') {
+            $sql = 'WHERE '.$sql;
+        }
+
+        return $sql;
+    }
+
+    /**
      * Converts a symbol (table, column, database, etc.) to a part of a SQL query text. Screens all the stuff.
      *
      * @param string|Query|StatementInterface $symbol Symbol
@@ -166,6 +196,144 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
+     * Converts an array of criteria to a SQL query text.
+     *
+     * @param Criterion[] $criteria List of criteria
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text or empty string
+     * @throws InvalidCriterionException
+     */
+    protected function criteriaToSQL(array $criteria, array &$bindings): string
+    {
+        $criteriaSQL = '';
+        $previousAppendRule = null;
+
+        foreach ($criteria as $criterion) {
+            $criterionSQL = $this->criterionToSQL($criterion, $bindings);
+            $appendRule = $criterion->appendRule;
+
+            if ($previousAppendRule === null) {
+                $criteriaSQL .= $criterionSQL;
+            } else {
+                switch ($appendRule) {
+                    case Criterion::APPEND_RULE_OR:
+                        $criteriaSQL .= ' OR '.$criterionSQL;
+                        break;
+                    case Criterion::APPEND_RULE_AND:
+                        if ($previousAppendRule === Criterion::APPEND_RULE_OR) {
+                            $criteriaSQL = '('.$criteriaSQL.') AND '.$criterionSQL;
+                        } else {
+                            $criteriaSQL .= ' AND '.$criterionSQL;
+                        }
+                        break;
+                    default:
+                        throw new InvalidCriterionException('Unknown criterion append rule `'.$appendRule.'`');
+                }
+            }
+
+            $previousAppendRule = $appendRule;
+        }
+
+        return $criteriaSQL;
+    }
+
+    /**
+     * Converts a single criterion to a SQL query text.
+     *
+     * @param Criterion $criterion Criterion
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text or empty string
+     * @throws InvalidCriterionException
+     */
+    protected function criterionToSQL(Criterion $criterion, array &$bindings): string
+    {
+        if ($criterion instanceof ValueCriterion) {
+            return sprintf(
+                '%s %s %s',
+                $this->symbolToSQL($criterion->column, $bindings),
+                $criterion->rule,
+                $this->valueToSQL($criterion->value, $bindings)
+            );
+        }
+
+        if ($criterion instanceof ColumnsCriterion) {
+            return sprintf(
+                '%s %s %s',
+                $this->symbolToSQL($criterion->column1, $bindings),
+                $criterion->rule,
+                $this->symbolToSQL($criterion->column2, $bindings)
+            );
+        }
+
+        if ($criterion instanceof BetweenCriterion) {
+            return sprintf(
+                '%s %sBETWEEN(%s, %s)',
+                $this->symbolToSQL($criterion->column, $bindings),
+                $criterion->not ? 'NOT ' : '',
+                $this->valueToSQL($criterion->min, $bindings),
+                $this->valueToSQL($criterion->max, $bindings)
+            );
+        }
+
+        if ($criterion instanceof CriteriaCriterion) {
+            $groupBindings = [];
+            $groupSQL = $this->criteriaToSQL($criterion->criteria, $groupBindings);
+
+            if ($groupSQL === '') {
+                return '';
+            } else {
+                $this->mergeBindings($bindings, $groupBindings);
+
+                return sprintf(
+                    '%s(%s)',
+                    $criterion->not ? 'NOT ' : '',
+                    $groupSQL
+                );
+            }
+        }
+
+        if ($criterion instanceof ExistsCriterion) {
+            return sprintf(
+                '%sEXISTS(%s)',
+                $criterion->not ? 'NOT ' : '',
+                $this->subQueryToSQL($criterion->subQuery, $bindings)
+            );
+        }
+
+        if ($criterion instanceof InCriterion) {
+            if (is_array($criterion->values)) {
+                $values = [];
+                foreach ($criterion->values as $value) {
+                    $values[] = $this->valueToSQL($value, $bindings);
+                }
+                $subQuery = implode(', ', $values);
+            } else {
+                $subQuery = $this->subQueryToSQL($criterion->values, $bindings);
+            }
+
+            return sprintf(
+                '%sIN(%s)',
+                $criterion->not ? 'NOT ' : '',
+                $subQuery
+            );
+        }
+
+        if ($criterion instanceof NullCriterion) {
+            return sprintf(
+                '%s IS %sNULL',
+                $this->symbolToSQL($criterion->column, $bindings),
+                $criterion->isNull ? '' : 'NOT '
+            );
+        }
+
+        if ($criterion instanceof RawCriterion) {
+            return $this->subQueryToSQL($criterion->raw, $bindings);
+        }
+
+        throw new InvalidCriterionException('The given criterion '.get_class($criterion).' is unknown');
+    }
+
+    /**
      * Wraps a symbol (table, column, database, etc.) name with quotes.
      *
      * @param string $name
@@ -223,6 +391,15 @@ class CommonGrammar implements GrammarInterface
      */
     protected function implodeSQL(array $parts): string
     {
-        return implode("\n", $parts);
+        $result = '';
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            $result .= ($result === '' ? '' : "\n").$part;
+        }
+
+        return $result;
     }
 }

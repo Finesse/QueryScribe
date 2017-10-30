@@ -18,7 +18,6 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * Contains properties and methods that add a possibility to use the WHERE section in a query.
  *
- * @todo Teach grammar to compile it all
  * @author Surgie
  */
 trait WhereTrait
@@ -262,7 +261,11 @@ trait WhereTrait
             );
         }
 
-        if ($values instanceof \Closure) {
+        if (is_array($values)) {
+            foreach ($values as $index => &$value) {
+                $value = $this->checkScalarOrNullValue('Argument $values['.$index.']', $value);
+            }
+        } elseif ($values instanceof \Closure) {
             $values = $this->retrieveClosureQuery($values, $this->makeCopyForSubQuery());
         }
 
