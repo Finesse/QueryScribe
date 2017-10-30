@@ -2,9 +2,11 @@
 
 namespace Finesse\QueryScribe\Tests\Grammars;
 
+use Finesse\QueryScribe\Exceptions\InvalidCriterionException;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Grammars\CommonGrammar;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\Tests\TestCase;
 
@@ -54,9 +56,10 @@ class CommonGrammarTest extends TestCase
                 AVG(`boo`) AS `avg`,
                 SUM((baz * boo))
             FROM `prefix_table` AS `t`
+            WHERE `price` > ?
             OFFSET ?
             LIMIT ?
-        ', [140, 12], $grammar->compileSelect(
+        ', [100, 140, 12], $grammar->compileSelect(
             (new Query('prefix_'))
                 ->select([
                     'table.*',
@@ -71,6 +74,7 @@ class CommonGrammarTest extends TestCase
                 ->avg('boo', 'avg')
                 ->sum(new Raw('baz * boo'))
                 ->from('table', 't')
+                ->where('price', '>', 100)
                 ->offset(140)
                 ->limit(12)
         ));
@@ -125,6 +129,87 @@ class CommonGrammarTest extends TestCase
                 $query->select(['foo', new Raw('? + ?', [2, 3])])->from('other');
             }, 't')
         ));
+    }
+
+    /**
+     * Tests the WHERE part compilation
+     */
+    public function testWhere()
+    {
+        $grammar = new CommonGrammar();
+
+        $this->assertStatement('
+            SELECT *
+            FROM `test_posts`
+            WHERE
+                (
+                    (
+                        `date` < (NOW()) OR
+                        (ARE_ABOUT_EQUAL(title, description))
+                    ) AND
+                    `position` NOT BETWEEN(?, (
+                        SELECT MAX(`price`)
+                        FROM `test_products`
+                    )) AND (
+                        `foo` = `bar` AND
+                        `bar` != `baz`
+                    ) OR (
+                        `title` LIKE ? AND
+                        `type` = ?
+                    ) OR
+                    NOT EXISTS(
+                        SELECT *
+                        FROM `test_comments`
+                        WHERE
+                            `test_posts`.`id` = `test_comments`.`post_id` AND
+                            `content` = ?
+                    )
+                ) AND
+                (MONTH(date)) IN (?, ?, ?) AND
+                `position` IS NULL
+        ', [0, '%boss%', 'Important', 'Hello', 1, 4, 6], $grammar->compileSelect(
+            (new Query('test_'))
+                ->from('posts')
+                ->where('date', '<', new Raw('NOW()'))
+                ->orWhereRaw('ARE_ABOUT_EQUAL(title, description)')
+                ->whereNotBetween('position', 0, function (Query $query) {
+                    $query->max('price')->from('products');
+                })
+                ->whereColumn([
+                    ['foo', 'bar'],
+                    ['bar', '!=', 'baz']
+                ])
+                ->orWhere(function (Query $query) {
+                    $query
+                        ->where('title', 'like', '%boss%')
+                        ->where('type', 'Important');
+                })
+                ->orWhereNotExists(function (Query $query) {
+                    $query
+                        ->from('comments')
+                        ->whereColumn('posts.id', 'comments.post_id')
+                        ->where('content', 'Hello');
+                })
+                ->whereIn(new Raw('MONTH(date)'), [1, 4, 6])
+                ->whereNull('position')
+        ));
+
+        // Unknown criterion type
+        $this->assertException(InvalidCriterionException::class, function () use ($grammar) {
+            $query = (new Query())->from('test');
+            $query->where[] = new class(Criterion::APPEND_RULE_AND) extends Criterion {};
+            $grammar->compileSelect($query);
+        });
+
+        // Unknown append type
+        $this->assertException(InvalidCriterionException::class, function () use ($grammar) {
+            $grammar->compileSelect(
+                (new Query())
+                    ->from('test')
+                    ->whereRaw('TRUE')
+                    ->where('foo', '=', 'bar', -2394723)
+            );
+        });
     }
 
     /**

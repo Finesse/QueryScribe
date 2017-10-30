@@ -43,8 +43,8 @@ class CommonGrammar implements GrammarInterface
         $sql = [
             $this->compileSelectPart($query, $bindings),
             $this->compileFromPart($query, $bindings),
-            $this->compileOffsetAndLimitPart($query, $bindings),
-            $this->compileWherePart($query, $bindings)
+            $this->compileWherePart($query, $bindings),
+            $this->compileOffsetAndLimitPart($query, $bindings)
         ];
 
         return new Raw($this->implodeSQL($sql), $bindings);
@@ -117,7 +117,6 @@ class CommonGrammar implements GrammarInterface
     /**
      * Compiles a WHERE part of a SQL query.
      *
-     * @todo Test it
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
@@ -171,7 +170,7 @@ class CommonGrammar implements GrammarInterface
      *
      * @param Query|StatementInterface $subQuery Subquery
      * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text
+     * @return string SQL text wrapped in parentheses
      */
     protected function subQueryToSQL($subQuery, array &$bindings): string
     {
@@ -196,7 +195,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts an array of criteria to a SQL query text.
+     * Converts an array of criteria (logical rules for WHERE, HAVING, etc.) to a SQL query text.
      *
      * @param Criterion[] $criteria List of criteria
      * @param array $bindings Bound values (array is filled by link)
@@ -294,7 +293,7 @@ class CommonGrammar implements GrammarInterface
 
         if ($criterion instanceof ExistsCriterion) {
             return sprintf(
-                '%sEXISTS(%s)',
+                '%sEXISTS %s',
                 $criterion->not ? 'NOT ' : '',
                 $this->subQueryToSQL($criterion->subQuery, $bindings)
             );
@@ -306,13 +305,14 @@ class CommonGrammar implements GrammarInterface
                 foreach ($criterion->values as $value) {
                     $values[] = $this->valueToSQL($value, $bindings);
                 }
-                $subQuery = implode(', ', $values);
+                $subQuery = '('.implode(', ', $values).')';
             } else {
                 $subQuery = $this->subQueryToSQL($criterion->values, $bindings);
             }
 
             return sprintf(
-                '%sIN(%s)',
+                '%s %sIN %s',
+                $this->symbolToSQL($criterion->column, $bindings),
                 $criterion->not ? 'NOT ' : '',
                 $subQuery
             );

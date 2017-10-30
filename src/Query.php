@@ -7,7 +7,7 @@ use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
- * Represents a built query. It contains only a basic query data, not a SQL text.
+ * Represents a built query. It contains only a basic query data, not a SQL text. It must not compile any SQL.
  *
  * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
  *  - Takes an empty query the first argument;
@@ -15,6 +15,15 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *
  * The Closure is used instead of callable to prevent ambiguities when a string column name or a value may be treated as
  * a function name.
+ *
+ * Future features:
+ *  * todo order by
+ *  * todo insert
+ *  * todo update
+ *  * todo delete
+ *  * todo join
+ *  * todo union
+ *  * todo group by and having
  *
  * @author Surgie
  */
