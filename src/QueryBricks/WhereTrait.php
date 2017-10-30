@@ -33,13 +33,13 @@ trait WhereTrait
      * Adds a criterion to the WHERE section. Possible formats:
      *  * column, rule, value — column compared to value by the given rule;
      *  * column, value — column is equal to value;
-     *  * callable – grouped criteria;
+     *  * Closure – grouped criteria;
      *  * array[] – criteria joined by the AND rule (the values are the arguments lists for this method);
      *  * Raw – raw SQL.
      *
-     * @param string|callable|Query|StatementInterface|array[] $column
-     * @param string|mixed|callable|Query|StatementInterface|null $rule
-     * @param mixed|callable|Query|StatementInterface|null $value
+     * @param string|\Closure|Query|StatementInterface|array[] $column
+     * @param string|mixed|\Closure|Query|StatementInterface|null $rule
+     * @param mixed|\Closure|Query|StatementInterface|null $value
      * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
      * @return self Itself
@@ -48,8 +48,8 @@ trait WhereTrait
     public function where($column, $rule = null, $value = null, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
         if ($rule === null && $value === null) {
-            if (is_callable($column)) {
-                $groupQuery = $this->retrieveCallableQuery($column, $this->makeCopyForCriteriaGroup());
+            if ($column instanceof \Closure) {
+                $groupQuery = $this->retrieveClosureQuery($column, $this->makeCopyForCriteriaGroup());
                 $this->where[] = new CriteriaCriterion($groupQuery->where, false, $appendRule);
                 return $this;
             }
@@ -112,14 +112,14 @@ trait WhereTrait
     /**
      * Adds a group of criteria wrapped by NOT.
      *
-     * @param callable $callback Makes a group of criteria
+     * @param \Closure $callback Makes a group of criteria
      * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
      * @return self Itself
      */
-    public function whereNot(callable $callback, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereNot(\Closure $callback, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
-        $groupQuery = $this->retrieveCallableQuery($callback, $this->makeCopyForCriteriaGroup());
+        $groupQuery = $this->retrieveClosureQuery($callback, $this->makeCopyForCriteriaGroup());
         $this->where[] = new CriteriaCriterion($groupQuery->where, true, $appendRule);
         return $this;
     }
@@ -128,10 +128,10 @@ trait WhereTrait
      * Adds a group of criteria wrapped by NOT with the OR append rule. See the readme for more info about append
      * rules.
      *
-     * @param callable $callback Makes a group of criteria
+     * @param \Closure $callback Makes a group of criteria
      * @return self Itself
      */
-    public function orWhereNot(callable $callback): self
+    public function orWhereNot(\Closure $callback): self
     {
         return $this->whereNot($callback, Criterion::APPEND_RULE_OR);
     }
@@ -166,9 +166,9 @@ trait WhereTrait
     /**
      * Adds a BETWEEN criterion to the WHERE section.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed|callable|Query|StatementInterface $min Left value
-     * @param mixed|callable|Query|StatementInterface $max Right value
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed|\Closure|Query|StatementInterface $min Left value
+     * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @param bool $not Whether the rule should be NOT BETWEEN
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
@@ -182,13 +182,9 @@ trait WhereTrait
         bool $not = false,
         int $appendRule = Criterion::APPEND_RULE_AND
     ): self {
-        $column = $this->checkStringValue('Argument $column', $column);
+        $column = $this->checkAndPrepareColumn('Argument $column', $column);
         $min = $this->checkScalarOrNullValue('The left between value', $min);
         $max = $this->checkScalarOrNullValue('The right between value', $max);
-
-        if (is_string($column)) {
-            $column = $this->addTablePrefixToColumn($column);
-        }
 
         $this->where[] = new BetweenCriterion($column, $min, $max, $not, $appendRule);
         return $this;
@@ -198,9 +194,9 @@ trait WhereTrait
      * Adds a BETWEEN criterion to the WHERE section with the OR append rule. See the readme for more info about append
      * rules.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed|callable|Query|StatementInterface $min Left value
-     * @param mixed|callable|Query|StatementInterface $max Right value
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed|\Closure|Query|StatementInterface $min Left value
+     * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @param bool $not Whether the rule should be NOT BETWEEN
      * @return self Itself
      * @throws InvalidArgumentException
@@ -213,9 +209,9 @@ trait WhereTrait
     /**
      * Adds a NOT BETWEEN criterion to the WHERE section.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed|callable|Query|StatementInterface $min Left value
-     * @param mixed|callable|Query|StatementInterface $max Right value
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed|\Closure|Query|StatementInterface $min Left value
+     * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -228,9 +224,9 @@ trait WhereTrait
      * Adds a NOT BETWEEN criterion to the WHERE section with the OR append rule. See the readme for more info about
      * append rules.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed|callable|Query|StatementInterface $min Left value
-     * @param mixed|callable|Query|StatementInterface $max Right value
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed|\Closure|Query|StatementInterface $min Left value
+     * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -242,8 +238,8 @@ trait WhereTrait
     /**
      * Adds a IN criterion to the WHERE section.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed[]|callable|Query|StatementInterface Haystack values
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @param bool $not Whether the rule should be NOT IN
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
@@ -256,19 +252,19 @@ trait WhereTrait
 
         if (
             !is_array($values) &&
-            !is_callable($values) &&
+            !($values instanceof \Closure) &&
             !($values instanceof Query) &&
             !($values instanceof StatementInterface)
         ) {
             throw InvalidArgumentException::create(
                 'The IN value',
                 $values,
-                ['array', 'callable', Query::class, StatementInterface::class, 'null']
+                ['array', \Closure::class, Query::class, StatementInterface::class, 'null']
             );
         }
 
-        if (is_callable($values)) {
-            $values = $this->retrieveCallableQuery($values, $this->makeCopyForSubQuery());
+        if ($values instanceof \Closure) {
+            $values = $this->retrieveClosureQuery($values, $this->makeCopyForSubQuery());
         }
 
         $this->where[] = new InCriterion($column, $values, $not, $appendRule);
@@ -279,8 +275,8 @@ trait WhereTrait
      * Adds a IN criterion to the WHERE section with the OR append rule. See the readme for more info about append
      * rules.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed[]|callable|Query|StatementInterface Haystack values
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @param bool $not Whether the rule should be NOT IN
      * @return self Itself
      * @throws InvalidArgumentException
@@ -293,8 +289,8 @@ trait WhereTrait
     /**
      * Adds a NOT IN criterion to the WHERE section.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed[]|callable|Query|StatementInterface Haystack values
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -307,8 +303,8 @@ trait WhereTrait
      * Adds a NOT IN criterion to the WHERE section with the OR append rule. See the readme for more info about append
      * rules.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
-     * @param mixed[]|callable|Query|StatementInterface Haystack values
+     * @param string|\Closure|Query|StatementInterface $column Target column
+     * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -320,7 +316,7 @@ trait WhereTrait
     /**
      * Adds a IS NULL criterion to the WHERE section.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
+     * @param string|\Closure|Query|StatementInterface $column Target column
      * @param bool $not Whether the rule should be NOT NULL
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
@@ -339,7 +335,7 @@ trait WhereTrait
      * Adds a IS NULL criterion to the WHERE section with the OR append rule. See the readme for more info about append
      * rules.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
+     * @param string|\Closure|Query|StatementInterface $column Target column
      * @param bool $not Whether the rule should be NOT IN
      * @return self Itself
      * @throws InvalidArgumentException
@@ -352,7 +348,7 @@ trait WhereTrait
     /**
      * Adds a IS NOT NULL criterion to the WHERE section.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
+     * @param string|\Closure|Query|StatementInterface $column Target column
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -365,7 +361,7 @@ trait WhereTrait
      * Adds a IS NOT NULL criterion to the WHERE section with the OR append rule. See the readme for more info about
      * append rules.
      *
-     * @param string|callable|Query|StatementInterface $column Target column
+     * @param string|\Closure|Query|StatementInterface $column Target column
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -379,9 +375,9 @@ trait WhereTrait
      * `whereColumn($column1, $column2)`, in this case the rule is `=`. Or you may pass an array of compares as the
      * first argument (they are appended with the AND rule).
      *
-     * @param string|callable|Query|StatementInterface|array[] $column Target column 1
-     * @param string|callable|Query|StatementInterface $rule Rule or target column 2
-     * @param string|callable|Query|StatementInterface|null $column Target column 2 or nothing
+     * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
+     * @param string|\Closure|Query|StatementInterface $rule Rule or target column 2
+     * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
      * @return self Itself
@@ -426,9 +422,9 @@ trait WhereTrait
      * array of compares as the first argument (they are appended with the AND rule). See the readme for more info about
      * append rules.
      *
-     * @param string|callable|Query|StatementInterface|array[] $column Target column 1
-     * @param string|callable|Query|StatementInterface $rule Rule or target column 2
-     * @param string|callable|Query|StatementInterface|null $column Target column 2 or nothing
+     * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
+     * @param string|\Closure|Query|StatementInterface $rule Rule or target column 2
+     * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
      * @return self Itself
      * @throws InvalidArgumentException
      */
@@ -440,7 +436,7 @@ trait WhereTrait
     /**
      * Adds a EXISTS criterion to the WHERE section.
      *
-     * @param $subQuery callable|Query|StatementInterface Query to place inside the EXISTS clause. If callable, it
+     * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
      * @param bool $not Whether the rule should be NOT EXISTS
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
@@ -451,19 +447,19 @@ trait WhereTrait
     public function whereExists($subQuery, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
         if (
-            !is_callable($subQuery) &&
+            !($subQuery instanceof \Closure) &&
             !($subQuery instanceof Query) &&
             !($subQuery instanceof StatementInterface)
         ) {
             throw InvalidArgumentException::create(
                 'Argument $subQuery',
                 $subQuery,
-                ['callable', Query::class, StatementInterface::class, 'null']
+                [\Closure::class, Query::class, StatementInterface::class, 'null']
             );
         }
 
-        if (is_callable($subQuery)) {
-            $subQuery = $this->retrieveCallableQuery($subQuery, $this->makeCopyForSubQuery());
+        if ($subQuery instanceof \Closure) {
+            $subQuery = $this->retrieveClosureQuery($subQuery, $this->makeCopyForSubQuery());
         }
 
         $this->where[] = new ExistsCriterion($subQuery, $not, $appendRule);
@@ -474,7 +470,7 @@ trait WhereTrait
      * Adds a EXISTS criterion to the WHERE section with the OR append rule. See the readme for more info about append
      * rules.
      *
-     * @param $subQuery callable|Query|StatementInterface Query to place inside the EXISTS clause. If callable, it
+     * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
      * @param bool $not Whether the rule should be NOT EXISTS
      * @return self Itself
@@ -488,7 +484,7 @@ trait WhereTrait
     /**
      * Adds a NOT EXISTS criterion to the WHERE section.
      *
-     * @param $subQuery callable|Query|StatementInterface Query to place inside the EXISTS clause. If callable, it
+     * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
      * @return self Itself
      * @throws InvalidArgumentException
@@ -502,7 +498,7 @@ trait WhereTrait
      * Adds a NOT EXISTS criterion to the WHERE section with the OR append rule. See the readme for more info about
      * append rules.
      *
-     * @param $subQuery callable|Query|StatementInterface Query to place inside the EXISTS clause. If callable, it
+     * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
      * @return self Itself
      * @throws InvalidArgumentException

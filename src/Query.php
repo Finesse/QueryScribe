@@ -9,9 +9,12 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
 /**
  * Represents a built query. It contains only a basic query data, not a SQL text.
  *
- * All the callable mentioned here as a value type are the function of the following type (if other is not specified):
+ * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
  *  - Takes an empty query the first argument;
  *  - Returns a SELECT query object or modifies the given object by link.
+ *
+ * The Closure is used instead of callable to prevent ambiguities when a string column name or a value may be treated as
+ * a function name.
  *
  * @author Surgie
  */
@@ -51,7 +54,7 @@ class Query
     /**
      * Sets the target table.
      *
-     * @param string|callable|Query|StatementInterface $table Not prefixed table name without quotes
+     * @param string|\Closure|Query|StatementInterface $table Not prefixed table name without quotes
      * @param string|null Table alias
      * @return self Itself
      * @throws InvalidArgumentException
@@ -68,7 +71,7 @@ class Query
     /**
      * Sets the offset.
      *
-     * @param int|callable|self|StatementInterface|null $offset Offset. Null removes the offset.
+     * @param int|\Closure|self|StatementInterface|null $offset Offset. Null removes the offset.
      * @return self Itself
      */
     public function offset($offset): self
@@ -80,7 +83,7 @@ class Query
     /**
      * Sets the limit.
      *
-     * @param int|callable|self|StatementInterface|null $limit Limit. Null removes the limit.
+     * @param int|\Closure|self|StatementInterface|null $limit Limit. Null removes the limit.
      * @return self Itself
      */
     public function limit($limit): self
@@ -90,11 +93,11 @@ class Query
     }
 
     /**
-     * Check that value is suitable for being a "string or subquery" property of a query. Retrieves the callable
+     * Check that value is suitable for being a "string or subquery" property of a query. Retrieves the closure
      * subquery.
      *
      * @param string $name Value name
-     * @param string|callable|self|StatementInterface $value
+     * @param string|\Closure|self|StatementInterface $value
      * @return string|self|StatementInterface
      * @throws InvalidArgumentException
      */
@@ -102,30 +105,30 @@ class Query
     {
         if (
             !is_string($value) &&
-            !is_callable($value) &&
+            !($value instanceof \Closure) &&
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
             throw InvalidArgumentException::create(
                 $name,
                 $value,
-                ['string', 'callable', self::class, StatementInterface::class]
+                ['string', \Closure::class, self::class, StatementInterface::class]
             );
         }
 
-        if (is_callable($value)) {
-            return $this->retrieveCallableQuery($value, $this->makeCopyForSubQuery());
+        if ($value instanceof \Closure) {
+            return $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
         }
 
         return $value;
     }
 
     /**
-     * Check that value is suitable for being a "int or null or subquery" property of a query. Retrieves the callable
+     * Check that value is suitable for being a "int or null or subquery" property of a query. Retrieves the closure
      * subquery.
      *
      * @param string $name Value name
-     * @param int|callable|self|StatementInterface|null $value
+     * @param int|\Closure|self|StatementInterface|null $value
      * @return int|self|StatementInterface|null
      * @throws InvalidArgumentException
      */
@@ -134,32 +137,32 @@ class Query
         if (
             $value !== null &&
             !is_numeric($value) &&
-            !is_callable($value) &&
+            !($value instanceof \Closure) &&
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
             throw InvalidArgumentException::create(
                 $name,
                 $value,
-                ['integer', 'callable', self::class, StatementInterface::class, 'null']
+                ['integer', \Closure::class, self::class, StatementInterface::class, 'null']
             );
         }
 
         if (is_numeric($value)) {
             $value = (int)$value;
-        } elseif (is_callable($value)) {
-            return $this->retrieveCallableQuery($value, $this->makeCopyForSubQuery());
+        } elseif ($value instanceof \Closure) {
+            return $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
         }
 
         return $value;
     }
 
     /**
-     * Check that value is suitable for being a "scalar or null or subquery" property of a query. Retrieves the callable
+     * Check that value is suitable for being a "scalar or null or subquery" property of a query. Retrieves the closure
      * subquery.
      *
      * @param string $name Value name
-     * @param mixed|callable|self|StatementInterface|null $value
+     * @param mixed|\Closure|self|StatementInterface|null $value
      * @return mixed|self|StatementInterface|null
      * @throws InvalidArgumentException
      */
@@ -168,30 +171,30 @@ class Query
         if (
             $value !== null &&
             !is_scalar($value) &&
-            !is_callable($value) &&
+            !($value instanceof \Closure) &&
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
             throw InvalidArgumentException::create(
                 $name,
                 $value,
-                ['scalar', 'callable', self::class, StatementInterface::class, 'null']
+                ['scalar', \Closure::class, self::class, StatementInterface::class, 'null']
             );
         }
 
-        if (is_callable($value)) {
-            return $this->retrieveCallableQuery($value, $this->makeCopyForSubQuery());
+        if ($value instanceof \Closure) {
+            return $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
         }
 
         return $value;
     }
 
     /**
-     * Check that value is suitable for being a column name of a query. Retrieves the callable subquery. Adds a table
+     * Check that value is suitable for being a column name of a query. Retrieves the closure subquery. Adds a table
      * prefix to a column name (if it contains a table name).
      *
      * @param string $name Value name
-     * @param string|callable|self|StatementInterface $column
+     * @param string|\Closure|self|StatementInterface $column
      * @return string|self|StatementInterface
      * @throws InvalidArgumentException
      */
@@ -205,13 +208,13 @@ class Query
     }
 
     /**
-     * Retrieves the subquery from a callable.
+     * Retrieves the subquery from a closure.
      *
-     * @param callable $callback
+     * @param \Closure $callback
      * @param self $emptyQuery Empty query object suitable for the callback
      * @return self
      */
-    protected function retrieveCallableQuery(callable $callback, self $emptyQuery): self
+    protected function retrieveClosureQuery(\Closure $callback, self $emptyQuery): self
     {
         $result = $callback($emptyQuery);
 
