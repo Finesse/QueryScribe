@@ -147,7 +147,7 @@ class CommonGrammarTest extends TestCase
                         `date` < (NOW()) OR
                         (ARE_ABOUT_EQUAL(title, description))
                     ) AND
-                    `position` NOT BETWEEN(?, (
+                    (`position` NOT BETWEEN ? AND (
                         SELECT MAX(`price`)
                         FROM `test_products`
                     )) AND (

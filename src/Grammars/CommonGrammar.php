@@ -270,7 +270,7 @@ class CommonGrammar implements GrammarInterface
 
         if ($criterion instanceof BetweenCriterion) {
             return sprintf(
-                '%s %sBETWEEN(%s, %s)',
+                '(%s %sBETWEEN %s AND %s)',
                 $this->symbolToSQL($criterion->column, $bindings),
                 $criterion->not ? 'NOT ' : '',
                 $this->valueToSQL($criterion->min, $bindings),
