@@ -68,10 +68,10 @@ class CommonGrammar implements GrammarInterface
             if ($column instanceof Aggregate) {
                 $column = $this->aggregateToSQL($column, $bindings);
             } else {
-                $column = $this->symbolToSQL($column, $bindings);
+                $column = $this->identifierToSQL($column, $bindings);
             }
 
-            $columns[] = $column.(is_string($alias) ? ' AS '.$this->wrapPlainSymbol($alias) : '');
+            $columns[] = $column.(is_string($alias) ? ' AS '.$this->quotePlainIdentifier($alias) : '');
         }
 
         return 'SELECT '.implode(', ', $columns);
@@ -91,8 +91,8 @@ class CommonGrammar implements GrammarInterface
             throw new InvalidQueryException('The FROM table is not set');
         }
 
-        return 'FROM '.$this->symbolToSQL($query->from, $bindings)
-            . ($query->fromAlias === null ? '' : ' AS '.$this->wrapPlainSymbol($query->fromAlias));
+        return 'FROM '.$this->identifierToSQL($query->from, $bindings)
+            . ($query->fromAlias === null ? '' : ' AS '.$this->quotePlainIdentifier($query->fromAlias));
     }
 
     /**
@@ -163,19 +163,19 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a symbol (table, column, database, etc.) to a part of a SQL query text. Screens all the stuff.
+     * Converts a identifier (table, column, database, etc.) to a part of a SQL query text. Screens all the stuff.
      *
-     * @param string|Query|StatementInterface $symbol Symbol
+     * @param string|Query|StatementInterface $identifier Identifier
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
-    protected function symbolToSQL($symbol, array &$bindings): string
+    protected function identifierToSQL($identifier, array &$bindings): string
     {
-        if ($symbol instanceof Query || $symbol instanceof StatementInterface) {
-            return $this->subQueryToSQL($symbol, $bindings);
+        if ($identifier instanceof Query || $identifier instanceof StatementInterface) {
+            return $this->subQueryToSQL($identifier, $bindings);
         }
 
-        return $this->wrapSymbol($symbol);
+        return $this->quoteIdentifier($identifier);
     }
 
     /**
@@ -221,7 +221,7 @@ class CommonGrammar implements GrammarInterface
      */
     protected function aggregateToSQL(Aggregate $aggregate, array &$bindings): string
     {
-        return $aggregate->function.'('.$this->symbolToSQL($aggregate->column, $bindings).')';
+        return $aggregate->function.'('.$this->identifierToSQL($aggregate->column, $bindings).')';
     }
 
     /**
@@ -283,7 +283,7 @@ class CommonGrammar implements GrammarInterface
         if ($criterion instanceof ValueCriterion) {
             return sprintf(
                 '%s %s %s',
-                $this->symbolToSQL($criterion->column, $bindings),
+                $this->identifierToSQL($criterion->column, $bindings),
                 $criterion->rule,
                 $this->valueToSQL($criterion->value, $bindings)
             );
@@ -292,16 +292,16 @@ class CommonGrammar implements GrammarInterface
         if ($criterion instanceof ColumnsCriterion) {
             return sprintf(
                 '%s %s %s',
-                $this->symbolToSQL($criterion->column1, $bindings),
+                $this->identifierToSQL($criterion->column1, $bindings),
                 $criterion->rule,
-                $this->symbolToSQL($criterion->column2, $bindings)
+                $this->identifierToSQL($criterion->column2, $bindings)
             );
         }
 
         if ($criterion instanceof BetweenCriterion) {
             return sprintf(
                 '(%s %sBETWEEN %s AND %s)',
-                $this->symbolToSQL($criterion->column, $bindings),
+                $this->identifierToSQL($criterion->column, $bindings),
                 $criterion->not ? 'NOT ' : '',
                 $this->valueToSQL($criterion->min, $bindings),
                 $this->valueToSQL($criterion->max, $bindings)
@@ -346,7 +346,7 @@ class CommonGrammar implements GrammarInterface
 
             return sprintf(
                 '%s %sIN %s',
-                $this->symbolToSQL($criterion->column, $bindings),
+                $this->identifierToSQL($criterion->column, $bindings),
                 $criterion->not ? 'NOT ' : '',
                 $subQuery
             );
@@ -355,7 +355,7 @@ class CommonGrammar implements GrammarInterface
         if ($criterion instanceof NullCriterion) {
             return sprintf(
                 '%s IS %sNULL',
-                $this->symbolToSQL($criterion->column, $bindings),
+                $this->identifierToSQL($criterion->column, $bindings),
                 $criterion->isNull ? '' : 'NOT '
             );
         }
@@ -378,7 +378,7 @@ class CommonGrammar implements GrammarInterface
     protected function orderToSQL($order, array &$bindings): string
     {
         if ($order instanceof Order) {
-            return $this->symbolToSQL($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
+            return $this->identifierToSQL($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
         }
 
         if ($order === 'random') {
@@ -392,12 +392,12 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Wraps a symbol (table, column, database, etc.) name with quotes.
+     * Wraps a identifier (table, column, database, etc.) name with quotes.
      *
      * @param string $name
      * @return string
      */
-    protected function wrapSymbol(string $name): string
+    protected function quoteIdentifier(string $name): string
     {
         $components = explode('.', $name);
 
@@ -406,21 +406,22 @@ class CommonGrammar implements GrammarInterface
                 continue;
             }
 
-            $components[$index] = $this->wrapPlainSymbol($component);
+            $components[$index] = $this->quotePlainIdentifier($component);
         }
 
         return implode('.', $components);
     }
 
     /**
-     * Wraps a plain (without nesting by dots) symbol (table, column, database, etc.) name with quotes.
+     * Wraps a plain (without nesting by dots) identifier (table, column, database, etc.) name with quotes and screens
+     * inside quotes.
      *
      * @param string $name
      * @return string
      */
-    protected function wrapPlainSymbol(string $name): string
+    protected function quotePlainIdentifier(string $name): string
     {
-        return '`'.str_replace('`', '``', $name).'`';
+        return '"'.str_replace('"', '""', $name).'"';
     }
 
     /**

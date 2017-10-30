@@ -26,12 +26,12 @@ class CommonGrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Select
-        $this->assertStatement('SELECT `foo` FROM `table`', [], $grammar->compile(
+        $this->assertStatement('SELECT "foo" FROM "table"', [], $grammar->compile(
             (new Query())->select('foo')->from('table')
         ));
 
         // One more select
-        $this->assertStatement('SELECT * FROM `table`', [], $grammar->compile(
+        $this->assertStatement('SELECT * FROM "table"', [], $grammar->compile(
             (new Query())->from('table')
         ));
     }
@@ -46,19 +46,19 @@ class CommonGrammarTest extends TestCase
         // Comprehensive case
         $this->assertStatement('
             SELECT
-                `prefix_table`.*,
-                `prefix_table`.`foo` AS `f`, 
-                `prefix_table`.`bar` AS `b`, 
-                (t.column) AS `r`,
-                (SELECT `foo` FROM `test_bar`) AS `sub``query`,
-                COUNT(*) AS `count`,
-                MIN(`prefix_table`.`bar`),
-                MAX(`baz`),
-                AVG(`boo`) AS `avg`,
+                "prefix_table".*,
+                "prefix_table"."foo" AS "f", 
+                "prefix_table"."bar" AS "b", 
+                (t.column) AS "r",
+                (SELECT "foo" FROM "test_bar") AS "sub""query",
+                COUNT(*) AS "count",
+                MIN("prefix_table"."bar"),
+                MAX("baz"),
+                AVG("boo") AS "avg",
                 SUM((baz * boo))
-            FROM `prefix_table` AS `t`
-            WHERE `price` > ?
-            ORDER BY `position` ASC
+            FROM "prefix_table" AS "t"
+            WHERE "price" > ?
+            ORDER BY "position" ASC
             OFFSET ?
             LIMIT ?
         ', [100, 140, 12], $grammar->compileSelect(
@@ -68,7 +68,7 @@ class CommonGrammarTest extends TestCase
                     'f' => 'table.foo',
                     'b' => 'table.bar',
                     'r' => new Raw('t.column'),
-                    'sub`query' => (new Query('test_'))->select('foo')->from('bar')
+                    'sub"query' => (new Query('test_'))->select('foo')->from('bar')
                 ])
                 ->count('*', 'count')
                 ->min('table.bar')
@@ -83,14 +83,14 @@ class CommonGrammarTest extends TestCase
         ));
 
         // Simple count
-        $this->assertStatement('SELECT COUNT(*) FROM `prefix_table`', [], $grammar->compileSelect(
+        $this->assertStatement('SELECT COUNT(*) FROM "prefix_table"', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table')->count()
         ));
 
         // No columns
         $this->assertStatement('
             SELECT *
-            FROM `prefix_table` AS `t`
+            FROM "prefix_table" AS "t"
         ', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table', 't')
         ));
@@ -111,12 +111,12 @@ class CommonGrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Simple from
-        $this->assertStatement('SELECT * FROM `database`.`prefix_table` AS `t`', [], $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM "database"."prefix_table" AS "t"', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('database.table', 't')
         ));
 
         // Raw from
-        $this->assertStatement('SELECT * FROM (TABLES(?)) AS `t`', ['foo'], $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM (TABLES(?)) AS "t"', ['foo'], $grammar->compileSelect(
             (new Query())->from(new Raw('TABLES(?)', ['foo']), 't')
         ));
 
@@ -124,9 +124,9 @@ class CommonGrammarTest extends TestCase
         $this->assertStatement('
             SELECT * 
             FROM (
-                SELECT `foo`, (? + ?)
-                FROM `other`
-            ) AS `t`
+                SELECT "foo", (? + ?)
+                FROM "other"
+            ) AS "t"
         ', [2, 3], $grammar->compileSelect(
             (new Query())->from(function (Query $query) {
                 $query->select(['foo', new Raw('? + ?', [2, 3])])->from('other');
@@ -143,37 +143,37 @@ class CommonGrammarTest extends TestCase
 
         $this->assertStatement('
             SELECT *
-            FROM `test_posts`
+            FROM "test_posts"
             WHERE
                 (
                     (
-                        `date` < (NOW()) OR
+                        "date" < (NOW()) OR
                         (ARE_ABOUT_EQUAL(title, description))
                     ) AND
-                    (`position` NOT BETWEEN ? AND (
-                        SELECT MAX(`price`)
-                        FROM `test_products`
+                    ("position" NOT BETWEEN ? AND (
+                        SELECT MAX("price")
+                        FROM "test_products"
                     )) AND (
-                        `foo` = `bar` AND
-                        `bar` != `baz`
+                        "foo" = "bar" AND
+                        "bar" != "baz"
                     ) OR (
-                        `title` LIKE ? AND
-                        `type` = ?
+                        "title" LIKE ? AND
+                        "type" = ?
                     ) OR
                     NOT EXISTS(
                         SELECT *
-                        FROM `test_comments`
+                        FROM "test_comments"
                         WHERE
-                            `test_posts`.`id` = `test_comments`.`post_id` AND
-                            `content` = ?
+                            "test_posts"."id" = "test_comments"."post_id" AND
+                            "content" = ?
                     )
                 ) AND
                 (MONTH(date)) IN (?, ?, ?) AND
-                `position` IS NULL AND
-                `author_id` NOT IN (
-                    SELECT `id`
-                    FROM `test_users`
-                    WHERE `deleted` = ?
+                "position" IS NULL AND
+                "author_id" NOT IN (
+                    SELECT "id"
+                    FROM "test_users"
+                    WHERE "deleted" = ?
                 )
         ', [0, '%boss%', 'Important', 'Hello', 1, 4, 6, true], $grammar->compileSelect(
             (new Query('test_'))
@@ -233,13 +233,13 @@ class CommonGrammarTest extends TestCase
 
         $this->assertStatement('
             SELECT *
-            FROM `test_stories`
+            FROM "test_stories"
             ORDER BY
-                `category` ASC,
+                "category" ASC,
                 (
-                    SELECT `foo`
-                    FROM `test2_bar`
-                    WHERE `foo` > ?
+                    SELECT "foo"
+                    FROM "test2_bar"
+                    WHERE "foo" > ?
                 ) DESC,
                 RANDOM()
         ', [3], $grammar->compileSelect(
@@ -265,21 +265,21 @@ class CommonGrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Specify only offset
-        $this->assertStatement('SELECT * FROM `table` OFFSET ?', [140], $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM "table" OFFSET ?', [140], $grammar->compileSelect(
             (new Query())->from('table')->offset(140)
         ));
 
         // Specify only limit
-        $this->assertStatement('SELECT * FROM `table` LIMIT ?', [12], $statement = $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM "table" LIMIT ?', [12], $statement = $grammar->compileSelect(
             (new Query())->from('table')->limit(12)
         ));
 
         // Specify complex values
         $this->assertStatement('
             SELECT * 
-            FROM `table` 
+            FROM "table" 
             OFFSET (? + ?) 
-            LIMIT (SELECT (AVG(price)) FROM `prices`)
+            LIMIT (SELECT (AVG(price)) FROM "prices")
         ', [12, 19], $grammar->compileSelect(
             (new Query())
                 ->from('table')
