@@ -391,7 +391,7 @@ trait WhereTrait
     {
         if (is_array($column1)) {
             return $this->where(
-                    function (self $query) use ($column1) {
+                function (self $query) use ($column1) {
                     foreach ($column1 as $criterionData) {
                         $query = $query->whereColumn(...$criterionData);
                     }

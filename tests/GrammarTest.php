@@ -22,18 +22,14 @@ class GrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Select
-        $statement = $grammar->compile(
+        $this->assertStatement('SELECT `foo` FROM `table`', [], $grammar->compile(
             (new Query())->select('foo')->from('table')
-        );
-        $this->assertEquals($this->plainSQL('SELECT `foo` FROM `table`'), $this->plainSQL($statement->getSQL()));
-        $this->assertEquals([], $statement->getBindings());
+        ));
 
         // One more select
-        $statement = $grammar->compile(
+        $this->assertStatement('SELECT * FROM `table`', [], $grammar->compile(
             (new Query())->from('table')
-        );
-        $this->assertEquals($this->plainSQL('SELECT * FROM `table`'), $this->plainSQL($statement->getSQL()));
-        $this->assertEquals([], $statement->getBindings());
+        ));
     }
 
     /**
@@ -44,7 +40,22 @@ class GrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Comprehensive case
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('
+            SELECT
+                `prefix_table`.*,
+                `prefix_table`.`foo` AS `f`, 
+                `prefix_table`.`bar` AS `b`, 
+                (t.column) AS `r`,
+                (SELECT `foo` FROM `test_bar`) AS `sub``query`,
+                COUNT(*) AS `count`,
+                MIN(`prefix_table`.`bar`),
+                MAX(`baz`),
+                AVG(`boo`) AS `avg`,
+                SUM((baz * boo))
+            FROM `prefix_table` AS `t`
+            OFFSET ?
+            LIMIT ?
+        ', [140, 12], $grammar->compileSelect(
             (new Query('prefix_'))
                 ->select([
                     'table.*',
@@ -61,50 +72,20 @@ class GrammarTest extends TestCase
                 ->from('table', 't')
                 ->offset(140)
                 ->limit(12)
-        );
-        $this->assertEquals(
-            $this->plainSQL('
-                SELECT
-                    `prefix_table`.*,
-                    `prefix_table`.`foo` AS `f`, 
-                    `prefix_table`.`bar` AS `b`, 
-                    (t.column) AS `r`,
-                    (SELECT `foo` FROM `test_bar`) AS `sub``query`,
-                    COUNT(*) AS `count`,
-                    MIN(`prefix_table`.`bar`),
-                    MAX(`baz`),
-                    AVG(`boo`) AS `avg`,
-                    SUM((baz * boo))
-                FROM `prefix_table` AS `t`
-                OFFSET ?
-                LIMIT ?
-            '),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([140, 12], $statement->getBindings());
+        ));
 
         // Simple count
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('SELECT COUNT(*) FROM `prefix_table`', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table')->count()
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT COUNT(*) FROM `prefix_table`'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([], $statement->getBindings());
+        ));
 
         // No columns
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('
+            SELECT *
+            FROM `prefix_table` AS `t`
+        ', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table', 't')
-        );
-        $this->assertEquals(
-            $this->plainSQL('
-                SELECT *
-                FROM `prefix_table` AS `t`
-            '),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([], $statement->getBindings());
+        ));
 
         // No from
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
@@ -122,36 +103,27 @@ class GrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Simple from
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM `database`.`prefix_table` AS `t`', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('database.table', 't')
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT * FROM `database`.`prefix_table` AS `t`'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([], $statement->getBindings());
+        ));
 
         // Raw from
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM (TABLES(?)) AS `t`', ['foo'], $grammar->compileSelect(
             (new Query())->from(new Raw('TABLES(?)', ['foo']), 't')
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT * FROM (TABLES(?)) AS `t`'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals(['foo'], $statement->getBindings());
+        ));
 
         // From subquery
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('
+            SELECT * 
+            FROM (
+                SELECT `foo`, (? + ?)
+                FROM `other`
+            ) AS `t`
+        ', [2, 3], $grammar->compileSelect(
             (new Query())->from(function (Query $query) {
                 $query->select(['foo', new Raw('? + ?', [2, 3])])->from('other');
             }, 't')
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT * FROM (SELECT `foo`, (? + ?) FROM `other`) AS `t`'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([2, 3], $statement->getBindings());
+        ));
     }
 
     /**
@@ -162,38 +134,28 @@ class GrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Specify only offset
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM `table` OFFSET ?', [140], $grammar->compileSelect(
             (new Query())->from('table')->offset(140)
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT * FROM `table` OFFSET ?'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([140], $statement->getBindings());
+        ));
 
         // Specify only limit
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM `table` LIMIT ?', [12], $statement = $grammar->compileSelect(
             (new Query())->from('table')->limit(12)
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT * FROM `table` LIMIT ?'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([12], $statement->getBindings());
+        ));
 
         // Specify complex values
-        $statement = $grammar->compileSelect(
+        $this->assertStatement('
+            SELECT * 
+            FROM `table` 
+            OFFSET (? + ?) 
+            LIMIT (SELECT (AVG(price)) FROM `prices`)
+        ', [12, 19], $grammar->compileSelect(
             (new Query())
                 ->from('table')
                 ->offset(new Raw('? + ?', [12, 19]))
                 ->limit(function (Query $query) {
                     $query->select(new Raw('AVG(price)'))->from('prices');
                 })
-        );
-        $this->assertEquals(
-            $this->plainSQL('SELECT * FROM `table` OFFSET (? + ?) LIMIT (SELECT (AVG(price)) FROM `prices`)'),
-            $this->plainSQL($statement->getSQL())
-        );
-        $this->assertEquals([12, 19], $statement->getBindings());
+        ));
     }
 }

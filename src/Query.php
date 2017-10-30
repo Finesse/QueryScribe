@@ -239,6 +239,12 @@ class Query
      */
     protected function makeCopyForCriteriaGroup(): self
     {
-        return (new static($this->tablePrefix))->from($this->from);
+        $query = new static($this->tablePrefix);
+
+        // The `from` method is not used because it adds extra prefix
+        $query->from = $this->from;
+        $query->fromAlias = $this->fromAlias;
+
+        return $query;
     }
 }

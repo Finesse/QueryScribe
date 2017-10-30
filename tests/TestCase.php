@@ -2,6 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests;
 
+use Finesse\QueryScribe\StatementInterface;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
 /**
@@ -11,18 +12,6 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
  */
 class TestCase extends BaseTestCase
 {
-    /**
-     * Converts a SQL text to a single string with no double spaces.
-     *
-     * @param string $sql
-     * @return string
-     */
-    protected function plainSQL(string $sql): string
-    {
-        $sql = preg_replace('/\s*([,()])\s*/', '$1', $sql);
-        return trim(preg_replace('/\s+/', ' ', $sql));
-    }
-
     /**
      * Asserts that the given callback throws the given exception.
      *
@@ -39,5 +28,45 @@ class TestCase extends BaseTestCase
         }
 
         $this->fail('No exception was thrown');
+    }
+
+    /**
+     * Asserts that the given object has the given attributes with the given values.
+     *
+     * @param array $expectedAttributes Attributes. The indexes are the attributes names, the values are the attributes
+     *    values.
+     * @param mixed $actualObject Object
+     */
+    protected function assertAttributes(array $expectedAttributes, $actualObject)
+    {
+        foreach ($expectedAttributes as $property => $value) {
+            $this->assertObjectHasAttribute($property, $actualObject);
+            $this->assertAttributeEquals($value, $property, $actualObject);
+        }
+    }
+
+    /**
+     * Asserts that the given statement (raw SQL or compiled query) has the given SQL and the given bindings
+     *
+     * @param string $expectedSQL (may be human-formatted by spaces, tabs and new lines)
+     * @param array $expectedBindings
+     * @param StatementInterface $statement
+     */
+    protected function assertStatement(string $expectedSQL, array $expectedBindings, StatementInterface $statement)
+    {
+        $this->assertEquals($this->plainSQL($expectedSQL), $this->plainSQL($statement->getSQL()));
+        $this->assertEquals($expectedBindings, $statement->getBindings());
+    }
+
+    /**
+     * Converts a SQL text to a single string with no double spaces.
+     *
+     * @param string $sql
+     * @return string
+     */
+    protected function plainSQL(string $sql): string
+    {
+        $sql = preg_replace('/\s*([,()])\s*/', '$1', $sql);
+        return trim(preg_replace('/\s+/', ' ', $sql));
     }
 }
