@@ -66,8 +66,7 @@ class CommonGrammar implements GrammarInterface
 
         $insert = $query->insert;
         $bindings = [];
-        $sqlLine1 = 'INSERT INTO '.$this->compileIdentifier($query->table, $bindings)
-            . ($query->tableAlias === null ? '' : ' AS '.$this->quotePlainIdentifier($query->tableAlias));
+        $sqlLine1 = 'INSERT INTO '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings);
 
         if (is_array($insert)) {
             // Step 1. Fetch unique columns list.
@@ -147,8 +146,7 @@ class CommonGrammar implements GrammarInterface
             throw new InvalidQueryException('The FROM table is not set');
         }
 
-        return 'FROM '.$this->compileIdentifier($query->table, $bindings)
-            . ($query->tableAlias === null ? '' : ' AS '.$this->quotePlainIdentifier($query->tableAlias));
+        return 'FROM '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings);
     }
 
     /**
@@ -453,6 +451,21 @@ class CommonGrammar implements GrammarInterface
             'The given order `%s` is unknown',
             is_string($order) ? $order : gettype($order)
         ));
+    }
+
+    /**
+     * Converts a identifier (table, column, database, etc.) with alias to a part of a SQL query text. Screens all the
+     * stuff.
+     *
+     * @param string|Query|StatementInterface $identifier Identifier
+     * @param string|null $alias Alias name
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function compileIdentifierWithAlias($identifier, string $alias = null, array &$bindings): string
+    {
+        return $this->compileIdentifier($identifier, $bindings)
+            . ($alias === null ? '' : ' AS '.$this->quotePlainIdentifier($alias));
     }
 
     /**

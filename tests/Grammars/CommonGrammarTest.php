@@ -149,6 +149,13 @@ class CommonGrammarTest extends TestCase
                 })
         ));
 
+        // No table
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileInsert(
+                (new Query())->insert(['value' => 1, 'name' => 'foo'])
+            );
+        });
+
         // Unknown insert type
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $query = (new Query())->table('bar');
