@@ -10,15 +10,15 @@ SQL query builder. It doesn't perform queries to a database, it only builds SQL 
 
 ```php
 $query = (new Query('demo_'))
-	->from('posts')
-	->where('level', '>', 3)
-	->whereIn('category_id', function ($query) {
-		$query->select('id')->from('categories')->where('categories.name', 'Interesting');
-	})
-	->where(new Raw('MONTH(date)'), 4)
-	->orderBy('date', 'desc')
-	->limit(10);
-	
+    ->from('posts')
+    ->where('level', '>', 3)
+    ->whereIn('category_id', function ($query) {
+        $query->select('id')->from('categories')->where('categories.name', 'Interesting');
+    })
+    ->where(new Raw('MONTH(date)'), 4)
+    ->orderBy('date', 'desc')
+    ->limit(10);
+    
 $grammar = new MySQLGrammar();
 $compiled = $grammar->compile($query);
 
@@ -27,15 +27,14 @@ echo $compiled->getSQL();
 SELECT *
 FROM `demo_posts`
 WHERE
-	`level` > ? AND
-	`category_id` IN (SELECT `id` FROM `demo_categories` WHERE `demo_categories`.`name` = ?) AND
-	(MONTH(date)) = ?
+    `level` > ? AND
+    `category_id` IN (SELECT `id` FROM `demo_categories` WHERE `demo_categories`.`name` = ?) AND
+    (MONTH(date)) = ?
 ORDER BY `date` DESC
 LIMIT ?
  */
 
-echo $compiled->getBindings();
-// [3, 'Interesting', 4, 10]
+echo $compiled->getBindings(); // [3, 'Interesting', 4, 10]
 ```
 
 You can use [PDO](http://php.net/manual/en/book.pdo.php) or other database abstractions like 
@@ -51,7 +50,7 @@ Key features:
   comments in the code to know where you can pass them).
 * Supports table prefixes. Once set to a `Query` object, the prefix will be applied to all tables passing through the 
   object (except raw expressions).
-* All the values go to bindings, even in subqueries.
+* All the values go to bindings, even from subqueries.
 * No dependencies. Requires only PHP ≥ 7.
 
 Supported SQL dialects:
@@ -116,7 +115,7 @@ One grammar can be used many times for different queries.
 
 #### Select
 
-If no fields are set, all fields are selected
+If no fields are set, all fields are selected:
 
 ```php
 (new Query())->from('table'); // SELECT * FROM "table"
@@ -128,13 +127,13 @@ Specify fields:
 (new Query())->select(['id', 'name'])->table('table'); // SELECT "id", "name" FROM "table"
 ```
 
-Using aliases:
+With aliases:
 
 ```php
 (new Query())
-	->select('id', 'i')
-	->select(['n' => 'name', 'p' => 'price'])
-	->from('table', 't');
+    ->select('id', 'i')
+    ->select(['n' => 'name', 'p' => 'price'])
+    ->from('table', 't');
 // SELECT "id" AS "i", "name" AS "n", "price" AS "p" FROM "table" AS "t"
 ```
 
@@ -142,12 +141,12 @@ Using aliases:
 
 ```php
 (new Query())
-	->count()
-	->avg('price', 'avg_price')
-	->min('value'),
-	->max('value')
-	->sum('amount', 'sum')
-	->from('orders');
+    ->count()
+    ->avg('price', 'avg_price')
+    ->min('value'),
+    ->max('value')
+    ->sum('amount', 'sum')
+    ->from('orders');
 // SELECT COUNT(*), AVG("price") AS "avg_price", MIN("value"), MAX("value"), SUM("AMOUNT") AS "sum" FORM "orders"
 ```
 
@@ -161,8 +160,8 @@ Use `$grammar->compile()` or `$grammar->compileInsert()` to compile an insert qu
 // Bindings: ['John', 5]
 
 (new Query())->table('users')->insert([
-	['name' => 'Jack', 'role' => 2],
-	['name' => 'Bob', 'role' => 5]
+    ['name' => 'Jack', 'role' => 2],
+    ['name' => 'Bob', 'role' => 5]
 ]);
 // INSERT INTO "users" ("name", "role") VALUES (?, ?), (?, ?)
 // Bindings: ['Jack', 2, 'Bob', 5]
@@ -172,7 +171,7 @@ Insert from a select statement:
 
 ```php
 (new Query())->table('users')->insertFromSelect(['name', 'phone'], function ($query) {
-	$query->select(['first_name', 'primary_phone'])->from('contacts');
+    $query->select(['first_name', 'primary_phone'])->from('contacts');
 });
 // INSERT INTO "users" ("name", "phone") (SELECT "first_name", "primary_phone" FROM "contacts")
 ```
@@ -202,10 +201,10 @@ Simple where clauses:
 
 ```php
 (new Query())
-	->from('table')
-	->where('name', 'Bill')
-	->where('age', '>', 5)
-	->orWhere('position', 'like', '%boss%');
+    ->from('table')
+    ->where('name', 'Bill')
+    ->where('age', '>', 5)
+    ->orWhere('position', 'like', '%boss%');
 // SELECT * FROM "table" WHERE "name" = ? AND "age" > ? OR "position" LIKE ?
 ```
 
@@ -213,15 +212,15 @@ Simple where clauses:
 
 ```php
 (new Query())
-	->from('fruits')
-	->where([
-		['name', 'Orange'],
-		['weight' > 6]
-	])
-	->orWhere([
-		['name', 'Banana'],
-		['weight' < 15]
-	]);
+    ->from('fruits')
+    ->where([
+        ['name', 'Orange'],
+        ['weight' > 6]
+    ])
+    ->orWhere([
+        ['name', 'Banana'],
+        ['weight' < 15]
+    ]);
 // SELECT * FROM "fruits" WHERE ("name" = ? AND "weight" > ?) OR ("name" = ? AND "weight" < ?)
 ```
 
@@ -229,13 +228,13 @@ Or using a closure:
 
 ```php
 (new Query())
-	->from('fruits')
-	->where(function ($query) {
-		$query->where('name', 'Apple')->orWhere('name', 'Pine');
-	})
-	->notWhere(function ($query) {
-		$query->where('weight', '<', 1)->orWhere('weight', '>', 100)
-	});
+    ->from('fruits')
+    ->where(function ($query) {
+        $query->where('name', 'Apple')->orWhere('name', 'Pine');
+    })
+    ->notWhere(function ($query) {
+        $query->where('weight', '<', 1)->orWhere('weight', '>', 100)
+    });
 // SELECT * FROM "fruits" WHERE ("name" = ? OR "name" = ?) AND NOT("weight" < ? OR "weight" > ?)
 ```
 
@@ -271,7 +270,7 @@ Using subquery:
 
 ```php
 (new Query())->from('table')->whereIn('user_id', function ($query) {
-	$query->select('id')->from('users')->where('name', 'Charles');
+    $query->select('id')->from('users')->where('name', 'Charles');
 });
 // SELECT * FROM "table" WHERE "category_id" IN (SELECT "id" FROM "users" WHERE "name" = ?)
 ```
@@ -298,8 +297,8 @@ Or
 
 ```php
 (new Query())->from('table')->whereColumn([
-	['first_name', 'last_name'],
-	['account', '>=', 'debpt']
+    ['first_name', 'last_name'],
+    ['account', '>=', 'debpt']
 ]);
 // SELECT * FROM "table" WHERE ("first_name" = "last_name" AND "account" >= "debpt")
 ```
@@ -310,7 +309,7 @@ Use can also use `orWhereColumn`.
 
 ```php
 (new Query('demo_'))->from('posts')->whereExists(function ($query) {
-	$query->from('comments')->whereColumn('comments.post_id', 'posts.id')
+    $query->from('comments')->whereColumn('comments.post_id', 'posts.id')
 });
 // SELECT * FROM "demo_posts" WHERE EXISTS (SELECT * FROM "demo_comments" WHERE "demo_comments"."post_id" = "demo_posts"."id")
 ```
@@ -328,9 +327,9 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 
 ```php
 (new Query())
-	->from('demo')
-	->orderBy('date', 'desc')
-	->orderBy('id');
+    ->from('demo')
+    ->orderBy('date', 'desc')
+    ->orderBy('id');
 // SELECT * FROM "demo" ORDER BY "date" DESC, "id" ASC
 ```
 
@@ -341,7 +340,7 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 // SELECT * FROM "demo" ORDER BY RANDOM()
 ```
 
-You can combine the random with a column order.
+You can combine the random order with a column order.
 
 #### Limit and offset
 
@@ -361,10 +360,10 @@ Call to make a raw:
 use Finesse\QueryScribe\Raw;
 $raw = new Raw('CONCAT(?, ?) # Your raw SQL', ['Bindings', 'here']);
 
-// Or
+// or
 use Finesse\QueryScribe\Query;
 $query = new Query();
-$query->raw('CONCAT(?, ?)', ['Bindings', 'here']);
+$raw = $query->raw('CONCAT(?, ?)', ['Bindings', 'here']);
 ```
 
 Tables and columns are not prefixed in raw SQL, but you can use the helper methods to add a prefix:
@@ -372,8 +371,8 @@ Tables and columns are not prefixed in raw SQL, but you can use the helper metho
 ```php
 $query = new Query('test_');
 $query
-	->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'))
-	->select($query->raw('REPLACE('.$query->addTablePrefixToColumn('my_table.name').', ?, ?)', ['!', '.']));
+    ->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'))
+    ->select($query->raw('REPLACE('.$query->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
 // SELECT (REPLACE(test_my_table.name, ?, ?)) FROM (MAGIC(test_my_table))
 ```
 
@@ -381,35 +380,35 @@ Example of what is possible:
 
 ```php
 (new Query())
-	->from(function($query) {
-		$query
-			->select(new Raw('SOMETHING()'))
-			->from('other_table');
-	}, 'table')
-	->select([
-		'column1' => (new Query())->avg('price')->from('products'),
-		'column2' => function ($query) {
-			$query->select('name')->from('users')->orderBy('rating', 'desc')->limit(1);
-		}
-	])
-	->where(function ($query) {
-		$query
-			->from('events')
-			->select('date')
-			->whereColumn('events.type', new Raw('table.id'))
-			->orderBy('date')
-			->offest(1)
-			->limit(1);
-	}, '<', new Raw('NOW()'))
-	->orderBy(function ($query) {
-		$query
-			->max(new Raw('price * quantity'))
-			->from('orders')
-			->whereExists((new Query())->select('height')->from('person')->whereColumn([
-				['orders.person_id', 'order.id'],
-				['person.id', new Raw('table.user_id')]
-			]))
-	}, 'desc');
+    ->from(function($query) {
+        $query
+            ->select(new Raw('SOMETHING()'))
+            ->from('other_table');
+    }, 'table')
+    ->select([
+        'column1' => (new Query())->avg('price')->from('products'),
+        'column2' => function ($query) {
+            $query->select('name')->from('users')->orderBy('rating', 'desc')->limit(1);
+        }
+    ])
+    ->where(function ($query) {
+        $query
+            ->from('events')
+            ->select('date')
+            ->whereColumn('events.type', new Raw('table.id'))
+            ->orderBy('date')
+            ->offest(1)
+            ->limit(1);
+    }, '<', new Raw('NOW()'))
+    ->orderBy(function ($query) {
+        $query
+            ->max(new Raw('price * quantity'))
+            ->from('orders')
+            ->whereExists((new Query())->select('height')->from('person')->whereColumn([
+                ['orders.person_id', 'order.id'],
+                ['person.id', new Raw('table.user_id')]
+            ]))
+    }, 'desc');
 ```
 
 
