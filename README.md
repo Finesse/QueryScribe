@@ -13,7 +13,10 @@ $query = (new Query('demo_'))
     ->from('posts')
     ->where('level', '>', 3)
     ->whereIn('category_id', function ($query) {
-        $query->select('id')->from('categories')->where('categories.name', 'Interesting');
+        $query
+            ->select('id')
+            ->from('categories')
+            ->where('categories.name', 'Interesting');
     })
     ->where(new Raw('MONTH(date)'), 4)
     ->orderBy('date', 'desc')
@@ -24,14 +27,14 @@ $compiled = $grammar->compile($query);
 
 echo $compiled->getSQL();
 /*
-SELECT *
-FROM `demo_posts`
-WHERE
-    `level` > ? AND
-    `category_id` IN (SELECT `id` FROM `demo_categories` WHERE `demo_categories`.`name` = ?) AND
-    (MONTH(date)) = ?
-ORDER BY `date` DESC
-LIMIT ?
+    SELECT *
+    FROM `demo_posts`
+    WHERE
+        `level` > ? AND
+        `category_id` IN (SELECT `id` FROM `demo_categories` WHERE `demo_categories`.`name` = ?) AND
+        (MONTH(date)) = ?
+    ORDER BY `date` DESC
+    LIMIT ?
  */
 
 echo $compiled->getBindings(); // [3, 'Interesting', 4, 10]
@@ -98,13 +101,17 @@ $query = new Query(); // You can add table prefix: new Query('prefix_')
 Build a query:
 
 ```php
-$query->select(['name', 'id'])->from('users')->limit(10);
+$query
+    ->select(['name', 'id'])
+    ->from('users')
+    ->limit(10);
 ```
 
 Compile the query:
 
 ```php
 $compiled = $grammar->compile($query); // You can specify the query type explicitly: $grammar->compileSelect($query)
+
 $sql = $compiled->getSQL();
 $parameters = $compiled->getBindings();
 ```
@@ -118,13 +125,20 @@ One grammar can be used many times for different queries.
 If no fields are set, all fields are selected:
 
 ```php
-(new Query())->from('table'); // SELECT * FROM "table"
+(new Query())
+    ->from('table');
+
+// SELECT * FROM "table"
 ```
 
 Specify fields:
 
 ```php
-(new Query())->select(['id', 'name'])->table('table'); // SELECT "id", "name" FROM "table"
+(new Query())
+    ->select(['id', 'name'])
+    ->table('table');
+    
+// SELECT "id", "name" FROM "table"
 ```
 
 With aliases:
@@ -134,6 +148,7 @@ With aliases:
     ->select('id', 'i')
     ->select(['n' => 'name', 'p' => 'price'])
     ->from('table', 't');
+
 // SELECT "id" AS "i", "name" AS "n", "price" AS "p" FROM "table" AS "t"
 ```
 
@@ -147,6 +162,7 @@ With aliases:
     ->max('value')
     ->sum('amount', 'sum')
     ->from('orders');
+
 // SELECT COUNT(*), AVG("price") AS "avg_price", MIN("value"), MAX("value"), SUM("AMOUNT") AS "sum" FORM "orders"
 ```
 
@@ -155,14 +171,24 @@ With aliases:
 Use `$grammar->compile()` or `$grammar->compileInsert()` to compile an insert query.
 
 ```php
-(new Query())->table('users')->insert(['name' => 'John', 'role' => 5])
+(new Query())
+    ->table('users')
+    ->insert(['name' => 'John', 'role' => 5])
+
 // INSERT INTO "users" ("name". "role") VALUES (?, ?)
 // Bindings: ['John', 5]
+```
 
-(new Query())->table('users')->insert([
-    ['name' => 'Jack', 'role' => 2],
-    ['name' => 'Bob', 'role' => 5]
-]);
+Many rows at once:
+
+```php
+(new Query())
+    ->table('users')
+    ->insert([
+        ['name' => 'Jack', 'role' => 2],
+        ['name' => 'Bob', 'role' => 5]
+    ]);
+
 // INSERT INTO "users" ("name", "role") VALUES (?, ?), (?, ?)
 // Bindings: ['Jack', 2, 'Bob', 5]
 ```
@@ -170,9 +196,14 @@ Use `$grammar->compile()` or `$grammar->compileInsert()` to compile an insert qu
 Insert from a select statement:
 
 ```php
-(new Query())->table('users')->insertFromSelect(['name', 'phone'], function ($query) {
-    $query->select(['first_name', 'primary_phone'])->from('contacts');
-});
+(new Query())
+    ->table('users')
+    ->insertFromSelect(['name', 'phone'], function ($query) {
+        $query
+            ->select(['first_name', 'primary_phone'])
+            ->from('contacts');
+    });
+
 // INSERT INTO "users" ("name", "phone") (SELECT "first_name", "primary_phone" FROM "contacts")
 ```
 
@@ -181,7 +212,11 @@ Insert from a select statement:
 Use `$grammar->compile()` or `$grammar->compileUpdate()` to compile an update query.
 
 ```php
-(new Query())->table('posts')->update(['title' => 'Awesome', 'position' => 1])->where('id', 55);
+(new Query())
+    ->table('posts')
+    ->update(['title' => 'Awesome', 'position' => 1])
+    ->where('id', 55);
+
 // UPDATE "posts" SET "title" = ?, "positoin" = ? WHERE "id" = ?
 // Bindings: ['Awesome', 1, 55]
 ```
@@ -191,7 +226,11 @@ Use `$grammar->compile()` or `$grammar->compileUpdate()` to compile an update qu
 Use `$grammar->compile()` or `$grammar->compileDelete()` to compile a delete query.
 
 ```php
-(new Query())->delete()->table('posts')->where('date', '<', '2017-01-01');
+(new Query())
+    ->delete()
+    ->table('posts')
+    ->where('date', '<', '2017-01-01');
+
 // DELETE FROM "posts" WHERE "date" < ?
 ```
 
@@ -205,6 +244,7 @@ Simple where clauses:
     ->where('name', 'Bill')
     ->where('age', '>', 5)
     ->orWhere('position', 'like', '%boss%');
+
 // SELECT * FROM "table" WHERE "name" = ? AND "age" > ? OR "position" LIKE ?
 ```
 
@@ -221,6 +261,7 @@ Simple where clauses:
         ['name', 'Banana'],
         ['weight' < 15]
     ]);
+
 // SELECT * FROM "fruits" WHERE ("name" = ? AND "weight" > ?) OR ("name" = ? AND "weight" < ?)
 ```
 
@@ -230,20 +271,30 @@ Or using a closure:
 (new Query())
     ->from('fruits')
     ->where(function ($query) {
-        $query->where('name', 'Apple')->orWhere('name', 'Pine');
+        $query
+            ->where('name', 'Apple')
+            ->orWhere('name', 'Pine');
     })
     ->notWhere(function ($query) {
-        $query->where('weight', '<', 1)->orWhere('weight', '>', 100)
+        $query
+            ->where('weight', '<', 1)
+            ->orWhere('weight', '>', 100)
     });
+
 // SELECT * FROM "fruits" WHERE ("name" = ? OR "name" = ?) AND NOT("weight" < ? OR "weight" > ?)
 ```
 
 ##### Raw SQL criterion
 
 ```php
-(new Query())->from('table')->whereRaw('YEAR(date) = ?', [1997]);
+(new Query())
+    ->from('table')
+    ->whereRaw('YEAR(date) = ?', [1997]);
 // or
-(new Query())->from('table')->where(new Raw('YEAR(date) = ?', [1997]));
+(new Query())
+    ->from('table')
+    ->where(new Raw('YEAR(date) = ?', [1997]));
+
 // SELECT * FROM "table" WHERE (YEAR(date) = ?)
 // Bindings: [1997]
 ```
@@ -253,7 +304,10 @@ Use can also use `orWhereRaw`.
 ##### Between
 
 ```php
-(new Query())->from('table')->whereBetween('age', 13, 19);
+(new Query())
+    ->from('table')
+    ->whereBetween('age', 13, 19);
+
 // SELECT * FROM "table" WHERE ("age" BETWEEN ? AND ?)
 ```
 
@@ -262,16 +316,25 @@ Use can also use `orWhereBetween`, `whereNotBetween` and `orWhereNotBetween`.
 ##### In
 
 ```php
-(new Query())->from('table')->whereIn('caterogy_id', [5, 17, 10]);
+(new Query())
+    ->from('table')
+    ->whereIn('caterogy_id', [5, 17, 10]);
+
 // SELECT * FROM "table" WHERE "category_id" IN (?, ?, ?)
 ```
 
 Using subquery:
 
 ```php
-(new Query())->from('table')->whereIn('user_id', function ($query) {
-    $query->select('id')->from('users')->where('name', 'Charles');
-});
+(new Query())
+    ->from('table')
+    ->whereIn('user_id', function ($query) {
+        $query
+            ->select('id')
+            ->from('users')
+            ->where('name', 'Charles');
+    });
+
 // SELECT * FROM "table" WHERE "category_id" IN (SELECT "id" FROM "users" WHERE "name" = ?)
 ```
 
@@ -280,7 +343,10 @@ Use can also use `orWhereIn`, `whereNotIn` and `orWhereNotIn`.
 ##### Is null
 
 ```php
-(new Query())->from('table')->whereNull('description');
+(new Query())
+    ->from('table')
+    ->whereNull('description');
+
 // SELECT * FROM "table" WHERE "description" IS NULL
 ```
 
@@ -289,17 +355,23 @@ Use can also use `orWhereNull`, `whereNotNull` and `orWhereNotNull`.
 ##### Compare columns
 
 ```php
-(new Query())->from('table')->whereColumn('age', '<', 'experiance');
+(new Query())
+    ->from('table')
+    ->whereColumn('age', '<', 'experiance');
+
 // SELECT * FROM "table" WHERE "age" < "experiance"
 ```
 
 Or
 
 ```php
-(new Query())->from('table')->whereColumn([
-    ['first_name', 'last_name'],
-    ['account', '>=', 'debpt']
-]);
+(new Query())
+    ->from('table')
+    ->whereColumn([
+        ['first_name', 'last_name'],
+        ['account', '>=', 'debpt']
+    ]);
+
 // SELECT * FROM "table" WHERE ("first_name" = "last_name" AND "account" >= "debpt")
 ```
 
@@ -308,9 +380,14 @@ Use can also use `orWhereColumn`.
 ##### Exists
 
 ```php
-(new Query('demo_'))->from('posts')->whereExists(function ($query) {
-    $query->from('comments')->whereColumn('comments.post_id', 'posts.id')
-});
+(new Query('demo_'))
+    ->from('posts')
+    ->whereExists(function ($query) {
+        $query
+            ->from('comments')
+            ->whereColumn('comments.post_id', 'posts.id');
+    });
+
 // SELECT * FROM "demo_posts" WHERE EXISTS (SELECT * FROM "demo_comments" WHERE "demo_comments"."post_id" = "demo_posts"."id")
 ```
 
@@ -330,13 +407,17 @@ is compiled to `((... OR ...) AND ...) OR ...`.
     ->from('demo')
     ->orderBy('date', 'desc')
     ->orderBy('id');
+
 // SELECT * FROM "demo" ORDER BY "date" DESC, "id" ASC
 ```
 
 ##### In random order
 
 ```php
-(new Query())->from('demo')->inRandomOrder();
+(new Query())
+    ->from('demo')
+    ->inRandomOrder();
+
 // SELECT * FROM "demo" ORDER BY RANDOM()
 ```
 
@@ -345,7 +426,11 @@ You can combine the random order with a column order.
 #### Limit and offset
 
 ```php
-(new Query())->from('table')->offset(150)->limit(12);
+(new Query())
+    ->from('table')
+    ->offset(150)
+    ->limit(12);
+
 // SELECT * FROM "table" OFFSET ? LIMIT ?
 // Bindings: [150, 12]
 ```
@@ -373,6 +458,7 @@ $query = new Query('test_');
 $query
     ->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'))
     ->select($query->raw('REPLACE('.$query->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
+
 // SELECT (REPLACE(test_my_table.name, ?, ?)) FROM (MAGIC(test_my_table))
 ```
 
