@@ -35,6 +35,9 @@ class CommonGrammar implements GrammarInterface
         if ($query->insert) {
             return $this->compileInsert($query);
         }
+        if ($query->update) {
+            return $this->compileUpdate($query);
+        }
         return $this->compileSelect($query);
     }
 
@@ -106,6 +109,30 @@ class CommonGrammar implements GrammarInterface
         }
 
         return new Raw($this->implodeSQL([$sqlLine1, $sqlLine2]), $bindings);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function compileUpdate(Query $query): StatementInterface
+    {
+        if ($query->table === null) {
+            throw new InvalidQueryException('The updated table is not set');
+        }
+        if (!$query->update) {
+            throw new InvalidQueryException('The updated values are not set');
+        }
+
+        $bindings = [];
+        $sql = [
+            'UPDATE '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings),
+            $this->compileUpdateSetPart($query, $bindings),
+            $this->compileWherePart($query, $bindings),
+            $this->compileOrderPart($query, $bindings),
+            $this->compileOffsetAndLimitPart($query, $bindings)
+        ];
+
+        return new Raw($this->implodeSQL($sql), $bindings);
     }
 
     /**
@@ -209,11 +236,26 @@ class CommonGrammar implements GrammarInterface
             }
         }
 
-        if ($ordersSQL) {
-            return 'ORDER BY '.implode(', ', $ordersSQL);
-        } else {
-            return '';
+        return $ordersSQL ? 'ORDER BY '.implode(', ', $ordersSQL) : '';
+    }
+
+    /**
+     * Compiles a SET part of a update SQL query.
+     *
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     * @throws InvalidQueryException
+     */
+    protected function compileUpdateSetPart(Query $query, array &$bindings): string
+    {
+        $parts = [];
+
+        foreach ($query->update as $column => $value) {
+            $parts[] = $this->quoteIdentifier($column).' = '.$this->compileValue($value, $bindings);
         }
+
+        return $parts ? 'SET '.implode(', ', $parts) : '';
     }
 
     /**

@@ -62,6 +62,42 @@ class QueryTest extends TestCase
     }
 
     /**
+     * Tests the `update` method
+     */
+    public function testUpdate()
+    {
+        $query = (new Query('pref_'))
+            ->update([
+                'foo' => 'Bar',
+                'date' => new Raw('NOW()'),
+                'value' => function (Query $query) {
+                    $query->avg('height')->from('table');
+                }
+            ])
+            ->update([
+                'foo' => 12345,
+                'field' => null
+            ]);
+
+        $this->assertCount(4, $query->update);
+        $this->assertEquals(12345, $query->update['foo']);
+        $this->assertStatement('NOW()', [], $query->update['date']);
+        $this->assertInstanceOf(Query::class, $query->update['value']);
+        $this->assertEquals('pref_table', $query->update['value']->table);
+        $this->assertNull($query->update['field']);
+
+        // Incorrect column name
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->update(['foo' => 'bar', 'baq']);
+        });
+
+        // Incorrect value
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->update(['foo' => [1, 2, 3]]);
+        });
+    }
+
+    /**
      * Tests the ordering methods
      */
     public function testOrder()

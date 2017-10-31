@@ -38,4 +38,13 @@ interface GrammarInterface
      * @throws InvalidQueryException
      */
     public function compileInsert(Query $query): StatementInterface;
+
+    /**
+     * Compiles a query object to a UPDATE SQL query.
+     *
+     * @param Query $query
+     * @return StatementInterface
+     * @throws InvalidQueryException
+     */
+    public function compileUpdate(Query $query): StatementInterface;
 }

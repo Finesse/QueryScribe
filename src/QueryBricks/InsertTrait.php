@@ -41,19 +41,22 @@ trait InsertTrait
                 throw InvalidArgumentException::create('Argument $rows['.$index.']', $row, ['array']);
             }
 
-            foreach ($row as $column => &$value) {
+            $filteredRow = [];
+
+            foreach ($row as $column => $value) {
                 if (!is_string($column)) {
-                    throw InvalidArgumentException::create('The argument $rows['.$index.'] index', $column, ['string']);
+                    throw InvalidArgumentException::create('The argument $rows['.$index.'] indexes', $column, ['string']);
                 }
 
                 $value = $this->checkScalarOrNullValue('Argument $rows['.$index.']['.$column.']', $value);
+                $column = $this->addTablePrefixToColumn($column);
+                $filteredRow[$column] = $value;
             }
 
             if (!is_array($this->insert)) {
                 $this->insert = [];
             }
-
-            $this->insert[] = $row;
+            $this->insert[] = $filteredRow;
         }
 
         return $this;

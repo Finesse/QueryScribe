@@ -9,7 +9,7 @@ use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
- * Represents a built query. It contains only a basic query data, not a SQL text. All the identifiers a final
+ * Represents a built query. It contains only a basic query data, not a SQL text. All the stored identifiers a final
  * (prefixed). It must not compile any SQL.
  *
  * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
@@ -20,7 +20,6 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  * todo update
  *  * todo delete
  *  * todo support of different SQL dialects
  *  * todo join
@@ -44,6 +43,12 @@ class Query
      * @var string|null Target table alias
      */
     public $tableAlias = null;
+
+    /**
+     * @var mixed[]|\Closure[]|Query[]|StatementInterface[] Fields to update. The indexes are the columns names, the
+     *     values are the values.
+     */
+    public $update = [];
 
     /**
      * @var Order[]|string[] Orders. String value `random` means that the order should be random.
@@ -82,6 +87,29 @@ class Query
 
         $this->table = is_string($table) ? $this->addTablePrefix($table) : $table;
         $this->tableAlias = $alias;
+        return $this;
+    }
+
+    /**
+     * Adds values that should be updated
+     *
+     * @param mixed[]|\Closure[]|Query[]|StatementInterface[] $values Fields to update. The indexes are the columns
+     *     names, the values are the values.
+     * @return self Itself
+     * @throws InvalidArgumentException
+     */
+    public function update(array $values): self
+    {
+        foreach ($values as $column => $value) {
+            if (!is_string($column)) {
+                throw InvalidArgumentException::create('Argument $values indexes', $column, ['string']);
+            }
+
+            $value = $this->checkScalarOrNullValue('Argument $values['.$column.']', $value);
+            $column = $this->addTablePrefixToColumn($column);
+            $this->update[$column] = $value;
+        }
+
         return $this;
     }
 

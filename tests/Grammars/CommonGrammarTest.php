@@ -40,6 +40,11 @@ class CommonGrammarTest extends TestCase
         ', [12, 'foo'], $grammar->compile(
             (new Query())->table('table')->insert(['weight' => 12, 'name' => 'foo'])
         ));
+
+        // Update
+        $this->assertStatement('UPDATE "table" SET "name" = ?', ['Joe'], $grammar->compile(
+            (new Query())->table('table')->update(['name' => 'Joe'])
+        ));
     }
 
     /**
@@ -163,6 +168,65 @@ class CommonGrammarTest extends TestCase
             $grammar->compileInsert($query);
         }, function (InvalidQueryException $exception) {
             $this->assertStringStartsWith('Unknown insert instruction type', $exception->getMessage());
+        });
+    }
+
+    /**
+     * Tests the `compileUpdate` method
+     */
+    public function testCompileUpdate()
+    {
+        $grammar = new CommonGrammar();
+
+        // Comprehensive case
+        $this->assertStatement('
+            UPDATE "pref_table" AS "t"
+            SET
+                "name" = ?,
+                "pref_table"."price" = ?,
+                "date" = (NEXT_DAY(?)),
+                "description" = (
+                    SELECT "title"
+                    FROM "pref_stories"
+                    LIMIT ?
+                )
+            WHERE "old" = ?
+            ORDER BY "date" DESC
+            OFFSET ?
+            LIMIT ?
+        ', ['Hello darkness', 145.5, 56, 1, true, 2, 10], $grammar->compileUpdate(
+            (new Query('pref_'))
+                ->table('table', 't')
+                ->where('old', true)
+                ->orderBy('date', 'desc')
+                ->offset(2)
+                ->limit(10)
+                ->update([
+                    'name' => 'Hello darkness',
+                    'table.price' => 145.5,
+                    'date' => new Raw('NEXT_DAY(?)', [56]),
+                    'description' => function (Query $query) {
+                        $query->from('stories')->select('title')->limit(1);
+                    }
+                ])
+        ));
+
+        // No table
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileUpdate(
+                (new Query())->update(['value' => 1, 'name' => 'foo'])
+            );
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('The updated table is not set', $exception->getMessage());
+        });
+
+        // No updated values
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileUpdate(
+                (new Query())->table('foo')
+            );
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('The updated values are not set', $exception->getMessage());
         });
     }
 
