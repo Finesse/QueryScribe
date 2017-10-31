@@ -2,8 +2,6 @@
 
 namespace Finesse\QueryScribe\Tests\Grammars;
 
-use Finesse\QueryScribe\Exceptions\InvalidCriterionException;
-use Finesse\QueryScribe\Exceptions\InvalidOrderException;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Grammars\CommonGrammar;
 use Finesse\QueryScribe\Query;
@@ -19,7 +17,7 @@ use Finesse\QueryScribe\Tests\TestCase;
 class CommonGrammarTest extends TestCase
 {
     /**
-     * Tests the compile method
+     * Tests the `compile` method
      */
     public function testCompile()
     {
@@ -34,10 +32,18 @@ class CommonGrammarTest extends TestCase
         $this->assertStatement('SELECT * FROM "table"', [], $grammar->compile(
             (new Query())->from('table')
         ));
+
+        // Insert
+        $this->assertStatement('
+            INSERT INTO "table" ("weight", "name") 
+            VALUES (?, ?)
+        ', [12, 'foo'], $grammar->compile(
+            (new Query())->table('table')->insert(['weight' => 12, 'name' => 'foo'])
+        ));
     }
 
     /**
-     * Tests the compileSelect method
+     * Tests the `compileSelect` method
      */
     public function testCompileSelect()
     {
@@ -100,6 +106,56 @@ class CommonGrammarTest extends TestCase
             $grammar->compileSelect(
                 (new Query('prefix_'))->select(['id', 'name'])
             );
+        });
+    }
+
+    /**
+     * Tests the `compileInsert` method
+     */
+    public function testCompileInsert()
+    {
+        $grammar = new CommonGrammar();
+
+        // Insert values
+        $this->assertStatement('
+            INSERT INTO "demo_posts" ("title", "author_id", "date", "description")
+            VALUES
+                (?, ?, DEFAULT, DEFAULT),
+                (?, DEFAULT, (NOW()), DEFAULT),
+                (DEFAULT, DEFAULT, (SELECT MAX("start") FROM "demo_events" WHERE "type" = ?), ?)
+        ', ['Foo!!', 12, 'Bar?', 'post', null], $grammar->compileInsert(
+            (new Query('demo_'))
+                ->table('posts')
+                ->insert([
+                    ['title' => 'Foo!!', 'author_id' => 12],
+                    ['title' => 'Bar?', 'date' => new Raw('NOW()')],
+                    ['description' => null, 'date' => function (Query $query) {
+                        $query->max('start')->from('events')->where('type', 'post');
+                    }]
+                ])
+        ));
+
+        // Insert from select
+        $this->assertStatement('
+            INSERT INTO "demo_posts" ("name", "address") (
+                SELECT "first_name", "home_address"
+                FROM "demo_users"
+            )
+        ', [], $grammar->compileInsert(
+            (new Query('demo_'))
+                ->table('posts')
+                ->insertFromSelect(['name', 'address'], function (Query $query) {
+                    $query->select(['first_name', 'home_address'])->from('users');
+                })
+        ));
+
+        // Unknown insert type
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $query = (new Query())->table('bar');
+            $query->insert = 'VALUES (0, 1, 2)';
+            $grammar->compileInsert($query);
+        }, function (InvalidQueryException $exception) {
+            $this->assertStringStartsWith('Unknown insert instruction type', $exception->getMessage());
         });
     }
 
@@ -207,20 +263,24 @@ class CommonGrammarTest extends TestCase
         ));
 
         // Unknown criterion type
-        $this->assertException(InvalidCriterionException::class, function () use ($grammar) {
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $query = (new Query())->from('test');
             $query->where[] = new class(Criterion::APPEND_RULE_AND) extends Criterion {};
             $grammar->compileSelect($query);
+        }, function (InvalidQueryException $exception) {
+            $this->assertStringStartsWith('The given criterion', $exception->getMessage());
         });
 
         // Unknown append type
-        $this->assertException(InvalidCriterionException::class, function () use ($grammar) {
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileSelect(
                 (new Query())
                     ->from('test')
                     ->whereRaw('TRUE')
                     ->where('foo', '=', 'bar', -2394723)
             );
+        }, function (InvalidQueryException $exception) {
+            $this->assertStringStartsWith('Unknown criterion append rule', $exception->getMessage());
         });
     }
 
@@ -250,10 +310,12 @@ class CommonGrammarTest extends TestCase
                 ->inRandomOrder()
         ));
 
-        $this->assertException(InvalidOrderException::class, function () use ($grammar) {
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $query = (new Query())->from('table');
             $query->order[] = 'foo ASC';
             $grammar->compileSelect($query);
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('The given order `foo ASC` is unknown', $exception->getMessage());
         });
     }
 
@@ -288,5 +350,28 @@ class CommonGrammarTest extends TestCase
                     $query->select(new Raw('AVG(price)'))->from('prices');
                 })
         ));
+    }
+
+    /**
+     * Tests that an errors in a subquery is passed with the proper message
+     */
+    public function testErrorInSubQuery()
+    {
+        $grammar = new CommonGrammar();
+
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileSelect(
+                (new Query())
+                    ->select('*')
+                    ->select(function (Query $query) {
+                        $query->select('name')->from('users');
+                        $query->order[] = 'status DESC';
+                        return $query;
+                    }, 'useless')
+                    ->from('table1')
+            );
+        }, function (InvalidQueryException $exception) {
+            $this->assertStringStartsWith('Error in subquery: ', $exception->getMessage());
+        });
     }
 }

@@ -3,12 +3,14 @@
 namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\QueryBricks\InsertTrait;
 use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
- * Represents a built query. It contains only a basic query data, not a SQL text. It must not compile any SQL.
+ * Represents a built query. It contains only a basic query data, not a SQL text. All the identifiers a final
+ * (prefixed). It must not compile any SQL.
  *
  * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
  *  - Takes an empty query the first argument;
@@ -18,30 +20,30 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  * todo insert
  *  * todo update
  *  * todo delete
  *  * todo support of different SQL dialects
  *  * todo join
  *  * todo union
  *  * todo group by and having
+ *  * todo distinct
  *
  * @author Surgie
  */
 class Query
 {
     use AddTablePrefixTrait, MakeRawTrait;
-    use SelectTrait, WhereTrait;
+    use SelectTrait, InsertTrait, WhereTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name (prefixed)
      */
-    public $from = null;
+    public $table = null;
 
     /**
      * @var string|null Target table alias
      */
-    public $fromAlias = null;
+    public $tableAlias = null;
 
     /**
      * @var Order[]|string[] Orders. String value `random` means that the order should be random.
@@ -70,16 +72,16 @@ class Query
      * Sets the target table.
      *
      * @param string|\Closure|Query|StatementInterface $table Not prefixed table name without quotes
-     * @param string|null Table alias
+     * @param string|null $alias Table alias
      * @return self Itself
      * @throws InvalidArgumentException
      */
-    public function from($table, string $alias = null): self
+    public function table($table, string $alias = null): self
     {
         $table = $this->checkStringValue('Argument $table', $table);
 
-        $this->from = is_string($table) ? $this->addTablePrefix($table) : $table;
-        $this->fromAlias = $alias;
+        $this->table = is_string($table) ? $this->addTablePrefix($table) : $table;
+        $this->tableAlias = $alias;
         return $this;
     }
 
@@ -230,6 +232,35 @@ class Query
     }
 
     /**
+     * Check that value is suitable for being a subquery property of a query. Retrieves the closure subquery.
+     *
+     * @param string $name Value name
+     * @param \Closure|self|StatementInterface $value
+     * @return self|StatementInterface
+     * @throws InvalidArgumentException
+     */
+    protected function checkSubQueryValue(string $name, $value)
+    {
+        if (
+            !($value instanceof \Closure) &&
+            !($value instanceof Query) &&
+            !($value instanceof StatementInterface)
+        ) {
+            throw InvalidArgumentException::create(
+                $name,
+                $value,
+                [\Closure::class, Query::class, StatementInterface::class]
+            );
+        }
+
+        if ($value instanceof \Closure) {
+            $value = $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
+        }
+
+        return $value;
+    }
+
+    /**
      * Check that value is suitable for being a column name of a query. Retrieves the closure subquery. Adds a table
      * prefix to a column name (if it contains a table name).
      *
@@ -285,8 +316,8 @@ class Query
         $query = new static($this->tablePrefix);
 
         // The `from` method is not used because it adds extra prefix
-        $query->from = $this->from;
-        $query->fromAlias = $this->fromAlias;
+        $query->table = $this->table;
+        $query->tableAlias = $this->tableAlias;
 
         return $query;
     }

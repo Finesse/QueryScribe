@@ -2,8 +2,6 @@
 
 namespace Finesse\QueryScribe\Grammars;
 
-use Finesse\QueryScribe\Exceptions\InvalidCriterionException;
-use Finesse\QueryScribe\Exceptions\InvalidOrderException;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\GrammarInterface;
 use Finesse\QueryScribe\QueryBricks\Aggregate;
@@ -17,6 +15,7 @@ use Finesse\QueryScribe\QueryBricks\Criteria\RawCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
 use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
@@ -33,6 +32,9 @@ class CommonGrammar implements GrammarInterface
      */
     public function compile(Query $query): StatementInterface
     {
+        if ($query->insert) {
+            return $this->compileInsert($query);
+        }
         return $this->compileSelect($query);
     }
 
@@ -54,6 +56,60 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function compileInsert(Query $query): StatementInterface
+    {
+        if ($query->table === null) {
+            throw new InvalidQueryException('The INTO table is not set');
+        }
+
+        $insert = $query->insert;
+        $bindings = [];
+        $sqlLine1 = 'INSERT INTO '.$this->compileIdentifier($query->table, $bindings)
+            . ($query->tableAlias === null ? '' : ' AS '.$this->quotePlainIdentifier($query->tableAlias));
+
+        if (is_array($insert)) {
+            // Step 1. Fetch unique columns list.
+            $columns = [];
+            foreach ($insert as $row) {
+                foreach ($row as $column => $value) {
+                    if (!isset($columns[$column])) {
+                        $columns[$column] = count($columns);
+                    }
+                }
+            }
+
+            // Step 2. Build the values matrix.
+            $compiledRows = [];
+            foreach ($insert as $row) {
+                $compiledRow = [];
+                foreach ($columns as $column => $columnIndex) {
+                    if (array_key_exists($column, $row)) {
+                        $compiledRow[$columnIndex] = $this->compileValue($row[$column], $bindings);
+                    } else {
+                        $compiledRow[$columnIndex] = 'DEFAULT';
+                    }
+                }
+                $compiledRows[] = '('.implode(', ', $compiledRow).')';
+            }
+
+            // Step 3. Build the SQL
+            $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], array_keys($columns))).')';
+            $sqlLine2 = 'VALUES '.implode(', ', $compiledRows);
+        } elseif ($insert instanceof InsertFromSelect) {
+            if ($insert->columns !== null) {
+                $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], $insert->columns)).')';
+            }
+            $sqlLine2 = $this->compileSubquery($insert->selectQuery, $bindings);
+        } else {
+            throw new InvalidQueryException('Unknown insert instruction type: '.gettype($insert));
+        }
+
+        return new Raw($this->implodeSQL([$sqlLine1, $sqlLine2]), $bindings);
+    }
+
+    /**
      * Compiles a SELECT part of a SQL query.
      *
      * @param Query $query Query data
@@ -66,9 +122,9 @@ class CommonGrammar implements GrammarInterface
 
         foreach (($query->select ?: ['*']) as $alias => $column) {
             if ($column instanceof Aggregate) {
-                $column = $this->aggregateToSQL($column, $bindings);
+                $column = $this->compileAggregate($column, $bindings);
             } else {
-                $column = $this->identifierToSQL($column, $bindings);
+                $column = $this->compileIdentifier($column, $bindings);
             }
 
             $columns[] = $column.(is_string($alias) ? ' AS '.$this->quotePlainIdentifier($alias) : '');
@@ -87,12 +143,12 @@ class CommonGrammar implements GrammarInterface
      */
     protected function compileFromPart(Query $query, array &$bindings): string
     {
-        if ($query->from === null) {
+        if ($query->table === null) {
             throw new InvalidQueryException('The FROM table is not set');
         }
 
-        return 'FROM '.$this->identifierToSQL($query->from, $bindings)
-            . ($query->fromAlias === null ? '' : ' AS '.$this->quotePlainIdentifier($query->fromAlias));
+        return 'FROM '.$this->compileIdentifier($query->table, $bindings)
+            . ($query->tableAlias === null ? '' : ' AS '.$this->quotePlainIdentifier($query->tableAlias));
     }
 
     /**
@@ -107,11 +163,11 @@ class CommonGrammar implements GrammarInterface
         $parts = [];
 
         if ($query->offset !== null) {
-            $parts[] = 'OFFSET '.$this->valueToSQL($query->offset, $bindings);
+            $parts[] = 'OFFSET '.$this->compileValue($query->offset, $bindings);
         }
 
         if ($query->limit !== null) {
-            $parts[] = 'LIMIT '.$this->valueToSQL($query->limit, $bindings);
+            $parts[] = 'LIMIT '.$this->compileValue($query->limit, $bindings);
         }
 
         return $this->implodeSQL($parts);
@@ -123,11 +179,11 @@ class CommonGrammar implements GrammarInterface
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
-     * @throws InvalidCriterionException
+     * @throws InvalidQueryException
      */
     protected function compileWherePart(Query $query, array &$bindings): string
     {
-        $sql = $this->criteriaToSQL($query->where, $bindings);
+        $sql = $this->compileCriteria($query->where, $bindings);
         if ($sql !== '') {
             $sql = 'WHERE '.$sql;
         }
@@ -141,14 +197,14 @@ class CommonGrammar implements GrammarInterface
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
-     * @throws InvalidOrderException
+     * @throws InvalidQueryException
      */
     protected function compileOrderPart(Query $query, array &$bindings): string
     {
         $ordersSQL = [];
 
         foreach ($query->order as $order) {
-            $orderSQL = $this->orderToSQL($order, $bindings);
+            $orderSQL = $this->compileOneOrder($order, $bindings);
 
             if ($orderSQL !== '') {
                 $ordersSQL[] = $orderSQL;
@@ -169,10 +225,10 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
-    protected function identifierToSQL($identifier, array &$bindings): string
+    protected function compileIdentifier($identifier, array &$bindings): string
     {
         if ($identifier instanceof Query || $identifier instanceof StatementInterface) {
-            return $this->subQueryToSQL($identifier, $bindings);
+            return $this->compileSubquery($identifier, $bindings);
         }
 
         return $this->quoteIdentifier($identifier);
@@ -185,10 +241,10 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
-    protected function valueToSQL($value, array &$bindings): string
+    protected function compileValue($value, array &$bindings): string
     {
         if ($value instanceof Query || $value instanceof StatementInterface) {
-            return $this->subQueryToSQL($value, $bindings);
+            return $this->compileSubquery($value, $bindings);
         }
 
         $this->mergeBindings($bindings, [$value]);
@@ -202,10 +258,18 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text wrapped in parentheses
      */
-    protected function subQueryToSQL($subQuery, array &$bindings): string
+    protected function compileSubquery($subQuery, array &$bindings): string
     {
         if ($subQuery instanceof Query) {
-            $subQuery = $this->compile($subQuery);
+            try {
+                $subQuery = $this->compile($subQuery);
+            } catch (InvalidQueryException $exception) {
+                throw new InvalidQueryException(
+                    'Error in subquery: '.$exception->getMessage(),
+                    $exception->getCode(),
+                    $exception
+                );
+            }
         }
 
         $this->mergeBindings($bindings, $subQuery->getBindings());
@@ -219,9 +283,9 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
-    protected function aggregateToSQL(Aggregate $aggregate, array &$bindings): string
+    protected function compileAggregate(Aggregate $aggregate, array &$bindings): string
     {
-        return $aggregate->function.'('.$this->identifierToSQL($aggregate->column, $bindings).')';
+        return $aggregate->function.'('.$this->compileIdentifier($aggregate->column, $bindings).')';
     }
 
     /**
@@ -230,15 +294,15 @@ class CommonGrammar implements GrammarInterface
      * @param Criterion[] $criteria List of criteria
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text or empty string
-     * @throws InvalidCriterionException
+     * @throws InvalidQueryException
      */
-    protected function criteriaToSQL(array $criteria, array &$bindings): string
+    protected function compileCriteria(array $criteria, array &$bindings): string
     {
         $criteriaSQL = '';
         $previousAppendRule = null;
 
         foreach ($criteria as $criterion) {
-            $criterionSQL = $this->criterionToSQL($criterion, $bindings);
+            $criterionSQL = $this->compileCriterion($criterion, $bindings);
             if ($criterionSQL === '') {
                 continue;
             }
@@ -260,7 +324,7 @@ class CommonGrammar implements GrammarInterface
                         }
                         break;
                     default:
-                        throw new InvalidCriterionException('Unknown criterion append rule `'.$appendRule.'`');
+                        throw new InvalidQueryException('Unknown criterion append rule `'.$appendRule.'`');
                 }
             }
 
@@ -276,41 +340,41 @@ class CommonGrammar implements GrammarInterface
      * @param Criterion $criterion Criterion
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text or empty string
-     * @throws InvalidCriterionException
+     * @throws InvalidQueryException
      */
-    protected function criterionToSQL(Criterion $criterion, array &$bindings): string
+    protected function compileCriterion(Criterion $criterion, array &$bindings): string
     {
         if ($criterion instanceof ValueCriterion) {
             return sprintf(
                 '%s %s %s',
-                $this->identifierToSQL($criterion->column, $bindings),
+                $this->compileIdentifier($criterion->column, $bindings),
                 $criterion->rule,
-                $this->valueToSQL($criterion->value, $bindings)
+                $this->compileValue($criterion->value, $bindings)
             );
         }
 
         if ($criterion instanceof ColumnsCriterion) {
             return sprintf(
                 '%s %s %s',
-                $this->identifierToSQL($criterion->column1, $bindings),
+                $this->compileIdentifier($criterion->column1, $bindings),
                 $criterion->rule,
-                $this->identifierToSQL($criterion->column2, $bindings)
+                $this->compileIdentifier($criterion->column2, $bindings)
             );
         }
 
         if ($criterion instanceof BetweenCriterion) {
             return sprintf(
                 '(%s %sBETWEEN %s AND %s)',
-                $this->identifierToSQL($criterion->column, $bindings),
+                $this->compileIdentifier($criterion->column, $bindings),
                 $criterion->not ? 'NOT ' : '',
-                $this->valueToSQL($criterion->min, $bindings),
-                $this->valueToSQL($criterion->max, $bindings)
+                $this->compileValue($criterion->min, $bindings),
+                $this->compileValue($criterion->max, $bindings)
             );
         }
 
         if ($criterion instanceof CriteriaCriterion) {
             $groupBindings = [];
-            $groupSQL = $this->criteriaToSQL($criterion->criteria, $groupBindings);
+            $groupSQL = $this->compileCriteria($criterion->criteria, $groupBindings);
 
             if ($groupSQL === '') {
                 return '';
@@ -329,7 +393,7 @@ class CommonGrammar implements GrammarInterface
             return sprintf(
                 '%sEXISTS %s',
                 $criterion->not ? 'NOT ' : '',
-                $this->subQueryToSQL($criterion->subQuery, $bindings)
+                $this->compileSubquery($criterion->subQuery, $bindings)
             );
         }
 
@@ -337,16 +401,16 @@ class CommonGrammar implements GrammarInterface
             if (is_array($criterion->values)) {
                 $values = [];
                 foreach ($criterion->values as $value) {
-                    $values[] = $this->valueToSQL($value, $bindings);
+                    $values[] = $this->compileValue($value, $bindings);
                 }
                 $subQuery = '('.implode(', ', $values).')';
             } else {
-                $subQuery = $this->subQueryToSQL($criterion->values, $bindings);
+                $subQuery = $this->compileSubquery($criterion->values, $bindings);
             }
 
             return sprintf(
                 '%s %sIN %s',
-                $this->identifierToSQL($criterion->column, $bindings),
+                $this->compileIdentifier($criterion->column, $bindings),
                 $criterion->not ? 'NOT ' : '',
                 $subQuery
             );
@@ -355,16 +419,16 @@ class CommonGrammar implements GrammarInterface
         if ($criterion instanceof NullCriterion) {
             return sprintf(
                 '%s IS %sNULL',
-                $this->identifierToSQL($criterion->column, $bindings),
+                $this->compileIdentifier($criterion->column, $bindings),
                 $criterion->isNull ? '' : 'NOT '
             );
         }
 
         if ($criterion instanceof RawCriterion) {
-            return $this->subQueryToSQL($criterion->raw, $bindings);
+            return $this->compileSubquery($criterion->raw, $bindings);
         }
 
-        throw new InvalidCriterionException('The given criterion '.get_class($criterion).' is unknown');
+        throw new InvalidQueryException('The given criterion '.get_class($criterion).' is unknown');
     }
 
     /**
@@ -373,20 +437,20 @@ class CommonGrammar implements GrammarInterface
      * @param Order|string $order Order. String `random` means that the order should be random.
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text or empty string
-     * @throws InvalidOrderException
+     * @throws InvalidQueryException
      */
-    protected function orderToSQL($order, array &$bindings): string
+    protected function compileOneOrder($order, array &$bindings): string
     {
         if ($order instanceof Order) {
-            return $this->identifierToSQL($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
+            return $this->compileIdentifier($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
         }
 
         if ($order === 'random') {
             return 'RANDOM()';
         }
 
-        throw new InvalidOrderException(sprintf(
-            'The given order %s is unknown',
+        throw new InvalidQueryException(sprintf(
+            'The given order `%s` is unknown',
             is_string($order) ? $order : gettype($order)
         ));
     }

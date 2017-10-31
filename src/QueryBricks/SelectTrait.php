@@ -14,10 +14,25 @@ use Finesse\QueryScribe\StatementInterface;
 trait SelectTrait
 {
     /**
-     * @var string[]|Aggregate[]|Query[]|StatementInterface[] Columns names to select (prefixed). The string indexes are the
-     *    aliases names. If no columns are provided, all columns should be selected.
+     * @var string[]|Aggregate[]|Query[]|StatementInterface[] Columns names to select (prefixed). The string indexes are
+     *     the aliases names. If no columns are provided, all columns should be selected.
      */
     public $select = [];
+
+    /**
+     * Table method alias
+     *
+     * @see Query::table For reference
+     *
+     * @param string|\Closure|Query|StatementInterface $table
+     * @param string|null $alias
+     * @return self
+     * @throws InvalidArgumentException
+     */
+    public function from($table, string $alias = null): self
+    {
+        return $this->table($table, $alias);
+    }
 
     /**
      * Adds column or columns to the SELECT section.

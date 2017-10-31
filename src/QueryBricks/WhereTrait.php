@@ -448,21 +448,7 @@ trait WhereTrait
      */
     public function whereExists($subQuery, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
-        if (
-            !($subQuery instanceof \Closure) &&
-            !($subQuery instanceof Query) &&
-            !($subQuery instanceof StatementInterface)
-        ) {
-            throw InvalidArgumentException::create(
-                'Argument $subQuery',
-                $subQuery,
-                [\Closure::class, Query::class, StatementInterface::class, 'null']
-            );
-        }
-
-        if ($subQuery instanceof \Closure) {
-            $subQuery = $this->retrieveClosureQuery($subQuery, $this->makeCopyForSubQuery());
-        }
+        $subQuery = $this->checkSubQueryValue('Argument $subQuery', $subQuery);
 
         $this->where[] = new ExistsCriterion($subQuery, $not, $appendRule);
         return $this;
