@@ -44,7 +44,7 @@ class Query
     public $tableAlias = null;
 
     /**
-     * @var mixed[]|\Closure[]|Query[]|StatementInterface[] Fields to update. The indexes are the columns names, the
+     * @var mixed[]|Query[]|StatementInterface[] Fields to update. The indexes are the columns names, the
      *     values are the values.
      */
     public $update = [];

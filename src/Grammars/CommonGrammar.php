@@ -129,7 +129,7 @@ class CommonGrammar implements GrammarInterface
         $bindings = [];
         $sql = [
             'UPDATE '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings),
-            $this->compileUpdateSetPart($query, $bindings),
+            'SET '.$this->compileUpdateValues($query->update, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),
             $this->compileOffsetAndLimitPart($query, $bindings)
@@ -260,22 +260,23 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Compiles a SET part of a update SQL query.
+     * Compiles a values list for the SET part of a update SQL query.
      *
-     * @param Query $query Query data
+     * @param Query mixed[]|Query[]|StatementInterface[] Values. The indexes are the columns names, the values are the
+     *     values.
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      * @throws InvalidQueryException
      */
-    protected function compileUpdateSetPart(Query $query, array &$bindings): string
+    protected function compileUpdateValues(array $values, array &$bindings): string
     {
         $parts = [];
 
-        foreach ($query->update as $column => $value) {
+        foreach ($values as $column => $value) {
             $parts[] = $this->quoteIdentifier($column).' = '.$this->compileValue($value, $bindings);
         }
 
-        return $parts ? 'SET '.implode(', ', $parts) : '';
+        return implode(', ', $parts);
     }
 
     /**
