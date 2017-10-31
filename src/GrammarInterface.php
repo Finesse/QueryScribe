@@ -47,4 +47,13 @@ interface GrammarInterface
      * @throws InvalidQueryException
      */
     public function compileUpdate(Query $query): StatementInterface;
+
+    /**
+     * Compiles a query object to a DELETE SQL query.
+     *
+     * @param Query $query
+     * @return StatementInterface
+     * @throws InvalidQueryException
+     */
+    public function compileDelete(Query $query): StatementInterface;
 }

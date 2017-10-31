@@ -38,6 +38,9 @@ class CommonGrammar implements GrammarInterface
         if ($query->update) {
             return $this->compileUpdate($query);
         }
+        if ($query->delete) {
+            return $this->compileDelete($query);
+        }
         return $this->compileSelect($query);
     }
 
@@ -103,7 +106,7 @@ class CommonGrammar implements GrammarInterface
             if ($insert->columns !== null) {
                 $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], $insert->columns)).')';
             }
-            $sqlLine2 = $this->compileSubquery($insert->selectQuery, $bindings);
+            $sqlLine2 = $this->compileSubQuery($insert->selectQuery, $bindings);
         } else {
             throw new InvalidQueryException('Unknown insert instruction type: '.gettype($insert));
         }
@@ -127,6 +130,23 @@ class CommonGrammar implements GrammarInterface
         $sql = [
             'UPDATE '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings),
             $this->compileUpdateSetPart($query, $bindings),
+            $this->compileWherePart($query, $bindings),
+            $this->compileOrderPart($query, $bindings),
+            $this->compileOffsetAndLimitPart($query, $bindings)
+        ];
+
+        return new Raw($this->implodeSQL($sql), $bindings);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function compileDelete(Query $query): StatementInterface
+    {
+        $bindings = [];
+        $sql = [
+            'DELETE',
+            $this->compileFromPart($query, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),
             $this->compileOffsetAndLimitPart($query, $bindings)
@@ -268,7 +288,7 @@ class CommonGrammar implements GrammarInterface
     protected function compileIdentifier($identifier, array &$bindings): string
     {
         if ($identifier instanceof Query || $identifier instanceof StatementInterface) {
-            return $this->compileSubquery($identifier, $bindings);
+            return $this->compileSubQuery($identifier, $bindings);
         }
 
         return $this->quoteIdentifier($identifier);
@@ -284,7 +304,7 @@ class CommonGrammar implements GrammarInterface
     protected function compileValue($value, array &$bindings): string
     {
         if ($value instanceof Query || $value instanceof StatementInterface) {
-            return $this->compileSubquery($value, $bindings);
+            return $this->compileSubQuery($value, $bindings);
         }
 
         $this->mergeBindings($bindings, [$value]);
@@ -298,7 +318,7 @@ class CommonGrammar implements GrammarInterface
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text wrapped in parentheses
      */
-    protected function compileSubquery($subQuery, array &$bindings): string
+    protected function compileSubQuery($subQuery, array &$bindings): string
     {
         if ($subQuery instanceof Query) {
             try {
@@ -433,7 +453,7 @@ class CommonGrammar implements GrammarInterface
             return sprintf(
                 '%sEXISTS %s',
                 $criterion->not ? 'NOT ' : '',
-                $this->compileSubquery($criterion->subQuery, $bindings)
+                $this->compileSubQuery($criterion->subQuery, $bindings)
             );
         }
 
@@ -445,7 +465,7 @@ class CommonGrammar implements GrammarInterface
                 }
                 $subQuery = '('.implode(', ', $values).')';
             } else {
-                $subQuery = $this->compileSubquery($criterion->values, $bindings);
+                $subQuery = $this->compileSubQuery($criterion->values, $bindings);
             }
 
             return sprintf(
@@ -465,7 +485,7 @@ class CommonGrammar implements GrammarInterface
         }
 
         if ($criterion instanceof RawCriterion) {
-            return $this->compileSubquery($criterion->raw, $bindings);
+            return $this->compileSubQuery($criterion->raw, $bindings);
         }
 
         throw new InvalidQueryException('The given criterion '.get_class($criterion).' is unknown');

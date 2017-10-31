@@ -45,6 +45,11 @@ class CommonGrammarTest extends TestCase
         $this->assertStatement('UPDATE "table" SET "name" = ?', ['Joe'], $grammar->compile(
             (new Query())->table('table')->update(['name' => 'Joe'])
         ));
+
+        // Delete
+        $this->assertStatement('DELETE FROM "table"', [], $grammar->compile(
+            (new Query())->table('table')->delete()
+        ));
     }
 
     /**
@@ -227,6 +232,45 @@ class CommonGrammarTest extends TestCase
             );
         }, function (InvalidQueryException $exception) {
             $this->assertEquals('The updated values are not set', $exception->getMessage());
+        });
+    }
+
+    /**
+     * Tests the `compileDelete` method
+     */
+    public function testCompileDelete()
+    {
+        $grammar = new CommonGrammar();
+
+        // Comprehensive case
+        $this->assertStatement('
+            DELETE FROM "test_table"
+            WHERE "date" < ?
+            ORDER BY "name" ASC
+            OFFSET ?
+            LIMIT ?
+        ', ['2017-01-01', 10, 5], $grammar->compileDelete(
+            (new Query('test_'))
+                ->table('table')
+                ->where('date', '<', '2017-01-01')
+                ->orderBy('name')
+                ->offset(10)
+                ->limit(5)
+                ->delete()
+        ));
+
+        // No explicit `delete` call
+        $this->assertStatement('DELETE FROM "names" WHERE "foo" = ?', ['bar'], $grammar->compileDelete(
+            (new Query())->from('names')->where('foo', 'bar')
+        ));
+
+        // No table
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileDelete(
+                (new Query())->delete()
+            );
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('The FROM table is not set', $exception->getMessage());
         });
     }
 

@@ -20,7 +20,6 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  * todo delete
  *  * todo support of different SQL dialects
  *  * todo join
  *  * todo union
@@ -49,6 +48,11 @@ class Query
      *     values are the values.
      */
     public $update = [];
+
+    /**
+     * @var bool Should rows be deleted?
+     */
+    public $delete = false;
 
     /**
      * @var Order[]|string[] Orders. String value `random` means that the order should be random.
@@ -110,6 +114,17 @@ class Query
             $this->update[$column] = $value;
         }
 
+        return $this;
+    }
+
+    /**
+     * Makes the target rows be deleted.
+     *
+     * @return self Itself
+     */
+    public function delete(): self
+    {
+        $this->delete = true;
         return $this;
     }
 

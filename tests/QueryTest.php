@@ -98,6 +98,22 @@ class QueryTest extends TestCase
     }
 
     /**
+     * Tests the `delete` method
+     */
+    public function testDelete()
+    {
+        $query = new Query();
+        $this->assertFalse($query->delete);
+
+        $query->delete();
+        $this->assertTrue($query->delete);
+
+        // Tests that sequential delete call doesn't toggle the delete flag
+        $query->delete();
+        $this->assertTrue($query->delete);
+    }
+
+    /**
      * Tests the ordering methods
      */
     public function testOrder()
