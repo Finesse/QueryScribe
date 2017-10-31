@@ -1,7 +1,7 @@
 {
 	"name": "finesse/query-scribe",
-	"description": "SQL query builder",
-	"keywords": ["sql", "query builder", "database"],
+	"description": "Extensible and flexible SQL query builder",
+	"keywords": ["sql", "query builder", "database", "mysql", "sqlite", "postgresql"],
 	"type": "library",
 	"homepage": "https://github.com/FinesseRus/QueryScribe",
 	"license": "MIT",

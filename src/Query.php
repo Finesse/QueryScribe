@@ -20,7 +20,6 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  * todo support of different SQL dialects
  *  * todo join
  *  * todo union
  *  * todo group by and having

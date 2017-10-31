@@ -48,7 +48,7 @@ class CommonGrammarTest extends TestCase
 
         // Delete
         $this->assertStatement('DELETE FROM "table"', [], $grammar->compile(
-            (new Query())->table('table')->delete()
+            (new Query())->delete()->from('table')
         ));
     }
 
@@ -251,17 +251,17 @@ class CommonGrammarTest extends TestCase
             LIMIT ?
         ', ['2017-01-01', 10, 5], $grammar->compileDelete(
             (new Query('test_'))
-                ->table('table')
+                ->delete()
+                ->from('table')
                 ->where('date', '<', '2017-01-01')
                 ->orderBy('name')
                 ->offset(10)
                 ->limit(5)
-                ->delete()
         ));
 
         // No explicit `delete` call
         $this->assertStatement('DELETE FROM "names" WHERE "foo" = ?', ['bar'], $grammar->compileDelete(
-            (new Query())->from('names')->where('foo', 'bar')
+            (new Query())->table('names')->where('foo', 'bar')
         ));
 
         // No table

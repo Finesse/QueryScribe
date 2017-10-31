@@ -237,7 +237,7 @@ trait WhereTrait
      * Adds a IN criterion to the WHERE section.
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
-     * @param mixed[]|\Closure|Query|StatementInterface Haystack values
+     * @param mixed[]\Closure[]|Query[]|StatementInterface[]|\Closure|Query|StatementInterface Haystack values
      * @param bool $not Whether the rule should be NOT IN
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
