@@ -156,6 +156,32 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function quoteIdentifier(string $name): string
+    {
+        $components = explode('.', $name);
+
+        foreach ($components as $index => $component) {
+            if ($component === '*') {
+                continue;
+            }
+
+            $components[$index] = $this->quotePlainIdentifier($component);
+        }
+
+        return implode('.', $components);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function quotePlainIdentifier(string $name): string
+    {
+        return '"'.str_replace('"', '""', $name).'"';
+    }
+
+    /**
      * Compiles a SELECT part of a SQL query.
      *
      * @param Query $query Query data
@@ -529,39 +555,6 @@ class CommonGrammar implements GrammarInterface
     {
         return $this->compileIdentifier($identifier, $bindings)
             . ($alias === null ? '' : ' AS '.$this->quotePlainIdentifier($alias));
-    }
-
-    /**
-     * Wraps a identifier (table, column, database, etc.) name with quotes.
-     *
-     * @param string $name
-     * @return string
-     */
-    protected function quoteIdentifier(string $name): string
-    {
-        $components = explode('.', $name);
-
-        foreach ($components as $index => $component) {
-            if ($component === '*') {
-                continue;
-            }
-
-            $components[$index] = $this->quotePlainIdentifier($component);
-        }
-
-        return implode('.', $components);
-    }
-
-    /**
-     * Wraps a plain (without nesting by dots) identifier (table, column, database, etc.) name with quotes and screens
-     * inside quotes.
-     *
-     * @param string $name
-     * @return string
-     */
-    protected function quotePlainIdentifier(string $name): string
-    {
-        return '"'.str_replace('"', '""', $name).'"';
     }
 
     /**

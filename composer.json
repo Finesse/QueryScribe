@@ -1,6 +1,6 @@
 {
 	"name": "finesse/query-scribe",
-	"description": "Extensible and flexible SQL query builder",
+	"description": "Light SQL query builder designed for extensibility and flexibility",
 	"keywords": ["sql", "query builder", "database", "mysql", "sqlite", "postgresql"],
 	"type": "library",
 	"homepage": "https://github.com/FinesseRus/QueryScribe",

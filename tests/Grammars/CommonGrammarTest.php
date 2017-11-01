@@ -275,6 +275,22 @@ class CommonGrammarTest extends TestCase
     }
 
     /**
+     * Tests the `quoteIdentifier` and `quotePlainIdentifier` methods
+     */
+    public function testQuoteIdentifier()
+    {
+        $grammar = new CommonGrammar();
+
+        $this->assertEquals('"name"', $grammar->quotePlainIdentifier('name'));
+        $this->assertEquals('"sub""name"', $grammar->quotePlainIdentifier('sub"name'));
+        $this->assertEquals('"*"', $grammar->quotePlainIdentifier('*'));
+
+        $this->assertEquals('"name"', $grammar->quoteIdentifier('name'));
+        $this->assertEquals('"table".*', $grammar->quoteIdentifier('table.*'));
+        $this->assertEquals('"database"."table"."col""umn"', $grammar->quoteIdentifier('database.table.col"umn'));
+    }
+
+    /**
      * Tests the FROM part compilation
      */
     public function testCompileFrom()

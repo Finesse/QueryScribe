@@ -6,7 +6,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/FinesseRus/QueryScribe/badge.svg?branch=master)](https://coveralls.io/github/FinesseRus/QueryScribe?branch=master)
 [![Dependency Status](https://www.versioneye.com/php/finesse:query-scribe/badge)](https://www.versioneye.com/php/finesse:query-scribe)
 
-SQL query builder. It doesn't perform queries to a database, it only builds SQL queries.
+Provides a convenient object syntax for building SQL queries. Compiles the queries to SQL text with values for binding.
+Doesn't perform queries to a database.
 
 ```php
 $query = (new Query('demo_'))
@@ -40,19 +41,18 @@ echo $compiled->getSQL();
 echo $compiled->getBindings(); // [3, 'Interesting', 4, 10]
 ```
 
-You can use [PDO](http://php.net/manual/en/book.pdo.php) or other database abstractions like 
-[MicroDB](https://github.com/FinesseRus/MicroDB) or [DBAL](http://www.doctrine-project.org/projects/dbal.html) to
-perform compiled queries on a database.
+To perform compiled queries to a database use a database connector like [PDO](http://php.net/manual/en/book.pdo.php), 
+[MicroDB](https://github.com/FinesseRus/MicroDB) or [DBAL](http://www.doctrine-project.org/projects/dbal.html).
 
 Key features:
 
-* The builder has the narrow responsibility: build SQL.
-* ~~Designed for further extension. You may build a database abstraction or an ORM on top of it without major problems.~~ 
-  Coming soon.
+* The builder has a single responsibility: build SQL.
+* Designed for further extension. You may build a database tool or an ORM on top of it without major problems. 
+  Examples will come soon.
 * Very flexible. You can pass a [raw SQL or a subquery](#raw-sql-and-subqueries) almost everywhere (see the PHPDoc 
   comments in the code to know where you can pass them).
-* Supports table prefixes. Once set to a `Query` object, the prefix will be applied to all tables passing through the 
-  object (except raw expressions).
+* Supports table prefixes. Once set to a `Query` object, the prefix will be applied to all the tables passing through 
+  the query (except raw expressions).
 * All the values go to bindings, even from subqueries.
 * No dependencies. Requires only PHP ≥ 7.
 
@@ -87,7 +87,7 @@ use Finesse\QueryScribe\Grammars\CommonGrammar;
 $grammar = new CommonGrammar();
 ``` 
 
-The `CommonGrammar` grammar is suitable for most of dialects.
+The `CommonGrammar` grammar is suitable for most dialects.
 For MySQL use the `Finesse\QueryScribe\Grammars\MySQLGrammar` grammar.
 
 Then make an empty query:
@@ -395,7 +395,7 @@ Use can also use `orWhereColumn`.
 
 By default where clauses are appended to previous clauses using the AND logical rule.
 
-Every logical clause is appended this way: _everything before APPEND_RULE clause_.
+Every logical clause is appended this way: _combined previous clauses APPEND_RULE clause_.
 
 For example, the following clauses chain `where(...)->orWhere(...)->where(...)->orWhere(...)` 
 is compiled to `((... OR ...) AND ...) OR ...`.

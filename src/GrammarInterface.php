@@ -56,4 +56,22 @@ interface GrammarInterface
      * @throws InvalidQueryException
      */
     public function compileDelete(Query $query): StatementInterface;
+
+    /**
+     * Wraps a identifier (table name, column, database, etc.) with quotes. Considers . (split) and * (all columns), for
+     * example `table.*`.
+     *
+     * @param string $identifier
+     * @return string
+     */
+    public function quoteIdentifier(string $identifier): string;
+
+    /**
+     * Wraps a plain (without nesting by dots) identifier (table name, column, database, etc.) with quotes and screens
+     * inside quotes. Must wrap everything even . and *.
+     *
+     * @param string $identifier
+     * @return string
+     */
+    public function quotePlainIdentifier(string $identifier): string;
 }

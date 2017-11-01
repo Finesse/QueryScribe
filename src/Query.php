@@ -357,7 +357,7 @@ class Query
     {
         $query = new static($this->tablePrefix);
 
-        // The `from` method is not used because it adds extra prefix
+        // The `table` method is not used because it adds extra prefix
         $query->table = $this->table;
         $query->tableAlias = $this->tableAlias;
 

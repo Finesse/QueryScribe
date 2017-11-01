@@ -12,7 +12,7 @@ class MySQLGrammar extends CommonGrammar
     /**
      * {@inheritDoc}
      */
-    protected function quotePlainIdentifier(string $name): string
+    public function quotePlainIdentifier(string $name): string
     {
         return '`'.str_replace('`', '``', $name).'`';
     }
