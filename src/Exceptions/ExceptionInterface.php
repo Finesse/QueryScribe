@@ -1,6 +1,6 @@
 <?php
 
-namespace Finesse\QueryScribe;
+namespace Finesse\QueryScribe\Exceptions;
 
 /**
  * Common interface for all exceptions of the library.

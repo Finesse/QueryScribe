@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\QueryBricks;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -29,6 +30,7 @@ trait InsertTrait
      *     cell values. Rows indexes must be strings.
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function insert(array $rows): self
     {
@@ -72,6 +74,7 @@ trait InsertTrait
      * @param \Closure|self|StatementInterface|null $selectQuery
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function insertFromSelect($columns, $selectQuery = null): self
     {

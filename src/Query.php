@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\QueryBricks\InsertTrait;
 use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\QueryBricks\SelectTrait;
@@ -14,7 +15,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *
  * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
  *  - Takes an empty query the first argument;
- *  - Returns a SELECT query object or modifies the given object by link.
+ *  - Returns a query object or modifies the given object by link.
  *
  * The Closure is used instead of callable to prevent ambiguities when a string column name or a value may be treated as
  * a function name.
@@ -83,6 +84,7 @@ class Query
      * @param string|null $alias Table alias
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function table($table, string $alias = null): self
     {
@@ -100,6 +102,7 @@ class Query
      *     names, the values are the values.
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function update(array $values): self
     {
@@ -133,6 +136,8 @@ class Query
      * @param string|\Closure|self|StatementInterface $column Column to order by
      * @param string $direction Order direction: `asc` - ascending, `desc` - descending
      * @return self Itself
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orderBy($column, string $direction = 'asc'): self
     {
@@ -157,6 +162,8 @@ class Query
      *
      * @param int|\Closure|self|StatementInterface|null $offset Offset. Null removes the offset.
      * @return self Itself
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function offset($offset): self
     {
@@ -169,6 +176,8 @@ class Query
      *
      * @param int|\Closure|self|StatementInterface|null $limit Limit. Null removes the limit.
      * @return self Itself
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function limit($limit): self
     {
@@ -184,6 +193,7 @@ class Query
      * @param string|\Closure|self|StatementInterface $value
      * @return string|self|StatementInterface
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     protected function checkStringValue(string $name, $value)
     {
@@ -215,6 +225,7 @@ class Query
      * @param int|\Closure|self|StatementInterface|null $value
      * @return int|self|StatementInterface|null
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     protected function checkIntOrNullValue(string $name, $value)
     {
@@ -249,6 +260,7 @@ class Query
      * @param mixed|\Closure|self|StatementInterface|null $value
      * @return mixed|self|StatementInterface|null
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     protected function checkScalarOrNullValue(string $name, $value)
     {
@@ -280,6 +292,7 @@ class Query
      * @param \Closure|self|StatementInterface $value
      * @return self|StatementInterface
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     protected function checkSubQueryValue(string $name, $value)
     {
@@ -310,6 +323,7 @@ class Query
      * @param string|\Closure|self|StatementInterface $column
      * @return string|self|StatementInterface
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     protected function checkAndPrepareColumn(string $name, $column)
     {
@@ -326,16 +340,27 @@ class Query
      * @param \Closure $callback
      * @param self $emptyQuery Empty query object suitable for the callback
      * @return self
+     * @throws InvalidReturnValueException
      */
     protected function retrieveClosureQuery(\Closure $callback, self $emptyQuery): self
     {
         $result = $callback($emptyQuery);
 
-        if ($result instanceof self) {
-            return $result;
-        } else {
+        if ($result === null) {
             return $emptyQuery;
         }
+        if ($result instanceof self) {
+            return $result;
+        }
+        if ($result instanceof HasQueryInterface) {
+            return $result->getBaseQuery();
+        }
+
+        throw InvalidReturnValueException::create(
+            'The closure return value',
+            $result,
+            ['null', self::class, HasQueryInterface::class]
+        );
     }
 
     /**

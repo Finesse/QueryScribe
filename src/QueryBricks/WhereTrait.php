@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\QueryBricks;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\Criteria\BetweenCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ColumnsCriterion;
@@ -42,6 +43,7 @@ trait WhereTrait
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function where($column, $rule = null, $value = null, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -101,6 +103,7 @@ trait WhereTrait
      * @see WhereTrait::where
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhere($column, $rule = null, $value = null): self
     {
@@ -114,6 +117,7 @@ trait WhereTrait
      * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
      * @return self Itself
+     * @throws InvalidReturnValueException
      */
     public function whereNot(\Closure $callback, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -172,6 +176,7 @@ trait WhereTrait
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereBetween(
         $column,
@@ -198,6 +203,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT BETWEEN
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereBetween($column, $min, $max, bool $not = false): self
     {
@@ -212,6 +218,7 @@ trait WhereTrait
      * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereNotBetween($column, $min, $max): self
     {
@@ -227,6 +234,7 @@ trait WhereTrait
      * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereNotBetween($column, $min, $max): self
     {
@@ -243,6 +251,7 @@ trait WhereTrait
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereIn($column, $values, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -282,6 +291,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT IN
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereIn($column, $values, bool $not = false): self
     {
@@ -295,6 +305,7 @@ trait WhereTrait
      * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereNotIn($column, $values): self
     {
@@ -309,6 +320,7 @@ trait WhereTrait
      * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereNotIn($column, $values): self
     {
@@ -324,6 +336,7 @@ trait WhereTrait
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereNull($column, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -341,6 +354,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT IN
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereNull($column, bool $not = false): self
     {
@@ -353,6 +367,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereNotNull($column): self
     {
@@ -366,6 +381,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereNotNull($column): self
     {
@@ -384,6 +400,7 @@ trait WhereTrait
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereColumn($column1, $rule = null, $column2 = null, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -429,6 +446,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereColumn($column1, $rule, $column2 = null): self
     {
@@ -445,6 +463,7 @@ trait WhereTrait
      *    constants)
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereExists($subQuery, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -463,6 +482,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT EXISTS
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereExists($subQuery, bool $not = false): self
     {
@@ -476,6 +496,7 @@ trait WhereTrait
      *    should create the query.
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function whereNotExists($subQuery): self
     {
@@ -490,6 +511,7 @@ trait WhereTrait
      *    should create the query.
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function orWhereNotExists($subQuery): self
     {

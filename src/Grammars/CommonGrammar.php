@@ -199,7 +199,7 @@ class CommonGrammar implements GrammarInterface
                 $column = $this->compileIdentifier($column, $bindings);
             }
 
-            $columns[] = $column.(is_string($alias) ? ' AS '.$this->quotePlainIdentifier($alias) : '');
+            $columns[] = $column.(is_string($alias) ? $this->compileAlias($alias) : '');
         }
 
         return 'SELECT '.implode(', ', $columns);
@@ -324,7 +324,7 @@ class CommonGrammar implements GrammarInterface
     /**
      * Converts a value to a part of a SQL query text. Actually it sends all the values to the bindings.
      *
-     * @param mixed|Query|\Finesse\QueryScribe\StatementInterface $value Value (a scalar value or a subquery)
+     * @param mixed|Query|StatementInterface $value Value (a scalar value or a subquery)
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
      */
@@ -364,7 +364,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts an aggregate object to a SQL query text.
+     * Converts an Aggregate object to a SQL query text.
      *
      * @param Aggregate $aggregate Aggregate
      * @param array $bindings Bound values (array is filled by link)
@@ -553,8 +553,19 @@ class CommonGrammar implements GrammarInterface
      */
     protected function compileIdentifierWithAlias($identifier, string $alias = null, array &$bindings): string
     {
-        return $this->compileIdentifier($identifier, $bindings)
-            . ($alias === null ? '' : ' AS '.$this->quotePlainIdentifier($alias));
+        return $this->compileIdentifier($identifier, $bindings) . ($alias === null ? '' : $this->compileAlias($alias));
+    }
+
+    /**
+     * Compiles the alias name to SQL with appending keyword. This method is used this way:
+     * `$sql = 'column_name'.$this->compileAlias('aliasName');`
+     *
+     * @param string $alias
+     * @return string
+     */
+    protected function compileAlias(string $alias): string
+    {
+        return ' AS '.$this->quotePlainIdentifier($alias);
     }
 
     /**

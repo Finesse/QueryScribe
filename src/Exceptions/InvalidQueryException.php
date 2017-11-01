@@ -2,8 +2,6 @@
 
 namespace Finesse\QueryScribe\Exceptions;
 
-use Finesse\QueryScribe\ExceptionInterface;
-
 /**
  * The query object has incorrect content.
  *

@@ -3,6 +3,8 @@
 namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+use Finesse\QueryScribe\HasQueryInterface;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\Raw;
@@ -243,5 +245,41 @@ class QueryTest extends TestCase
 
         $this->assertAttributes(['table' => 'pref_date', 'select' => ['is_array']], $query);
         $this->assertAttributes(['column' => 'sprintf', 'value' => 'ucfirst'], $query->where[0]);
+    }
+
+    /**
+     * Tests that closure subquery return values are treated right
+     */
+    public function testClosureSubQueryRetrieve()
+    {
+        $query = (new Query('prefix_'))->select([
+            function (Query $query) {
+                $query->from('table1');
+            },
+            function (Query $query) {
+                return $query->from('table2');
+            },
+            function () {
+                return (new Query())->from('table3');
+            },
+            function () {
+                return new class implements HasQueryInterface{
+                    public function getBaseQuery(): Query {
+                        return (new Query())->from('table4');
+                    }
+                };
+            }
+        ]);
+
+        $this->assertEquals('prefix_table1', $query->select[0]->table);
+        $this->assertEquals('prefix_table2', $query->select[1]->table);
+        $this->assertEquals('table3', $query->select[2]->table);
+        $this->assertEquals('table4', $query->select[3]->table);
+
+        $this->assertException(InvalidReturnValueException::class, function () {
+            (new Query())->select(function () {
+                return 'Big bang';
+            });
+        });
     }
 }

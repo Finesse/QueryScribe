@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\QueryBricks;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -28,6 +29,7 @@ trait SelectTrait
      * @param string|null $alias
      * @return self
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function from($table, string $alias = null): self
     {
@@ -42,6 +44,8 @@ trait SelectTrait
      *     treated as aliases.
      * @param string|null $alias Column alias name. Used only if the first argument is not an array.
      * @return self Itself
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function select($columns, string $alias = null): self
     {
@@ -73,6 +77,7 @@ trait SelectTrait
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function count($column = '*', string $alias = null): self
     {
@@ -86,6 +91,7 @@ trait SelectTrait
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function avg($column, string $alias = null): self
     {
@@ -99,6 +105,7 @@ trait SelectTrait
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function sum($column, string $alias = null): self
     {
@@ -112,6 +119,7 @@ trait SelectTrait
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function min($column, string $alias = null): self
     {
@@ -125,6 +133,7 @@ trait SelectTrait
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     public function max($column, string $alias = null): self
     {
@@ -139,6 +148,7 @@ trait SelectTrait
      * @param string|null $alias Aggregate alias name
      * @return self Itself
      * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
      */
     protected function addAggregate(string $function, $column, string $alias = null): self
     {
