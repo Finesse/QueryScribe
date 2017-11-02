@@ -75,14 +75,14 @@ class QueryProxyTest extends TestCase
         $query = new Query('prefix_');
         $superQuery = new QueryProxy($query);
         $superQuery
-            ->select(function ($query) {
+            ->addSelect(function ($query) {
                 $this->assertInstanceOf(QueryProxy::class, $query);
                 $query->from('table1');
             })
-            ->select(function () {
+            ->addSelect(function () {
                 return (new QueryProxy(new Query()))->from('table2');
             })
-            ->select(function () {
+            ->addSelect(function () {
                 return (new Query())->from('table3');
             })
             ->where(function ($query) {
@@ -113,7 +113,7 @@ class QueryProxyTest extends TestCase
                 return (new Query())->where('I am for criteria group', 0);
             }
         };
-        $superQuery->select(function () {})->where(function () {});
+        $superQuery->addSelect(function () {})->where(function () {});
 
         $this->assertEquals('I am for subquery', $query->select[0]->table);
         $this->assertEquals('I am for criteria group', $query->where[0]->criteria[0]->column);

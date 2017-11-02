@@ -19,7 +19,7 @@ class ResolvesClosuresTraitTest extends TestCase
     public function testClosureResolve()
     {
         $query = (new Query('prefix_'))
-            ->select([
+            ->addSelect([
                 function (Query $query) {
                     $query->from('table1');
                 },
@@ -45,7 +45,7 @@ class ResolvesClosuresTraitTest extends TestCase
         $this->assertEquals('table3', $query->select[2]->table);
 
         $this->assertException(InvalidReturnValueException::class, function () {
-            (new Query())->select(function () {
+            (new Query())->addSelect(function () {
                 return 'Big bang';
             });
         });
@@ -72,7 +72,7 @@ class ResolvesClosuresTraitTest extends TestCase
                     return (new Query())->where('I am for criteria group', 0);
                 }
             })
-            ->select(function () {})
+            ->addSelect(function () {})
             ->where(function () {});
 
         $this->assertEquals('I am for subquery', $query->select[0]->table);

@@ -36,7 +36,7 @@ class MySQLGrammarTest extends TestCase
         ', ['win%'], $grammar->compileSelect(
             (new Query('pref_'))
                 ->from('table')
-                ->select('description', 'des`ion')
+                ->addSelect('description', 'des`ion')
                 ->where('goal', 'like', 'win%')
         ));
     }

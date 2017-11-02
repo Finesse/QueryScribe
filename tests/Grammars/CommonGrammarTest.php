@@ -25,7 +25,7 @@ class CommonGrammarTest extends TestCase
 
         // Select
         $this->assertStatement('SELECT "foo" FROM "table"', [], $grammar->compile(
-            (new Query())->select('foo')->from('table')
+            (new Query())->addSelect('foo')->from('table')
         ));
 
         // One more select
@@ -38,17 +38,17 @@ class CommonGrammarTest extends TestCase
             INSERT INTO "table" ("weight", "name") 
             VALUES (?, ?)
         ', [12, 'foo'], $grammar->compile(
-            (new Query())->table('table')->insert(['weight' => 12, 'name' => 'foo'])
+            (new Query())->table('table')->addInsert([ 'weight' => 12, 'name' => 'foo'])
         ));
 
         // Update
         $this->assertStatement('UPDATE "table" SET "name" = ?', ['Joe'], $grammar->compile(
-            (new Query())->table('table')->update(['name' => 'Joe'])
+            (new Query())->table('table')->addUpdate([ 'name' => 'Joe'])
         ));
 
         // Delete
         $this->assertStatement('DELETE FROM "table"', [], $grammar->compile(
-            (new Query())->delete()->from('table')
+            (new Query())->setDelete()->from('table')
         ));
     }
 
@@ -79,18 +79,18 @@ class CommonGrammarTest extends TestCase
             LIMIT ?
         ', [100, 140, 12], $grammar->compileSelect(
             (new Query('prefix_'))
-                ->select([
+                ->addSelect([
                     'table.*',
                     'f' => 'table.foo',
                     'b' => 'table.bar',
                     'r' => new Raw('t.column'),
-                    'sub"query' => (new Query('test_'))->select('foo')->from('bar')
+                    'sub"query' => (new Query('test_'))->addSelect('foo')->from('bar')
                 ])
-                ->count('*', 'count')
-                ->min('table.bar')
-                ->max('baz')
-                ->avg('boo', 'avg')
-                ->sum(new Raw('baz * boo'))
+                ->addCount('*', 'count')
+                ->addMin('table.bar')
+                ->addMax('baz')
+                ->addAvg('boo', 'avg')
+                ->addSum(new Raw('baz * boo'))
                 ->from('table', 't')
                 ->where('price', '>', 100)
                 ->orderBy('position')
@@ -100,7 +100,7 @@ class CommonGrammarTest extends TestCase
 
         // Simple count
         $this->assertStatement('SELECT COUNT(*) FROM "prefix_table"', [], $grammar->compileSelect(
-            (new Query('prefix_'))->from('table')->count()
+            (new Query('prefix_'))->from('table')->addCount()
         ));
 
         // No columns
@@ -114,7 +114,7 @@ class CommonGrammarTest extends TestCase
         // No from
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileSelect(
-                (new Query('prefix_'))->select(['id', 'name'])
+                (new Query('prefix_'))->addSelect(['id', 'name'])
             );
         });
     }
@@ -136,11 +136,11 @@ class CommonGrammarTest extends TestCase
         ', ['Foo!!', 12, 'Bar?', 'post', null], $grammar->compileInsert(
             (new Query('demo_'))
                 ->table('posts')
-                ->insert([
+                ->addInsert([
                     ['title' => 'Foo!!', 'author_id' => 12],
                     ['title' => 'Bar?', 'date' => new Raw('NOW()')],
                     ['description' => null, 'date' => function (Query $query) {
-                        $query->max('start')->from('events')->where('type', 'post');
+                        $query->addMax('start')->from('events')->where('type', 'post');
                     }]
                 ])
         ));
@@ -154,15 +154,15 @@ class CommonGrammarTest extends TestCase
         ', [], $grammar->compileInsert(
             (new Query('demo_'))
                 ->table('posts')
-                ->insertFromSelect(['name', 'address'], function (Query $query) {
-                    $query->select(['first_name', 'home_address'])->from('users');
+                ->setInsertFromSelect(['name', 'address'], function (Query $query) {
+                    $query->addSelect(['first_name', 'home_address'])->from('users');
                 })
         ));
 
         // No table
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileInsert(
-                (new Query())->insert(['value' => 1, 'name' => 'foo'])
+                (new Query())->addInsert([ 'value' => 1, 'name' => 'foo'])
             );
         });
 
@@ -206,12 +206,12 @@ class CommonGrammarTest extends TestCase
                 ->orderBy('date', 'desc')
                 ->offset(2)
                 ->limit(10)
-                ->update([
+                ->addUpdate([
                     'name' => 'Hello darkness',
                     'table.price' => 145.5,
                     'date' => new Raw('NEXT_DAY(?)', [56]),
                     'description' => function (Query $query) {
-                        $query->from('stories')->select('title')->limit(1);
+                        $query->from('stories')->addSelect('title')->limit(1);
                     }
                 ])
         ));
@@ -219,7 +219,7 @@ class CommonGrammarTest extends TestCase
         // No table
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileUpdate(
-                (new Query())->update(['value' => 1, 'name' => 'foo'])
+                (new Query())->addUpdate([ 'value' => 1, 'name' => 'foo'])
             );
         }, function (InvalidQueryException $exception) {
             $this->assertEquals('The updated table is not set', $exception->getMessage());
@@ -251,7 +251,7 @@ class CommonGrammarTest extends TestCase
             LIMIT ?
         ', ['2017-01-01', 10, 5], $grammar->compileDelete(
             (new Query('test_'))
-                ->delete()
+                ->setDelete()
                 ->from('table')
                 ->where('date', '<', '2017-01-01')
                 ->orderBy('name')
@@ -267,7 +267,7 @@ class CommonGrammarTest extends TestCase
         // No table
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileDelete(
-                (new Query())->delete()
+                (new Query())->setDelete()
             );
         }, function (InvalidQueryException $exception) {
             $this->assertEquals('The FROM table is not set', $exception->getMessage());
@@ -316,7 +316,7 @@ class CommonGrammarTest extends TestCase
             ) AS "t"
         ', [2, 3], $grammar->compileSelect(
             (new Query())->from(function (Query $query) {
-                $query->select(['foo', new Raw('? + ?', [2, 3])])->from('other');
+                $query->addSelect(['foo', new Raw('? + ?', [2, 3])])->from('other');
             }, 't')
         ));
     }
@@ -368,7 +368,7 @@ class CommonGrammarTest extends TestCase
                 ->where('date', '<', new Raw('NOW()'))
                 ->orWhereRaw('ARE_ABOUT_EQUAL(title, description)')
                 ->whereNotBetween('position', 0, function (Query $query) {
-                    $query->max('price')->from('products');
+                    $query->addMax('price')->from('products');
                 })
                 ->whereColumn([
                     ['foo', 'bar'],
@@ -389,7 +389,7 @@ class CommonGrammarTest extends TestCase
                 ->whereNull('position')
                 ->where(function () {}) // Empty group
                 ->whereNotIn('author_id', function (Query $query) {
-                    $query->select('id')->from('users')->where('deleted', true);
+                    $query->addSelect('id')->from('users')->where('deleted', true);
                 })
         ));
 
@@ -437,7 +437,7 @@ class CommonGrammarTest extends TestCase
             (new Query('test_'))
                 ->from('stories')
                 ->orderBy('category', 'asc')
-                ->orderBy((new Query('test2_'))->select('foo')->from('bar')->where('foo', '>', 3), 'DESC')
+                ->orderBy((new Query('test2_'))->addSelect('foo')->from('bar')->where('foo', '>', 3), 'DESC')
                 ->inRandomOrder()
         ));
 
@@ -478,7 +478,7 @@ class CommonGrammarTest extends TestCase
                 ->from('table')
                 ->offset(new Raw('? + ?', [12, 19]))
                 ->limit(function (Query $query) {
-                    $query->select(new Raw('AVG(price)'))->from('prices');
+                    $query->addSelect(new Raw('AVG(price)'))->from('prices');
                 })
         ));
     }
@@ -493,9 +493,9 @@ class CommonGrammarTest extends TestCase
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileSelect(
                 (new Query())
-                    ->select('*')
-                    ->select(function (Query $query) {
-                        $query->select('name')->from('users');
+                    ->addSelect('*')
+                    ->addSelect(function (Query $query) {
+                        $query->addSelect('name')->from('users');
                         $query->order[] = 'status DESC';
                         return $query;
                     }, 'useless')

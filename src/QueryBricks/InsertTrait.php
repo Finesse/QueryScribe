@@ -32,7 +32,7 @@ trait InsertTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function insert(array $rows): self
+    public function addInsert(array $rows): self
     {
         if (!is_array(reset($rows))) {
             $rows = [$rows];
@@ -76,7 +76,7 @@ trait InsertTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function insertFromSelect($columns, $selectQuery = null): self
+    public function setInsertFromSelect($columns, $selectQuery = null): self
     {
         if ($selectQuery === null) {
             $selectQuery = $columns;

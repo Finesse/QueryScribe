@@ -88,13 +88,13 @@ class WhereTraitTest extends TestCase
         $query = (new Query('pre_'))
             ->where(
                 function (Query $query) {
-                    $query->count()->table('bar');
+                    $query->addCount()->table('bar');
                 },
                 '>',
                 new Raw('NOW()')
             )
             ->where('price', '<=', function (Query $query) {
-                return $query->table('prices')->avg('value');
+                return $query->table('prices')->addAvg('value');
             });
         $this->assertCount(2, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
@@ -170,17 +170,17 @@ class WhereTraitTest extends TestCase
             ->orWhereBetween('date', new Raw('YESTERDAY()'), new Raw('NOW()'))
             ->whereNotBetween(
                 function (Query $query) {
-                    $query->select('foo')->table('bar');
+                    $query->addSelect('foo')->table('bar');
                 },
                 function (Query $query) {
-                    $query->min('weight')->table('items');
+                    $query->addMin('weight')->table('items');
                 },
                 function (Query $query) {
-                    $query->max('weight')->table('items');
+                    $query->addMax('weight')->table('items');
                 }
             )
             ->orWhereNotBetween(
-                (new Query('demo_'))->select('name')->table('users'),
+                (new Query('demo_'))->addSelect('name')->table('users'),
                 'Alice',
                 'Bob'
             );
@@ -211,16 +211,16 @@ class WhereTraitTest extends TestCase
             ->orWhereIn('group', new Raw('TABLES()'))
             ->whereNotIn(
                 function (Query $query) {
-                    $query->select('foo')->table('bar');
+                    $query->addSelect('foo')->table('bar');
                 },
                 function (Query $query) {
-                    $query->select('title')->table('items');
+                    $query->addSelect('title')->table('items');
                 }
             )
             ->orWhereNotIn(
-                (new Query('demo_'))->select('name')->table('users'),
+                (new Query('demo_'))->addSelect('name')->table('users'),
                 [4, new Raw('foo'), function (Query $query) {
-                    $query->avg('price')->table('products');
+                    $query->addAvg('price')->table('products');
                 }]
             );
 
@@ -255,9 +255,9 @@ class WhereTraitTest extends TestCase
             ->whereNull('table.name')
             ->orWhereNull('group')
             ->whereNotNull(function (Query $query) {
-                $query->select('foo')->table('bar');
+                $query->addSelect('foo')->table('bar');
             })
-            ->orWhereNotNull((new Query('demo_'))->select('name')->table('users'));
+            ->orWhereNotNull((new Query('demo_'))->addSelect('name')->table('users'));
 
         $this->assertCount(4, $query->where);
         foreach ($query->where as $criterion) {

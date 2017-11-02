@@ -105,7 +105,7 @@ class Query
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function update(array $values): self
+    public function addUpdate(array $values): self
     {
         foreach ($values as $column => $value) {
             if (!is_string($column)) {
@@ -125,7 +125,7 @@ class Query
      *
      * @return self Itself
      */
-    public function delete(): self
+    public function setDelete(): self
     {
         $this->delete = true;
         return $this;

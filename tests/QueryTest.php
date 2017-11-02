@@ -31,7 +31,7 @@ class QueryTest extends TestCase
 
         // Table with callback subquery
         $query->table(function (Query $query) {
-            $query->select('foo')->from('bar');
+            $query->addSelect('foo')->from('bar');
         });
         $this->assertInstanceOf(Query::class, $query->table);
         $this->assertAttributes(['table' => 'pref_bar', 'tableAlias' => null], $query->table);
@@ -39,7 +39,7 @@ class QueryTest extends TestCase
 
         // Table with another type of callback
         $query->table(function () {
-            return (new Query('test_'))->select('foo2')->from('bar');
+            return (new Query('test_'))->addSelect('foo2')->from('bar');
         });
         $this->assertInstanceOf(Query::class, $query->table);
         $this->assertAttributes(['table' => 'test_bar', 'tableAlias' => null], $query->table);
@@ -62,19 +62,19 @@ class QueryTest extends TestCase
     }
 
     /**
-     * Tests the `update` method
+     * Tests the `addUpdate` method
      */
-    public function testUpdate()
+    public function testAddUpdate()
     {
         $query = (new Query('pref_'))
-            ->update([
+            ->addUpdate([
                 'foo' => 'Bar',
                 'date' => new Raw('NOW()'),
                 'value' => function (Query $query) {
-                    $query->avg('height')->from('table');
+                    $query->addAvg('height')->from('table');
                 }
             ])
-            ->update([
+            ->addUpdate([
                 'foo' => 12345,
                 'field' => null
             ]);
@@ -88,28 +88,28 @@ class QueryTest extends TestCase
 
         // Incorrect column name
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->update(['foo' => 'bar', 'baq']);
+            (new Query())->addUpdate([ 'foo' => 'bar', 'baq']);
         });
 
         // Incorrect value
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->update(['foo' => [1, 2, 3]]);
+            (new Query())->addUpdate([ 'foo' => [1, 2, 3]]);
         });
     }
 
     /**
-     * Tests the `delete` method
+     * Tests the `setDelete` method
      */
-    public function testDelete()
+    public function testSetDelete()
     {
         $query = new Query();
         $this->assertFalse($query->delete);
 
-        $query->delete();
+        $query->setDelete();
         $this->assertTrue($query->delete);
 
-        // Tests that sequential delete call doesn't toggle the delete flag
-        $query->delete();
+        // Tests that sequential setDelete call doesn't toggle the delete flag
+        $query->setDelete();
         $this->assertTrue($query->delete);
     }
 
@@ -124,7 +124,7 @@ class QueryTest extends TestCase
             ->inRandomOrder()
             ->orderBy(function (Query $query) {
                 $query
-                    ->avg('price')
+                    ->addAvg('price')
                     ->table('products')
                     ->whereColumn('post.category_id', 'price.category_id');
             }, 'desc');
@@ -154,7 +154,7 @@ class QueryTest extends TestCase
 
         // Callback offset
         $query->offset(function (Query $query) {
-            $query->select('foo')->table('bar');
+            $query->addSelect('foo')->table('bar');
         });
         $this->assertInstanceOf(Query::class, $query->offset);
         $this->assertEquals('pref_bar', $query->offset->table);
@@ -193,7 +193,7 @@ class QueryTest extends TestCase
 
         // Callback limit
         $query->limit(function (Query $query) {
-            $query->select('foo')->table('bar');
+            $query->addSelect('foo')->table('bar');
         });
         $this->assertInstanceOf(Query::class, $query->limit);
         $this->assertEquals('pref_bar', $query->limit->table);
@@ -238,7 +238,7 @@ class QueryTest extends TestCase
     {
         $query = (new Query('pref_'))
             ->table('date')
-            ->select('is_array')
+            ->addSelect('is_array')
             ->where('sprintf', 'ucfirst');
 
         $this->assertAttributes(['table' => 'pref_date', 'select' => ['is_array']], $query);

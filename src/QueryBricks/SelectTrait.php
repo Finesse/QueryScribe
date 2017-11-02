@@ -47,7 +47,7 @@ trait SelectTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function select($columns, string $alias = null): self
+    public function addSelect($columns, string $alias = null): self
     {
         if (!is_array($columns)) {
             if ($alias === null) {
@@ -79,7 +79,7 @@ trait SelectTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function count($column = '*', string $alias = null): self
+    public function addCount($column = '*', string $alias = null): self
     {
         return $this->addAggregate('COUNT', $column, $alias);
     }
@@ -93,7 +93,7 @@ trait SelectTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function avg($column, string $alias = null): self
+    public function addAvg($column, string $alias = null): self
     {
         return $this->addAggregate('AVG', $column, $alias);
     }
@@ -107,7 +107,7 @@ trait SelectTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function sum($column, string $alias = null): self
+    public function addSum($column, string $alias = null): self
     {
         return $this->addAggregate('SUM', $column, $alias);
     }
@@ -121,7 +121,7 @@ trait SelectTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function min($column, string $alias = null): self
+    public function addMin($column, string $alias = null): self
     {
         return $this->addAggregate('MIN', $column, $alias);
     }
@@ -135,7 +135,7 @@ trait SelectTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function max($column, string $alias = null): self
+    public function addMax($column, string $alias = null): self
     {
         return $this->addAggregate('MAX', $column, $alias);
     }

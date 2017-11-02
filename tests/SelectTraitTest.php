@@ -25,26 +25,26 @@ class SelectTraitTest extends TestCase
     }
 
     /**
-     * Tests the `select` method
+     * Tests the `addSelect` method
      */
-    public function testSelect()
+    public function testAddSelect()
     {
         // No select
         $query = (new Query('pref_'));
         $this->assertEquals([], $query->select);
 
         // One column
-        $query = (new Query('pref_'))->select('name', 'n');
+        $query = (new Query('pref_'))->addSelect('name', 'n');
         $this->assertEquals(['n' => 'name'], $query->select);
 
         // Many columns with different cases
-        $query = (new Query('pref_'))->select([
+        $query = (new Query('pref_'))->addSelect([
             'value',
             't' => 'table.title',
             function (Query $query) {
-                $query->select('foo')->table('bar');
+                $query->addSelect('foo')->table('bar');
             },
-            (new Query('pref2_'))->select('foo')->table('bar'),
+            (new Query('pref2_'))->addSelect('foo')->table('bar'),
             'price' => new Raw('AVG(price) + ?', [14])
         ]);
         $this->assertCount(5, $query->select);
@@ -59,12 +59,12 @@ class SelectTraitTest extends TestCase
         $this->assertEquals([14], $query->select['price']->getBindings());
 
         // Multiple select calls
-        $query = (new Query('pref_'))->select('id')->select('name');
+        $query = (new Query('pref_'))->addSelect('id')->addSelect('name');
         $this->assertEquals(['id', 'name'], $query->select);
 
         // Wrong argument
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->select([
+            (new Query())->addSelect([
                 'value',
                 ['column', 'alias']
             ]);
@@ -77,13 +77,13 @@ class SelectTraitTest extends TestCase
     public function testAggregates()
     {
         $query = (new Query('test_'))
-            ->count()
-            ->avg('table.price', 'price')
-            ->sum(new Raw('price * ?', [1.6]))
-            ->min(function (Query $query) {
+            ->addCount()
+            ->addAvg('table.price', 'price')
+            ->addSum(new Raw('price * ?', [1.6]))
+            ->addMin(function (Query $query) {
                 $query->table('items');
             })
-            ->max((new Query('foo_'))->table('bar'));
+            ->addMax((new Query('foo_'))->table('bar'));
 
         $this->assertCount(5, $query->select);
         foreach ($query->select as $column) {
@@ -104,7 +104,7 @@ class SelectTraitTest extends TestCase
         $this->assertEquals('foo_bar', $query->select[3]->column->table);
 
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->avg(['foo', 'bar']);
+            (new Query())->addAvg(['foo', 'bar']);
         });
     }
 }

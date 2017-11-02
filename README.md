@@ -15,7 +15,7 @@ $query = (new Query('demo_'))
     ->where('level', '>', 3)
     ->whereIn('category_id', function ($query) {
         $query
-            ->select('id')
+            ->addSelect('id')
             ->from('categories')
             ->where('categories.name', 'Interesting');
     })
@@ -102,7 +102,7 @@ Build a query:
 
 ```php
 $query
-    ->select(['name', 'id'])
+    ->addSelect(['name', 'id'])
     ->from('users')
     ->limit(10);
 ```
@@ -135,7 +135,7 @@ Specify fields:
 
 ```php
 (new Query())
-    ->select(['id', 'name'])
+    ->addSelect(['id', 'name'])
     ->table('table');
     
 // SELECT "id", "name" FROM "table"
@@ -145,8 +145,8 @@ With aliases:
 
 ```php
 (new Query())
-    ->select('id', 'i')
-    ->select(['n' => 'name', 'p' => 'price'])
+    ->addSelect('id', 'i')
+    ->addSelect(['n' => 'name', 'p' => 'price'])
     ->from('table', 't');
 
 // SELECT "id" AS "i", "name" AS "n", "price" AS "p" FROM "table" AS "t"
@@ -156,11 +156,11 @@ With aliases:
 
 ```php
 (new Query())
-    ->count()
-    ->avg('price', 'avg_price')
-    ->min('value'),
-    ->max('value')
-    ->sum('amount', 'sum')
+    ->addCount()
+    ->addAvg('price', 'avg_price')
+    ->addMin('value'),
+    ->addMax('value')
+    ->addSum('amount', 'sum')
     ->from('orders');
 
 // SELECT COUNT(*), AVG("price") AS "avg_price", MIN("value"), MAX("value"), SUM("AMOUNT") AS "sum" FORM "orders"
@@ -173,10 +173,11 @@ Use `$grammar->compile()` or `$grammar->compileInsert()` to compile an insert qu
 ```php
 (new Query())
     ->table('users')
-    ->insert(['name' => 'John', 'role' => 5])
+    ->addInsert(['name' => 'John', 'role' => 5])
+    ->addInsert(['name' => 'Bob', 'role' => 1])
 
-// INSERT INTO "users" ("name". "role") VALUES (?, ?)
-// Bindings: ['John', 5]
+// INSERT INTO "users" ("name". "role") VALUES (?, ?), (?, ?)
+// Bindings: ['John', 5, 'Bob', 1]
 ```
 
 Many rows at once:
@@ -184,7 +185,7 @@ Many rows at once:
 ```php
 (new Query())
     ->table('users')
-    ->insert([
+    ->addInsert([
         ['name' => 'Jack', 'role' => 2],
         ['name' => 'Bob', 'role' => 5]
     ]);
@@ -198,9 +199,9 @@ Insert from a select statement:
 ```php
 (new Query())
     ->table('users')
-    ->insertFromSelect(['name', 'phone'], function ($query) {
+    ->setInsertFromSelect(['name', 'phone'], function ($query) {
         $query
-            ->select(['first_name', 'primary_phone'])
+            ->addSelect(['first_name', 'primary_phone'])
             ->from('contacts');
     });
 
@@ -214,7 +215,7 @@ Use `$grammar->compile()` or `$grammar->compileUpdate()` to compile an update qu
 ```php
 (new Query())
     ->table('posts')
-    ->update(['title' => 'Awesome', 'position' => 1])
+    ->addUpdate(['title' => 'Awesome', 'position' => 1])
     ->where('id', 55);
 
 // UPDATE "posts" SET "title" = ?, "positoin" = ? WHERE "id" = ?
@@ -227,7 +228,7 @@ Use `$grammar->compile()` or `$grammar->compileDelete()` to compile a delete que
 
 ```php
 (new Query())
-    ->delete()
+    ->setDelete()
     ->table('posts')
     ->where('date', '<', '2017-01-01');
 
@@ -330,7 +331,7 @@ Using subquery:
     ->from('table')
     ->whereIn('user_id', function ($query) {
         $query
-            ->select('id')
+            ->addSelect('id')
             ->from('users')
             ->where('name', 'Charles');
     });
@@ -457,7 +458,7 @@ Tables and columns are not prefixed in raw SQL, but you can use the helper metho
 $query = new Query('test_');
 $query
     ->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'))
-    ->select($query->raw('REPLACE('.$query->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
+    ->addSelect($query->raw('REPLACE('.$query->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
 
 // SELECT (REPLACE(test_my_table.name, ?, ?)) FROM (MAGIC(test_my_table))
 ```
@@ -468,19 +469,23 @@ Example of what is possible:
 (new Query())
     ->from(function($query) {
         $query
-            ->select(new Raw('SOMETHING()'))
+            ->addSelect(new Raw('SOMETHING()'))
             ->from('other_table');
     }, 'table')
-    ->select([
-        'column1' => (new Query())->avg('price')->from('products'),
+    ->addSelect([
+        'column1' => (new Query())->addAvg('price')->from('products'),
         'column2' => function ($query) {
-            $query->select('name')->from('users')->orderBy('rating', 'desc')->limit(1);
+            $query
+                ->addSelect('name')
+                ->from('users')
+                ->orderBy('rating', 'desc')
+                ->limit(1);
         }
     ])
     ->where(function ($query) {
         $query
             ->from('events')
-            ->select('date')
+            ->addSelect('date')
             ->whereColumn('events.type', new Raw('table.id'))
             ->orderBy('date')
             ->offest(1)
@@ -488,13 +493,16 @@ Example of what is possible:
     }, '<', new Raw('NOW()'))
     ->orderBy(function ($query) {
         $query
-            ->max(new Raw('price * quantity'))
+            ->addMax(new Raw('price * quantity'))
             ->from('orders')
-            ->whereExists((new Query())->select('height')->from('person')->whereColumn([
+            ->whereExists((new Query())->addSelect('height')->from('person')->whereColumn([
                 ['orders.person_id', 'order.id'],
                 ['person.id', new Raw('table.user_id')]
-            ]))
-    }, 'desc');
+            ]));
+    }, 'desc')
+    ->offset(function ($query) {
+        $query->from('pages')->addMax('length');
+    });
 ```
 
 
