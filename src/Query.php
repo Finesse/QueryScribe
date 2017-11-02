@@ -4,6 +4,7 @@ namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+use Finesse\QueryScribe\QueryBricks\ResolvesClosuresTrait;
 use Finesse\QueryScribe\QueryBricks\InsertTrait;
 use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\QueryBricks\SelectTrait;
@@ -15,7 +16,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *
  * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
  *  - Takes an empty query the first argument;
- *  - Returns a query object or modifies the given object by link.
+ *  - Returns a Query or a HasQueryInterface object or modifies the given object by link.
  *
  * The Closure is used instead of callable to prevent ambiguities when a string column name or a value may be treated as
  * a function name.
@@ -31,7 +32,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
 class Query
 {
     use AddTablePrefixTrait, MakeRawTrait;
-    use SelectTrait, InsertTrait, WhereTrait;
+    use SelectTrait, InsertTrait, WhereTrait, ResolvesClosuresTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name (prefixed)
@@ -44,7 +45,7 @@ class Query
     public $tableAlias = null;
 
     /**
-     * @var mixed[]|Query[]|StatementInterface[] Fields to update. The indexes are the columns names, the
+     * @var mixed[]|self[]|StatementInterface[] Fields to update. The indexes are the columns names, the
      *     values are the values.
      */
     public $update = [];
@@ -80,7 +81,7 @@ class Query
     /**
      * Sets the target table.
      *
-     * @param string|\Closure|Query|StatementInterface $table Not prefixed table name without quotes
+     * @param string|\Closure|self|StatementInterface $table Not prefixed table name without quotes
      * @param string|null $alias Table alias
      * @return self Itself
      * @throws InvalidArgumentException
@@ -98,7 +99,7 @@ class Query
     /**
      * Adds values that should be updated
      *
-     * @param mixed[]|\Closure[]|Query[]|StatementInterface[] $values Fields to update. The indexes are the columns
+     * @param mixed[]|\Closure[]|self[]|StatementInterface[] $values Fields to update. The indexes are the columns
      *     names, the values are the values.
      * @return self Itself
      * @throws InvalidArgumentException
@@ -186,6 +187,42 @@ class Query
     }
 
     /**
+     * Makes an empty self copy with dependencies.
+     *
+     * @return self
+     */
+    public function makeEmptyCopy(): self
+    {
+        return new static($this->tablePrefix);
+    }
+
+    /**
+     * Makes a self copy with dependencies for passing to a subquery callback.
+     *
+     * @return self
+     */
+    public function makeCopyForSubQuery(): self
+    {
+        return $this->makeEmptyCopy();
+    }
+
+    /**
+     * Makes a self copy with dependencies for passing to a criteria group callback.
+     *
+     * @return self
+     */
+    public function makeCopyForCriteriaGroup(): self
+    {
+        $query = $this->makeEmptyCopy();
+
+        // The `table` method is not used because it adds extra prefix
+        $query->table = $this->table;
+        $query->tableAlias = $this->tableAlias;
+
+        return $query;
+    }
+
+    /**
      * Check that value is suitable for being a "string or subquery" property of a query. Retrieves the closure
      * subquery.
      *
@@ -211,7 +248,7 @@ class Query
         }
 
         if ($value instanceof \Closure) {
-            return $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
+            return $this->resolveSubQueryClosure($value);
         }
 
         return $value;
@@ -246,7 +283,7 @@ class Query
         if (is_numeric($value)) {
             $value = (int)$value;
         } elseif ($value instanceof \Closure) {
-            return $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
+            return $this->resolveSubQueryClosure($value);
         }
 
         return $value;
@@ -279,7 +316,7 @@ class Query
         }
 
         if ($value instanceof \Closure) {
-            return $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
+            return $this->resolveSubQueryClosure($value);
         }
 
         return $value;
@@ -298,18 +335,18 @@ class Query
     {
         if (
             !($value instanceof \Closure) &&
-            !($value instanceof Query) &&
+            !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
             throw InvalidArgumentException::create(
                 $name,
                 $value,
-                [\Closure::class, Query::class, StatementInterface::class]
+                [\Closure::class, self::class, StatementInterface::class]
             );
         }
 
         if ($value instanceof \Closure) {
-            $value = $this->retrieveClosureQuery($value, $this->makeCopyForSubQuery());
+            $value = $this->resolveSubQueryClosure($value);
         }
 
         return $value;
@@ -332,60 +369,5 @@ class Query
             $column = $this->addTablePrefixToColumn($column);
         }
         return $column;
-    }
-
-    /**
-     * Retrieves the subquery from a closure.
-     *
-     * @param \Closure $callback
-     * @param self $emptyQuery Empty query object suitable for the callback
-     * @return self
-     * @throws InvalidReturnValueException
-     */
-    protected function retrieveClosureQuery(\Closure $callback, self $emptyQuery): self
-    {
-        $result = $callback($emptyQuery);
-
-        if ($result === null) {
-            return $emptyQuery;
-        }
-        if ($result instanceof self) {
-            return $result;
-        }
-        if ($result instanceof HasQueryInterface) {
-            return $result->getBaseQuery();
-        }
-
-        throw InvalidReturnValueException::create(
-            'The closure return value',
-            $result,
-            ['null', self::class, HasQueryInterface::class]
-        );
-    }
-
-    /**
-     * Makes a self copy with dependencies for passing to a subquery callback.
-     *
-     * @return self
-     */
-    protected function makeCopyForSubQuery(): self
-    {
-        return new static($this->tablePrefix);
-    }
-
-    /**
-     * Makes a self copy with dependencies for passing to a criteria group callback.
-     *
-     * @return self
-     */
-    protected function makeCopyForCriteriaGroup(): self
-    {
-        $query = new static($this->tablePrefix);
-
-        // The `table` method is not used because it adds extra prefix
-        $query->table = $this->table;
-        $query->tableAlias = $this->tableAlias;
-
-        return $query;
     }
 }

@@ -49,7 +49,7 @@ trait WhereTrait
     {
         if ($rule === null && $value === null) {
             if ($column instanceof \Closure) {
-                $groupQuery = $this->retrieveClosureQuery($column, $this->makeCopyForCriteriaGroup());
+                $groupQuery = $this->resolveCriteriaGroupClosure($column);
                 $this->where[] = new CriteriaCriterion($groupQuery->where, false, $appendRule);
                 return $this;
             }
@@ -121,7 +121,7 @@ trait WhereTrait
      */
     public function whereNot(\Closure $callback, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
-        $groupQuery = $this->retrieveClosureQuery($callback, $this->makeCopyForCriteriaGroup());
+        $groupQuery = $this->resolveCriteriaGroupClosure($callback);
         $this->where[] = new CriteriaCriterion($groupQuery->where, true, $appendRule);
         return $this;
     }
@@ -275,7 +275,7 @@ trait WhereTrait
                 $value = $this->checkScalarOrNullValue('Argument $values['.$index.']', $value);
             }
         } elseif ($values instanceof \Closure) {
-            $values = $this->retrieveClosureQuery($values, $this->makeCopyForSubQuery());
+            $values = $this->resolveSubQueryClosure($values);
         }
 
         $this->where[] = new InCriterion($column, $values, $not, $appendRule);
