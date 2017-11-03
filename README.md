@@ -87,8 +87,9 @@ use Finesse\QueryScribe\Grammars\CommonGrammar;
 $grammar = new CommonGrammar();
 ``` 
 
-The `CommonGrammar` grammar is suitable for most dialects.
-For MySQL use the `Finesse\QueryScribe\Grammars\MySQLGrammar` grammar.
+* `Finesse\QueryScribe\Grammars\MySQLGrammar` for MySQL
+* `Finesse\QueryScribe\Grammars\SQLiteGrammar` for SQLite
+* `Finesse\QueryScribe\Grammars\CommonGrammar` for everything else
 
 Then make an empty query:
 
@@ -168,44 +169,53 @@ With aliases:
 
 #### Insert
 
-Use `$grammar->compile()` or `$grammar->compileInsert()` to compile an insert query.
+Use `$grammar->compileInsert()` to compile an insert query. It returns an array of compiled queries because not all the 
+DBMSs support all cases of inserting many rows at once.
 
 ```php
-(new Query())
-    ->table('users')
-    ->addInsert(['name' => 'John', 'role' => 5])
-    ->addInsert(['name' => 'Bob', 'role' => 1])
+$grammar->compileInsert(
+	(new Query())
+		->table('users')
+		->addInsert(['name' => 'John', 'role' => 5])
+		->addInsert(['name' => 'Bob', 'role' => 1])
+);
 
-// INSERT INTO "users" ("name". "role") VALUES (?, ?), (?, ?)
-// Bindings: ['John', 5, 'Bob', 1]
+// Value 1:
+//  - SQL: INSERT INTO "users" ("name". "role") VALUES (?, ?), (?, ?)
+//  - Bindings: ['John', 5, 'Bob', 1]
 ```
 
 Many rows at once:
 
 ```php
-(new Query())
-    ->table('users')
-    ->addInsert([
-        ['name' => 'Jack', 'role' => 2],
-        ['name' => 'Bob', 'role' => 5]
-    ]);
+$grammar->compileInsert(
+	(new Query())
+		->table('users')
+		->addInsert([
+			['name' => 'Jack', 'role' => 2],
+			['name' => 'Bob', 'role' => 5]
+		])
+);
 
-// INSERT INTO "users" ("name", "role") VALUES (?, ?), (?, ?)
-// Bindings: ['Jack', 2, 'Bob', 5]
+// Value 1:
+//  - SQL: INSERT INTO "users" ("name". "role") VALUES (?, ?), (?, ?)
+//  - Bindings: ['Jack', 2, 'Bob', 5]
 ```
 
 Insert from a select statement:
 
 ```php
+$grammar->compileInsert(
 (new Query())
     ->table('users')
-    ->setInsertFromSelect(['name', 'phone'], function ($query) {
+    ->addInsertFromSelect(['name', 'phone'], function ($query) {
         $query
             ->addSelect(['first_name', 'primary_phone'])
             ->from('contacts');
     });
 
-// INSERT INTO "users" ("name", "phone") (SELECT "first_name", "primary_phone" FROM "contacts")
+// Value 1:
+//  - SQL: ("name", "phone") SELECT "first_name", "primary_phone" FROM "contacts"
 ```
 
 #### Update

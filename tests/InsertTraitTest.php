@@ -59,54 +59,59 @@ class InsertTraitTest extends TestCase
             (new Query())->addInsert(['value1', new \stdClass()]);
         });
 
-        // insert must reset insertFromSelect
+        // insert must not reset insertFromSelect
         $query = (new Query())
-            ->setInsertFromSelect(function (Query $query) {
+            ->addInsertFromSelect(function (Query $query) {
                 $query->from('users');
             })
             ->addInsert([ 'foo' => 'bar']);
-        $this->assertInternalType('array', $query->insert);
-        $this->assertCount(1, $query->insert);
+        $this->assertCount(2, $query->insert);
+
+        // Add zero rows
+        $query = (new Query())->addInsert([]);
+        $this->assertCount(0, $query->insert);
     }
 
     /**
-     * Tests the `setInsertFromSelect` method
+     * Tests the `addInsertFromSelect` method
      */
-    public function testSetInsertFromSelect()
+    public function testAddInsertFromSelect()
     {
-        $query = (new Query('pr_'))->setInsertFromSelect(['name', 'address'], function (Query $query) {
-            return $query->addSelect(['username', 'home'])->from('users')->where('status', 5);
-        });
-        $this->assertInstanceOf(InsertFromSelect::class, $query->insert);
-        $this->assertEquals(['name', 'address'], $query->insert->columns);
-        $this->assertInstanceOf(Query::class, $query->insert->selectQuery);
-        $this->assertEquals('pr_users', $query->insert->selectQuery->table);
-
-        // Omit the columns list
-        $query = (new Query('pr_'))->setInsertFromSelect((new Query('pr2_'))->from('users')->where('status', 5));
-        $this->assertInstanceOf(InsertFromSelect::class, $query->insert);
-        $this->assertNull($query->insert->columns);
-        $this->assertInstanceOf(Query::class, $query->insert->selectQuery);
-        $this->assertEquals('pr2_users', $query->insert->selectQuery->table);
+        $query = (new Query('pr_'))
+            ->addInsertFromSelect(['name', 'address'], function (Query $query) {
+                return $query->addSelect(['username', 'home'])->from('users')->where('status', 5);
+            })
+            ->addInsertFromSelect(function (Query $query) {
+                return $query->addSelect(['author', 'contact'])->from('posts')->where('type', 3);
+            });
+        $this->assertCount(2, $query->insert);
+        $this->assertInstanceOf(InsertFromSelect::class, $query->insert[0]);
+        $this->assertEquals(['name', 'address'], $query->insert[0]->columns);
+        $this->assertInstanceOf(Query::class, $query->insert[0]->selectQuery);
+        $this->assertEquals('pr_users', $query->insert[0]->selectQuery->table);
+        $this->assertInstanceOf(InsertFromSelect::class, $query->insert[1]);
+        $this->assertNull($query->insert[1]->columns);
+        $this->assertInstanceOf(Query::class, $query->insert[1]->selectQuery);
+        $this->assertEquals('pr_posts', $query->insert[1]->selectQuery->table);
 
         // Wrong columns argument
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->setInsertFromSelect('name', function (Query $query) {
+            (new Query())->addInsertFromSelect('name', function (Query $query) {
                 $query->addSelect('name')->from('users');
             });
         });
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->setInsertFromSelect([1, 3], function (Query $query) {
+            (new Query())->addInsertFromSelect([1, 3], function (Query $query) {
                 $query->from('users');
             });
         });
 
-        // insertFromSelect insert must reset
+        // insertFromSelect insert must not reset value inserts
         $query = (new Query())
-            ->addInsert([ 'foo' => 'bar'])
-            ->setInsertFromSelect(function (Query $query) {
+            ->addInsert(['foo' => 'bar'])
+            ->addInsertFromSelect(function (Query $query) {
                 $query->from('users');
             });
-        $this->assertInstanceOf(InsertFromSelect::class, $query->insert);
+        $this->assertCount(2, $query->insert);
     }
 }

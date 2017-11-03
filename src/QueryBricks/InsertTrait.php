@@ -15,8 +15,9 @@ use Finesse\QueryScribe\StatementInterface;
 trait InsertTrait
 {
     /**
-     * @var mixed[][]|\Closure[][]|Query[][]|StatementInterface[][]|InsertFromSelect Values to insert to the table. An
-     *     array value is a list of rows to insert. Each row is an associative array where indexes are column names and values are cell values.
+     * @var mixed[][]||Query[][]|StatementInterface[][]|InsertFromSelect[] Values to insert to the table. An array value
+     *     is a list of rows to insert. Each row is an associative array where indexes are column names and values are
+     *     cell values.
      */
     public $insert = [];
 
@@ -34,7 +35,7 @@ trait InsertTrait
      */
     public function addInsert(array $rows): self
     {
-        if (!is_array(reset($rows))) {
+        if (!empty($rows) && !is_array(reset($rows))) {
             $rows = [$rows];
         }
 
@@ -55,9 +56,6 @@ trait InsertTrait
                 $filteredRow[$column] = $value;
             }
 
-            if (!is_array($this->insert)) {
-                $this->insert = [];
-            }
             $this->insert[] = $filteredRow;
         }
 
@@ -76,7 +74,7 @@ trait InsertTrait
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function setInsertFromSelect($columns, $selectQuery = null): self
+    public function addInsertFromSelect($columns, $selectQuery = null): self
     {
         if ($selectQuery === null) {
             $selectQuery = $columns;
@@ -96,7 +94,7 @@ trait InsertTrait
 
         $selectQuery = $this->checkSubQueryValue('Argument $selectQuery', $selectQuery);
 
-        $this->insert = new InsertFromSelect($columns, $selectQuery);
+        $this->insert[] = new InsertFromSelect($columns, $selectQuery);
         return $this;
     }
 }

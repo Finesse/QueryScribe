@@ -31,13 +31,14 @@ interface GrammarInterface
     public function compileSelect(Query $query): StatementInterface;
 
     /**
-     * Compiles a query object to a INSERT SQL query.
+     * Compiles a query object to a INSERT SQL queries. An array of rows is returned because not all DBMS systems
+     * support inserting many rows at once.
      *
      * @param Query $query
-     * @return StatementInterface
+     * @return StatementInterface[]
      * @throws InvalidQueryException
      */
-    public function compileInsert(Query $query): StatementInterface;
+    public function compileInsert(Query $query): array;
 
     /**
      * Compiles a query object to a UPDATE SQL query.

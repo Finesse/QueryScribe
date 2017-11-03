@@ -33,7 +33,7 @@ class CommonGrammar implements GrammarInterface
     public function compile(Query $query): StatementInterface
     {
         if ($query->insert) {
-            return $this->compileInsert($query);
+            return $this->compileInsert($query)[0];
         }
         if ($query->update) {
             return $this->compileUpdate($query);
@@ -64,54 +64,47 @@ class CommonGrammar implements GrammarInterface
     /**
      * {@inheritDoc}
      */
-    public function compileInsert(Query $query): StatementInterface
+    public function compileInsert(Query $query): array
     {
         if ($query->table === null) {
             throw new InvalidQueryException('The INTO table is not set');
         }
 
-        $insert = $query->insert;
-        $bindings = [];
-        $sqlLine1 = 'INSERT INTO '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings);
-
-        if (is_array($insert)) {
-            // Step 1. Fetch unique columns list.
-            $columns = [];
-            foreach ($insert as $row) {
-                foreach ($row as $column => $value) {
-                    if (!isset($columns[$column])) {
-                        $columns[$column] = count($columns);
-                    }
-                }
+        /**
+         * Divide inserts into two groups: values and select queries
+         * @var mixed[][]|Query[][]|StatementInterface[][] $values
+         * @var InsertFromSelect[] $selects
+         */
+        $values = [];
+        $selects = [];
+        foreach ($query->insert as $index => $insert) {
+            if (is_array($insert)) {
+                $values[] = $insert;
+            } elseif ($insert instanceof InsertFromSelect) {
+                $selects[] = $insert;
+            } else {
+                throw new InvalidQueryException(sprintf(
+                    'Unknown type of insert instruction %s: %s',
+                    is_int($index) ? '#'.$index : '`'.$index.'`',
+                    is_object($insert) ? get_class($insert) : gettype($insert)
+                ));
             }
-
-            // Step 2. Build the values matrix.
-            $compiledRows = [];
-            foreach ($insert as $row) {
-                $compiledRow = [];
-                foreach ($columns as $column => $columnIndex) {
-                    if (array_key_exists($column, $row)) {
-                        $compiledRow[$columnIndex] = $this->compileValue($row[$column], $bindings);
-                    } else {
-                        $compiledRow[$columnIndex] = 'DEFAULT';
-                    }
-                }
-                $compiledRows[] = '('.implode(', ', $compiledRow).')';
-            }
-
-            // Step 3. Build the SQL
-            $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], array_keys($columns))).')';
-            $sqlLine2 = 'VALUES '.implode(', ', $compiledRows);
-        } elseif ($insert instanceof InsertFromSelect) {
-            if ($insert->columns !== null) {
-                $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], $insert->columns)).')';
-            }
-            $sqlLine2 = $this->compileSubQuery($insert->selectQuery, $bindings);
-        } else {
-            throw new InvalidQueryException('Unknown insert instruction type: '.gettype($insert));
         }
 
-        return new Raw($this->implodeSQL([$sqlLine1, $sqlLine2]), $bindings);
+        // Compile values queries
+        $compiled = $this->compileInsertFromValues($query->table, $query->tableAlias, $values);
+
+        // Compile insert from select queries
+        foreach ($selects as $select) {
+            $compiled[] = $this->compileInsertFromSelect(
+                $query->table,
+                $query->tableAlias,
+                $select->columns,
+                $select->selectQuery
+            );
+        }
+
+        return $compiled;
     }
 
     /**
@@ -348,9 +341,10 @@ class CommonGrammar implements GrammarInterface
      *
      * @param Query|StatementInterface $subQuery Subquery
      * @param array $bindings Bound values (array is filled by link)
+     * @param bool $parenthesise Wrap the subquery in parentheses?
      * @return string SQL text wrapped in parentheses
      */
-    protected function compileSubQuery($subQuery, array &$bindings): string
+    protected function compileSubQuery($subQuery, array &$bindings, bool $parenthesise = true): string
     {
         if ($subQuery instanceof Query) {
             try {
@@ -365,7 +359,9 @@ class CommonGrammar implements GrammarInterface
         }
 
         $this->mergeBindings($bindings, $subQuery->getBindings());
-        return '('.$subQuery->getSQL().')';
+        $sql = $subQuery->getSQL();
+
+        return $parenthesise ? '('.$sql.')' : $sql;
     }
 
     /**
@@ -571,6 +567,83 @@ class CommonGrammar implements GrammarInterface
     protected function compileAlias(string $alias): string
     {
         return ' AS '.$this->quotePlainIdentifier($alias);
+    }
+
+    /**
+     * Compiles set of full INSERT queries from an array of values.
+     *
+     * @param string|Query|StatementInterface $table Target table name
+     * @param string|null $tableAlias Table alias
+     * @param mixed[][]|Query[][]|StatementInterface[][] $values Array of rows of values
+     * @return StatementInterface[]
+     * @throws InvalidQueryException
+     */
+    protected function compileInsertFromValues($table, string $tableAlias = null, array $values): array
+    {
+        if (empty($values)) {
+            return [];
+        }
+
+        $bindings = [];
+
+        // Step 1. Fetch unique columns list.
+        $columns = [];
+        foreach ($values as $row) {
+            foreach ($row as $column => $value) {
+                if (!isset($columns[$column])) {
+                    $columns[$column] = count($columns);
+                }
+            }
+        }
+
+        // Step 2. Build the values matrix.
+        $compiledRows = [];
+        foreach ($values as $row) {
+            $compiledRow = [];
+            foreach ($columns as $column => $columnIndex) {
+                if (array_key_exists($column, $row)) {
+                    $compiledRow[$columnIndex] = $this->compileValue($row[$column], $bindings);
+                } else {
+                    $compiledRow[$columnIndex] = 'DEFAULT';
+                }
+            }
+            $compiledRows[] = '('.implode(', ', $compiledRow).')';
+        }
+
+        // Step 3. Build the SQL
+        $sqlLine1 = 'INSERT INTO '.$this->compileIdentifierWithAlias($table, $tableAlias, $bindings)
+            . ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], array_keys($columns))).')';
+        $sqlLine2 = 'VALUES '.implode(', ', $compiledRows);
+
+        return [new Raw($this->implodeSQL([$sqlLine1, $sqlLine2]), $bindings)];
+    }
+
+    /**
+     * Compiles a full INSERT query from a select query.
+     *
+     * @param string|Query|StatementInterface $table Target table name
+     * @param string|null $tableAlias Table alias
+     * @param string[]|null $columns Columns of a target table. If null, the list of columns is omitted.
+     * @param Query|StatementInterface $selectQuery The select query
+     * @return StatementInterface
+     * @throws InvalidQueryException
+     */
+    protected function compileInsertFromSelect(
+        $table,
+        string $tableAlias = null,
+        array $columns = null,
+        $selectQuery
+    ): StatementInterface {
+        $bindings = [];
+
+        $sqlLine1 = 'INSERT INTO '.$this->compileIdentifierWithAlias($table, $tableAlias, $bindings);
+        if ($columns !== null) {
+            $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], $columns)).')';
+        }
+
+        $sqlLine2 = $this->compileSubQuery($selectQuery, $bindings, false);
+
+        return new Raw($this->implodeSQL([$sqlLine1, $sqlLine2]), $bindings);
     }
 
     /**

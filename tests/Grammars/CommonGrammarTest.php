@@ -126,14 +126,7 @@ class CommonGrammarTest extends TestCase
     {
         $grammar = new CommonGrammar();
 
-        // Insert values
-        $this->assertStatement('
-            INSERT INTO "demo_posts" ("title", "author_id", "date", "description")
-            VALUES
-                (?, ?, DEFAULT, DEFAULT),
-                (?, DEFAULT, (NOW()), DEFAULT),
-                (DEFAULT, DEFAULT, (SELECT MAX("start") FROM "demo_events" WHERE "type" = ?), ?)
-        ', ['Foo!!', 12, 'Bar?', 'post', null], $grammar->compileInsert(
+        $statements = $grammar->compileInsert(
             (new Query('demo_'))
                 ->table('posts')
                 ->addInsert([
@@ -143,37 +136,48 @@ class CommonGrammarTest extends TestCase
                         $query->addMax('start')->from('events')->where('type', 'post');
                     }]
                 ])
-        ));
+                ->addInsertFromSelect(['name', 'address'], function (Query $query) {
+                    $query->addSelect(['first_name', 'home_address'])->from('users');
+                })
+        );
+        $this->assertCount(2, $statements);
+
+        // Insert values
+        $this->assertStatement('
+            INSERT INTO "demo_posts" ("title", "author_id", "date", "description")
+            VALUES
+                (?, ?, DEFAULT, DEFAULT),
+                (?, DEFAULT, (NOW()), DEFAULT),
+                (DEFAULT, DEFAULT, (SELECT MAX("start") FROM "demo_events" WHERE "type" = ?), ?)
+        ', ['Foo!!', 12, 'Bar?', 'post', null], $statements[0]);
 
         // Insert from select
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("name", "address") (
-                SELECT "first_name", "home_address"
-                FROM "demo_users"
-            )
-        ', [], $grammar->compileInsert(
-            (new Query('demo_'))
-                ->table('posts')
-                ->setInsertFromSelect(['name', 'address'], function (Query $query) {
-                    $query->addSelect(['first_name', 'home_address'])->from('users');
-                })
-        ));
+            INSERT INTO "demo_posts" ("name", "address")
+            SELECT "first_name", "home_address"
+            FROM "demo_users"
+        ', [], $statements[1]);
 
         // No table
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $grammar->compileInsert(
-                (new Query())->addInsert([ 'value' => 1, 'name' => 'foo'])
+                (new Query())->addInsert(['value' => 1, 'name' => 'foo'])
             );
         });
 
         // Unknown insert type
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $query = (new Query())->table('bar');
-            $query->insert = 'VALUES (0, 1, 2)';
+            $query->insert[] = 'VALUES (0, 1, 2)';
             $grammar->compileInsert($query);
         }, function (InvalidQueryException $exception) {
-            $this->assertStringStartsWith('Unknown insert instruction type', $exception->getMessage());
+            $this->assertEquals('Unknown type of insert instruction #0: string', $exception->getMessage());
         });
+
+        // No insert rows
+        $this->assertCount(0, $grammar->compileInsert(
+            (new Query())->table('foo')
+        ));
     }
 
     /**
