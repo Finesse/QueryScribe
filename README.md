@@ -502,7 +502,8 @@ Example of what is possible:
     }, 'desc')
     ->offset(function ($query) {
         $query->from('pages')->addMax('length');
-    });
+    })
+    ->limit(3);
 ```
 
 
