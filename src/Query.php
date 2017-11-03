@@ -161,6 +161,8 @@ class Query
     /**
      * Sets the offset.
      *
+     * Warning! SQL doesn't allow to use offset without using limit.
+     *
      * @param int|\Closure|self|StatementInterface|null $offset Offset. Null removes the offset.
      * @return $this
      * @throws InvalidArgumentException

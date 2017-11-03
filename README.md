@@ -436,6 +436,8 @@ You can combine the random order with a column order.
 // Bindings: [150, 12]
 ```
 
+Warning! SQL doesn't allow to use offset without using limit.
+
 #### Raw SQL and subqueries
 
 You can pass raw SQL and subqueries in many of the `Query` methods.
