@@ -83,7 +83,7 @@ class Query
      *
      * @param string|\Closure|self|StatementInterface $table Not prefixed table name without quotes
      * @param string|null $alias Table alias
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -101,7 +101,7 @@ class Query
      *
      * @param mixed[]|\Closure[]|self[]|StatementInterface[] $values Fields to update. The indexes are the columns
      *     names, the values are the values.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -123,7 +123,7 @@ class Query
     /**
      * Makes the target rows be deleted.
      *
-     * @return self Itself
+     * @return $this
      */
     public function setDelete(): self
     {
@@ -136,7 +136,7 @@ class Query
      *
      * @param string|\Closure|self|StatementInterface $column Column to order by
      * @param string $direction Order direction: `asc` - ascending, `desc` - descending
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -150,7 +150,7 @@ class Query
     /**
      * Adds a random order to the orders list.
      *
-     * @return self Itself
+     * @return $this
      */
     public function inRandomOrder(): self
     {
@@ -162,7 +162,7 @@ class Query
      * Sets the offset.
      *
      * @param int|\Closure|self|StatementInterface|null $offset Offset. Null removes the offset.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -176,7 +176,7 @@ class Query
      * Sets the limit.
      *
      * @param int|\Closure|self|StatementInterface|null $limit Limit. Null removes the limit.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -189,7 +189,7 @@ class Query
     /**
      * Makes an empty self copy with dependencies.
      *
-     * @return self
+     * @return static
      */
     public function makeEmptyCopy(): self
     {
@@ -199,7 +199,7 @@ class Query
     /**
      * Makes a self copy with dependencies for passing to a subquery callback.
      *
-     * @return self
+     * @return static
      */
     public function makeCopyForSubQuery(): self
     {
@@ -209,7 +209,7 @@ class Query
     /**
      * Makes a self copy with dependencies for passing to a criteria group callback.
      *
-     * @return self
+     * @return static
      */
     public function makeCopyForCriteriaGroup(): self
     {

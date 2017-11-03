@@ -27,7 +27,7 @@ trait SelectTrait
      *
      * @param string|\Closure|Query|StatementInterface $table
      * @param string|null $alias
-     * @return self
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -43,7 +43,7 @@ trait SelectTrait
      *     to add. If string or raw, one column is added. If array, many columns are added and string indexes are
      *     treated as aliases.
      * @param string|null $alias Column alias name. Used only if the first argument is not an array.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -75,7 +75,7 @@ trait SelectTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Column to count
      * @param string|null $alias Aggregate alias name
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -89,7 +89,7 @@ trait SelectTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Column to get average
      * @param string|null $alias Aggregate alias name
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -103,7 +103,7 @@ trait SelectTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Column to get sum
      * @param string|null $alias Aggregate alias name
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -117,7 +117,7 @@ trait SelectTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Column to get min
      * @param string|null $alias Aggregate alias name
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -131,7 +131,7 @@ trait SelectTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Column to get max
      * @param string|null $alias Aggregate alias name
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -146,7 +146,7 @@ trait SelectTrait
      * @param string $function Aggregate function name
      * @param string|\Closure|Query|StatementInterface $column Column to count (not prefixed)
      * @param string|null $alias Aggregate alias name
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */

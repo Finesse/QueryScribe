@@ -41,7 +41,7 @@ trait WhereTrait
      * @param mixed|\Closure|Query|StatementInterface|null $value
      * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -101,7 +101,7 @@ trait WhereTrait
      * rules.
      *
      * @see WhereTrait::where
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -116,7 +116,7 @@ trait WhereTrait
      * @param \Closure $callback Makes a group of criteria
      * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidReturnValueException
      */
     public function whereNot(\Closure $callback, int $appendRule = Criterion::APPEND_RULE_AND): self
@@ -131,7 +131,7 @@ trait WhereTrait
      * rules.
      *
      * @param \Closure $callback Makes a group of criteria
-     * @return self Itself
+     * @return $this
      */
     public function orWhereNot(\Closure $callback): self
     {
@@ -145,7 +145,7 @@ trait WhereTrait
      * @param array $bindings Values to bind to the statement
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      */
     public function whereRaw(string $query, array $bindings = [], int $appendRule = Criterion::APPEND_RULE_AND): self
     {
@@ -158,7 +158,7 @@ trait WhereTrait
      *
      * @param string $query SQL statement
      * @param array $bindings Values to bind to the statement
-     * @return self Itself
+     * @return $this
      */
     public function orWhereRaw(string $query, array $bindings = []): self
     {
@@ -174,7 +174,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT BETWEEN
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -201,7 +201,7 @@ trait WhereTrait
      * @param mixed|\Closure|Query|StatementInterface $min Left value
      * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @param bool $not Whether the rule should be NOT BETWEEN
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -216,7 +216,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed|\Closure|Query|StatementInterface $min Left value
      * @param mixed|\Closure|Query|StatementInterface $max Right value
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -232,7 +232,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed|\Closure|Query|StatementInterface $min Left value
      * @param mixed|\Closure|Query|StatementInterface $max Right value
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -249,7 +249,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT IN
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -289,7 +289,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed[]|\Closure|Query|StatementInterface Haystack values
      * @param bool $not Whether the rule should be NOT IN
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -303,7 +303,7 @@ trait WhereTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed[]|\Closure|Query|StatementInterface Haystack values
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -318,7 +318,7 @@ trait WhereTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed[]|\Closure|Query|StatementInterface Haystack values
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -334,7 +334,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT NULL
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -352,7 +352,7 @@ trait WhereTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param bool $not Whether the rule should be NOT IN
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -365,7 +365,7 @@ trait WhereTrait
      * Adds a IS NOT NULL criterion to the WHERE section.
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -379,7 +379,7 @@ trait WhereTrait
      * append rules.
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -398,7 +398,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -444,7 +444,7 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
      * @param string|\Closure|Query|StatementInterface $rule Rule or target column 2
      * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -461,7 +461,7 @@ trait WhereTrait
      * @param bool $not Whether the rule should be NOT EXISTS
      * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
      *    constants)
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -480,7 +480,7 @@ trait WhereTrait
      * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
      * @param bool $not Whether the rule should be NOT EXISTS
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -494,7 +494,7 @@ trait WhereTrait
      *
      * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -509,7 +509,7 @@ trait WhereTrait
      *
      * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */

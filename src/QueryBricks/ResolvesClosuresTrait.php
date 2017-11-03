@@ -22,7 +22,7 @@ trait ResolvesClosuresTrait
      * Sets used closure resolver.
      *
      * @param ClosureResolverInterface|null $closureResolver
-     * @return self Itself
+     * @return $this
      */
     public function setClosureResolver(ClosureResolverInterface $closureResolver = null)
     {

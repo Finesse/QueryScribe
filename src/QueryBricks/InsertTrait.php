@@ -28,7 +28,7 @@ trait InsertTrait
      * @param mixed[][]|\Closure[][]|Query[][]|StatementInterface[][]|mixed[]|\Closure[]|Query[]|StatementInterface[] $rows
      *     A row or an array of rows. Each row is an associative array where indexes are column names and values are
      *     cell values. Rows indexes must be strings.
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -72,7 +72,7 @@ trait InsertTrait
      * @param string[]|\Closure|self|StatementInterface $columns The list of the columns to which the selected values
      *     should be inserted. You may omit this argument and pass the $selectQuery argument instead.
      * @param \Closure|self|StatementInterface|null $selectQuery
-     * @return self Itself
+     * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */

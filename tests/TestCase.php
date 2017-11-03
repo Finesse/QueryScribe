@@ -31,7 +31,7 @@ class TestCase extends BaseTestCase
             return;
         }
 
-        $this->fail('No exception was thrown');
+        $this->fail('No exception has been thrown');
     }
 
     /**
