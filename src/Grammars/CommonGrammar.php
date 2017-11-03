@@ -228,6 +228,7 @@ class CommonGrammar implements GrammarInterface
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
      * @return string SQL text
+     * @throws InvalidQueryException
      */
     protected function compileOffsetAndLimitPart(Query $query, array &$bindings): string
     {
@@ -235,10 +236,14 @@ class CommonGrammar implements GrammarInterface
 
         if ($query->limit !== null) {
             $parts[] = 'LIMIT '.$this->compileValue($query->limit, $bindings);
-        }
 
-        if ($query->offset !== null) {
-            $parts[] = 'OFFSET '.$this->compileValue($query->offset, $bindings);
+            if ($query->offset !== null) {
+                $parts[] = 'OFFSET '.$this->compileValue($query->offset, $bindings);
+            }
+        } else {
+            if ($query->offset !== null) {
+                throw new InvalidQueryException('Offset is not allowed without Limit');
+            }
         }
 
         return $this->implodeSQL($parts);

@@ -457,14 +457,14 @@ class CommonGrammarTest extends TestCase
     {
         $grammar = new CommonGrammar();
 
-        // Specify only offset
-        $this->assertStatement('SELECT * FROM "table" OFFSET ?', [140], $grammar->compileSelect(
-            (new Query())->from('table')->offset(140)
-        ));
-
         // Specify only limit
         $this->assertStatement('SELECT * FROM "table" LIMIT ?', [12], $statement = $grammar->compileSelect(
             (new Query())->from('table')->limit(12)
+        ));
+
+        // Specify limit and offset
+        $this->assertStatement('SELECT * FROM "table" LIMIT ? OFFSET ?', [10, 140], $grammar->compileSelect(
+            (new Query())->from('table')->limit(10)->offset(140)
         ));
 
         // Specify complex values
@@ -481,6 +481,13 @@ class CommonGrammarTest extends TestCase
                     $query->addSelect(new Raw('AVG(price)'))->from('prices');
                 })
         ));
+
+        // Specify only offset
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileSelect((new Query())->from('table')->offset(10));
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('Offset is not allowed without Limit', $exception->getMessage());
+        });
     }
 
     /**
