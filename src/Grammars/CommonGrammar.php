@@ -233,12 +233,12 @@ class CommonGrammar implements GrammarInterface
     {
         $parts = [];
 
-        if ($query->offset !== null) {
-            $parts[] = 'OFFSET '.$this->compileValue($query->offset, $bindings);
-        }
-
         if ($query->limit !== null) {
             $parts[] = 'LIMIT '.$this->compileValue($query->limit, $bindings);
+        }
+
+        if ($query->offset !== null) {
+            $parts[] = 'OFFSET '.$this->compileValue($query->offset, $bindings);
         }
 
         return $this->implodeSQL($parts);

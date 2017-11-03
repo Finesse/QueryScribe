@@ -75,9 +75,9 @@ class CommonGrammarTest extends TestCase
             FROM "prefix_table" AS "t"
             WHERE "price" > ?
             ORDER BY "position" ASC
-            OFFSET ?
             LIMIT ?
-        ', [100, 140, 12], $grammar->compileSelect(
+            OFFSET ?
+        ', [100, 12, 140], $grammar->compileSelect(
             (new Query('prefix_'))
                 ->addSelect([
                     'table.*',
@@ -197,9 +197,9 @@ class CommonGrammarTest extends TestCase
                 )
             WHERE "old" = ?
             ORDER BY "date" DESC
-            OFFSET ?
             LIMIT ?
-        ', ['Hello darkness', 145.5, 56, 1, true, 2, 10], $grammar->compileUpdate(
+            OFFSET ?
+        ', ['Hello darkness', 145.5, 56, 1, true, 10, 2], $grammar->compileUpdate(
             (new Query('pref_'))
                 ->table('table', 't')
                 ->where('old', true)
@@ -247,9 +247,9 @@ class CommonGrammarTest extends TestCase
             DELETE FROM "test_table"
             WHERE "date" < ?
             ORDER BY "name" ASC
-            OFFSET ?
             LIMIT ?
-        ', ['2017-01-01', 10, 5], $grammar->compileDelete(
+            OFFSET ?
+        ', ['2017-01-01', 5, 10], $grammar->compileDelete(
             (new Query('test_'))
                 ->setDelete()
                 ->from('table')
@@ -471,8 +471,8 @@ class CommonGrammarTest extends TestCase
         $this->assertStatement('
             SELECT * 
             FROM "table" 
-            OFFSET (? + ?) 
             LIMIT (SELECT (AVG(price)) FROM "prices")
+            OFFSET (? + ?) 
         ', [12, 19], $grammar->compileSelect(
             (new Query())
                 ->from('table')
