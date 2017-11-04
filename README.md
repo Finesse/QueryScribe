@@ -174,10 +174,10 @@ DBMSs support all cases of inserting many rows at once.
 
 ```php
 $grammar->compileInsert(
-	(new Query())
-		->table('users')
-		->addInsert(['name' => 'John', 'role' => 5])
-		->addInsert(['name' => 'Bob', 'role' => 1])
+    (new Query())
+        ->table('users')
+        ->addInsert(['name' => 'John', 'role' => 5])
+        ->addInsert(['name' => 'Bob', 'role' => 1])
 );
 
 // Value 1:
@@ -189,12 +189,12 @@ Many rows at once:
 
 ```php
 $grammar->compileInsert(
-	(new Query())
-		->table('users')
-		->addInsert([
-			['name' => 'Jack', 'role' => 2],
-			['name' => 'Bob', 'role' => 5]
-		])
+    (new Query())
+        ->table('users')
+        ->addInsert([
+            ['name' => 'Jack', 'role' => 2],
+            ['name' => 'Bob', 'role' => 5]
+        ])
 );
 
 // Value 1:

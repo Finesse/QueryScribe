@@ -50,10 +50,17 @@ class QueryProxy implements ClosureResolverInterface
         }
 
         try {
-            return $this->baseQuery->$name(...$arguments);
+            $result = $this->baseQuery->$name(...$arguments);
         } catch (\Throwable $exception) {
             return $this->handleBaseQueryException($exception);
         }
+
+        // Is the base query returns itself, this object should also return itself
+        if ($result === $this->baseQuery) {
+            return $this;
+        }
+
+        return $result;
     }
 
     /**

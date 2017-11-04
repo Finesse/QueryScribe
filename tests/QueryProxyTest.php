@@ -22,13 +22,17 @@ class QueryProxyTest extends TestCase
         $query = new Query('prefix');
         $superQuery = new QueryProxy($query);
 
-        $superQuery
+        $superQuery = $superQuery
             ->from('items')
             ->where('items.size', '>', 3);
 
         $this->assertEquals('prefixitems', $query->table);
         $this->assertEquals('prefixitems.size', $query->where[0]->column);
         $this->assertEquals(3, $query->where[0]->value);
+        $this->assertEquals('prefixfoo', $superQuery->addTablePrefix('foo'));
+
+        // Checks that a QueryProxy instance is returned
+        $this->assertInstanceOf(QueryProxy::class, $superQuery);
 
         // Checks that the forbidden methods are not called
         $this->assertException(\Error::class, function () use ($superQuery) {
