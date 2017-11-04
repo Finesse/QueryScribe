@@ -5,6 +5,8 @@ namespace Finesse\QueryScribe\QueryBricks;
 /**
  * A query criterion (a statement that returns true of false). Used in WHERE, HAVING, JOIN.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 abstract class Criterion
@@ -21,6 +23,7 @@ abstract class Criterion
 
     /**
      * @var int Append rule. The value if a value of one of the self::APPEND_RULE_* constants.
+     * @readonly
      */
     public $appendRule;
 

@@ -7,7 +7,9 @@ use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
- * Criterion which compares a column with a value
+ * Criterion which compares a column with a value.
+ *
+ * You MUST NOT change the public variables values.
  *
  * @author Surgie
  */
@@ -15,16 +17,19 @@ class ValueCriterion extends Criterion
 {
     /**
      * @var string|Query|StatementInterface Target column (with prefix)
+     * @readonly
      */
     public $column;
 
     /**
      * @var string Compare rule (=, >, etc.)
+     * @readonly
      */
     public $rule;
 
     /**
      * @var mixed|Query|StatementInterface|null Value
+     * @readonly
      */
     public $value;
 

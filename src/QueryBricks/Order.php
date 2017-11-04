@@ -8,17 +8,21 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * One order for the ORDER section.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 class Order
 {
     /**
      * @var string|Query|StatementInterface Target column (with prefix)
+     * @readonly
      */
     public $column;
 
     /**
      * @var bool Should the order be ascending (true) or descending (false)
+     * @readonly
      */
     public $isDescending;
 

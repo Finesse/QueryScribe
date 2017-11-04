@@ -7,17 +7,21 @@ use Finesse\QueryScribe\QueryBricks\Criterion;
 /**
  * A group of criteria.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 class CriteriaCriterion extends Criterion
 {
     /**
      * @var Criterion[] Criteria of the group
+     * @readonly
      */
     public $criteria;
 
     /**
      * @var bool Whether the group should be wrapped with NOT
+     * @readonly
      */
     public $not;
 

@@ -8,17 +8,21 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * An aggregate (min, sum, etc.) function for the SELECT part of a query.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 class Aggregate
 {
     /**
      * @var string Aggregate function name
+     * @readonly
      */
     public $function;
 
     /**
      * @var string|Query|StatementInterface Value to aggregate (prefixed column name or a subquery)
+     * @readonly
      */
     public $column;
 

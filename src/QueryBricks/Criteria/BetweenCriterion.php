@@ -9,27 +9,33 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * BETWEEN criterion.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 class BetweenCriterion extends Criterion
 {
     /**
      * @var string|Query|StatementInterface Target column (with prefix)
+     * @readonly
      */
     public $column;
 
     /**
      * @var mixed|Query|StatementInterface|null Left value
+     * @readonly
      */
     public $min;
 
     /**
      * @var mixed|Query|StatementInterface|null Right value
+     * @readonly
      */
     public $max;
 
     /**
      * @var bool Whether the rule should be NOT BETWEEN
+     * @readonly
      */
     public $not;
 

@@ -7,7 +7,9 @@ use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
- * Criterion which compares two columns
+ * Criterion which compares two columns.
+ *
+ * You MUST NOT change the public variables values.
  *
  * @author Surgie
  */
@@ -15,16 +17,19 @@ class ColumnsCriterion extends Criterion
 {
     /**
      * @var string|Query|StatementInterface Target column 1 (with prefix)
+     * @readonly
      */
     public $column1;
 
     /**
      * @var string Compare rule (=, >, etc.)
+     * @readonly
      */
     public $rule;
 
     /**
      * @var string|Query|StatementInterface Target column 2 (with prefix)
+     * @readonly
      */
     public $column2;
 

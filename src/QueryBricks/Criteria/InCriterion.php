@@ -9,22 +9,27 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * IN criterion.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 class InCriterion extends Criterion
 {
     /**
      * @var string|Query|StatementInterface Target column (with prefix)
+     * @readonly
      */
     public $column;
 
     /**
      * @var mixed[]|Query|StatementInterface Haystack values
+     * @readonly
      */
     public $values;
 
     /**
      * @var bool Whether the rule should be NOT IN
+     * @readonly
      */
     public $not;
 

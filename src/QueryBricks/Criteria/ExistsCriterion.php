@@ -7,7 +7,9 @@ use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
- * EXISTS criterion
+ * EXISTS criterion.
+ *
+ * You MUST NOT change the public variables values.
  *
  * @author Surgie
  */
@@ -15,11 +17,13 @@ class ExistsCriterion extends Criterion
 {
     /**
      * @var Query|StatementInterface Subquery
+     * @readonly
      */
     public $subQuery;
 
     /**
      * @var bool Whether the rule should be NOT IN
+     * @readonly
      */
     public $not;
 

@@ -8,12 +8,15 @@ use Finesse\QueryScribe\StatementInterface;
 /**
  * A criterion represented by a raw SQL.
  *
+ * You MUST NOT change the public variables values.
+ *
  * @author Surgie
  */
 class RawCriterion extends Criterion
 {
     /**
      * @var StatementInterface A raw SQL criteria
+     * @readonly
      */
     public $raw;
 
