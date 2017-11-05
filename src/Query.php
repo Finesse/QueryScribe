@@ -11,8 +11,8 @@ use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
- * Represents a built query. It contains only a basic query data, not a SQL text. All the stored identifiers a final
- * (prefixed). It must not compile any SQL.
+ * Represents a built query. It contains only a basic query data, not a SQL text. All the stored identifiers a final. It
+ * must not compile any SQL.
  *
  * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
  *  - Takes an empty query the first argument;
@@ -31,16 +31,15 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  */
 class Query
 {
-    use AddTablePrefixTrait, MakeRawTrait;
-    use SelectTrait, InsertTrait, WhereTrait, ResolvesClosuresTrait;
+    use MakeRawTrait, SelectTrait, InsertTrait, WhereTrait, ResolvesClosuresTrait;
 
     /**
-     * @var string|self|StatementInterface|null Query target table name (prefixed)
+     * @var string|self|StatementInterface|null Query target table name
      */
     public $table = null;
 
     /**
-     * @var string|null Target table alias (prefixed)
+     * @var string|null Target table alias
      */
     public $tableAlias = null;
 
@@ -71,14 +70,6 @@ class Query
     public $limit = null;
 
     /**
-     * @param string $tablePrefix Prefix for all the tables (except raws)
-     */
-    public function __construct(string $tablePrefix = '')
-    {
-        $this->tablePrefix = $tablePrefix;
-    }
-
-    /**
      * Sets the target table.
      *
      * @param string|\Closure|self|StatementInterface $table Not prefixed table name without quotes
@@ -91,8 +82,8 @@ class Query
     {
         $table = $this->checkStringValue('Argument $table', $table);
 
-        $this->table = is_string($table) ? $this->addTablePrefix($table) : $table;
-        $this->tableAlias = $alias === null ? null : $this->addTablePrefix($alias);
+        $this->table = $table;
+        $this->tableAlias = $alias;
         return $this;
     }
 
@@ -113,7 +104,6 @@ class Query
             }
 
             $value = $this->checkScalarOrNullValue('Argument $values['.$column.']', $value);
-            $column = $this->addTablePrefixToColumn($column);
             $this->update[$column] = $value;
         }
 
@@ -142,7 +132,7 @@ class Query
      */
     public function orderBy($column, string $direction = 'asc'): self
     {
-        $column = $this->checkAndPrepareColumn('Argument $column', $column);
+        $column = $this->checkStringValue('Argument $column', $column);
         $this->order[] = new Order($column, strtolower($direction) === 'desc');
         return $this;
     }
@@ -195,7 +185,7 @@ class Query
      */
     public function makeEmptyCopy(): self
     {
-        return new static($this->tablePrefix);
+        return new static();
     }
 
     /**
@@ -216,11 +206,8 @@ class Query
     public function makeCopyForCriteriaGroup(): self
     {
         $query = $this->makeEmptyCopy();
-
-        // The `table` method is not used because it adds extra prefix
         $query->table = $this->table;
         $query->tableAlias = $this->tableAlias;
-
         return $query;
     }
 
@@ -352,24 +339,5 @@ class Query
         }
 
         return $value;
-    }
-
-    /**
-     * Check that value is suitable for being a column name of a query. Retrieves the closure subquery. Adds a table
-     * prefix to a column name (if it contains a table name).
-     *
-     * @param string $name Value name
-     * @param string|\Closure|self|StatementInterface $column
-     * @return string|self|StatementInterface
-     * @throws InvalidArgumentException
-     * @throws InvalidReturnValueException
-     */
-    protected function checkAndPrepareColumn(string $name, $column)
-    {
-        $column = $this->checkStringValue($name, $column);
-        if (is_string($column)) {
-            $column = $this->addTablePrefixToColumn($column);
-        }
-        return $column;
     }
 }

@@ -22,7 +22,7 @@ class SQLiteGrammarTest extends TestCase
         $grammar = new SQLiteGrammar();
 
         $statements = $grammar->compileInsert(
-            (new Query('demo_'))
+            (new Query())
                 ->table('posts')
                 ->addInsert([
                     ['title' => 'Foo!!', 'author_id' => 12],
@@ -39,23 +39,23 @@ class SQLiteGrammarTest extends TestCase
 
         // Insert values
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("title", "author_id")
+            INSERT INTO "posts" ("title", "author_id")
             VALUES (?, ?)
         ', ['Foo!!', 12], $statements[0]);
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("title", "date")
+            INSERT INTO "posts" ("title", "date")
             VALUES (?, (NOW()))
         ', ['Bar?'], $statements[1]);
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("description", "date")
-            VALUES (?, (SELECT MAX("start") FROM "demo_events" WHERE "type" = ?))
+            INSERT INTO "posts" ("description", "date")
+            VALUES (?, (SELECT MAX("start") FROM "events" WHERE "type" = ?))
         ', [null, 'post'], $statements[2]);
 
         // Insert from select
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("name", "address")
+            INSERT INTO "posts" ("name", "address")
             SELECT "first_name", "home_address"
-            FROM "demo_users"
+            FROM "users"
         ', [], $statements[3]);
     }
 }

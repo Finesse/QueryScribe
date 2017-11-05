@@ -21,35 +21,35 @@ class QueryTest extends TestCase
     public function testTable()
     {
         // No table
-        $query = new Query('pref_');
+        $query = new Query();
         $this->assertNull($query->table);
         $this->assertNull($query->tableAlias);
 
         // Simple table
         $query->table('foo', 'f');
-        $this->assertAttributes(['table' => 'pref_foo', 'tableAlias' => 'pref_f'], $query);
+        $this->assertAttributes(['table' => 'foo', 'tableAlias' => 'f'], $query);
 
         // Table with callback subquery
         $query->table(function (Query $query) {
             $query->addSelect('foo')->from('bar');
         });
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'pref_bar', 'tableAlias' => null], $query->table);
+        $this->assertAttributes(['table' => 'bar', 'tableAlias' => null], $query->table);
         $this->assertNull($query->tableAlias);
 
         // Table with another type of callback
         $query->table(function () {
-            return (new Query('test_'))->addSelect('foo2')->from('bar');
+            return (new Query())->addSelect('foo2')->from('bar');
         });
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'test_bar', 'tableAlias' => null], $query->table);
+        $this->assertAttributes(['table' => 'bar', 'tableAlias' => null], $query->table);
         $this->assertNull($query->tableAlias);
 
         // Table with subquery
-        $query->table((new Query('sub_'))->table('table', 't'), 's');
+        $query->table((new Query())->table('table', 't'), 's');
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'sub_table', 'tableAlias' => 'sub_t'], $query->table);
-        $this->assertEquals('pref_s', $query->tableAlias);
+        $this->assertAttributes(['table' => 'table', 'tableAlias' => 't'], $query->table);
+        $this->assertEquals('s', $query->tableAlias);
 
         // Raw table
         $query->table(new Raw('TABLES()'));
@@ -66,7 +66,7 @@ class QueryTest extends TestCase
      */
     public function testAddUpdate()
     {
-        $query = (new Query('pref_'))
+        $query = (new Query())
             ->addUpdate([
                 'foo' => 'Bar',
                 'date' => new Raw('NOW()'),
@@ -83,7 +83,7 @@ class QueryTest extends TestCase
         $this->assertEquals(12345, $query->update['foo']);
         $this->assertStatement('NOW()', [], $query->update['date']);
         $this->assertInstanceOf(Query::class, $query->update['value']);
-        $this->assertEquals('pref_table', $query->update['value']->table);
+        $this->assertEquals('table', $query->update['value']->table);
         $this->assertNull($query->update['field']);
 
         // Incorrect column name
@@ -118,7 +118,7 @@ class QueryTest extends TestCase
      */
     public function testOrder()
     {
-        $query = (new Query('pref_'))
+        $query = (new Query())
             ->from('post')
             ->orderBy('name')
             ->inRandomOrder()
@@ -136,7 +136,7 @@ class QueryTest extends TestCase
         $this->assertInstanceOf(Order::class, $query->order[2]);
         $this->assertEquals(true, $query->order[2]->isDescending);
         $this->assertInstanceOf(Query::class, $query->order[2]->column);
-        $this->assertEquals('pref_products', $query->order[2]->column->table);
+        $this->assertEquals('products', $query->order[2]->column->table);
     }
 
     /**
@@ -145,7 +145,7 @@ class QueryTest extends TestCase
     public function testOffset()
     {
         // No offset
-        $query = new Query('pref_');
+        $query = new Query();
         $this->assertNull($query->offset);
 
         // Integer offset
@@ -157,12 +157,12 @@ class QueryTest extends TestCase
             $query->addSelect('foo')->table('bar');
         });
         $this->assertInstanceOf(Query::class, $query->offset);
-        $this->assertEquals('pref_bar', $query->offset->table);
+        $this->assertEquals('bar', $query->offset->table);
 
         // Subquery offset
-        $query->offset((new Query('sub_'))->table('table'));
+        $query->offset((new Query())->table('table'));
         $this->assertInstanceOf(Query::class, $query->offset);
-        $this->assertEquals('sub_table', $query->offset->table);
+        $this->assertEquals('table', $query->offset->table);
 
         // Raw offset
         $query->offset(new Raw('AVG(price)'));
@@ -184,7 +184,7 @@ class QueryTest extends TestCase
     public function testLimit()
     {
         // No limit
-        $query = new Query('pref_');
+        $query = new Query();
         $this->assertNull($query->limit);
 
         // Integer limit
@@ -196,12 +196,12 @@ class QueryTest extends TestCase
             $query->addSelect('foo')->table('bar');
         });
         $this->assertInstanceOf(Query::class, $query->limit);
-        $this->assertEquals('pref_bar', $query->limit->table);
+        $this->assertEquals('bar', $query->limit->table);
 
         // Subquery limit
-        $query->limit((new Query('sub_'))->table('table'));
+        $query->limit((new Query())->table('table'));
         $this->assertInstanceOf(Query::class, $query->limit);
-        $this->assertEquals('sub_table', $query->limit->table);
+        $this->assertEquals('table', $query->limit->table);
 
         // Raw limit
         $query->limit(new Raw('AVG(price)'));
@@ -222,9 +222,7 @@ class QueryTest extends TestCase
      */
     public function testTraits()
     {
-        $query = new Query('prefix_');
-
-        $this->assertEquals('prefix_table', $query->addTablePrefix('table'));
+        $query = new Query();
 
         $raw = $query->raw('`column` = ?', ['orange']);
         $this->assertInstanceOf(Raw::class, $raw);
@@ -236,12 +234,12 @@ class QueryTest extends TestCase
      */
     public function testCallableColumnName()
     {
-        $query = (new Query('pref_'))
+        $query = (new Query())
             ->table('date')
             ->addSelect('is_array')
             ->where('sprintf', 'ucfirst');
 
-        $this->assertAttributes(['table' => 'pref_date', 'select' => ['is_array']], $query);
+        $this->assertAttributes(['table' => 'date', 'select' => ['is_array']], $query);
         $this->assertAttributes(['column' => 'sprintf', 'value' => 'ucfirst'], $query->where[0]);
     }
 }

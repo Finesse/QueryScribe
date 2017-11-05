@@ -20,8 +20,8 @@ class SelectTraitTest extends TestCase
      */
     public function testFrom()
     {
-        $query = (new Query('demo_'))->from('table', 't');
-        $this->assertAttributes(['table' => 'demo_table', 'tableAlias' => 'demo_t'], $query);
+        $query = (new Query())->from('table', 't');
+        $this->assertAttributes(['table' => 'table', 'tableAlias' => 't'], $query);
     }
 
     /**
@@ -30,36 +30,36 @@ class SelectTraitTest extends TestCase
     public function testAddSelect()
     {
         // No select
-        $query = (new Query('pref_'));
+        $query = (new Query());
         $this->assertEquals([], $query->select);
 
         // One column
-        $query = (new Query('pref_'))->addSelect('name', 'n');
+        $query = (new Query())->addSelect('name', 'n');
         $this->assertEquals(['n' => 'name'], $query->select);
 
         // Many columns with different cases
-        $query = (new Query('pref_'))->addSelect([
+        $query = (new Query())->addSelect([
             'value',
             't' => 'table.title',
             function (Query $query) {
                 $query->addSelect('foo')->table('bar');
             },
-            (new Query('pref2_'))->addSelect('foo')->table('bar'),
+            (new Query())->addSelect('foo')->table('bar'),
             'price' => new Raw('AVG(price) + ?', [14])
         ]);
         $this->assertCount(5, $query->select);
         $this->assertEquals('value', $query->select[0]);
-        $this->assertEquals('pref_table.title', $query->select['t']);
+        $this->assertEquals('table.title', $query->select['t']);
         $this->assertInstanceOf(Query::class, $query->select[1]);
-        $this->assertAttributes(['table' => 'pref_bar', 'select' => ['foo']], $query->select[1]);
+        $this->assertAttributes(['table' => 'bar', 'select' => ['foo']], $query->select[1]);
         $this->assertInstanceOf(Query::class, $query->select[2]);
-        $this->assertAttributes(['table' => 'pref2_bar', 'select' => ['foo']], $query->select[2]);
+        $this->assertAttributes(['table' => 'bar', 'select' => ['foo']], $query->select[2]);
         $this->assertInstanceOf(StatementInterface::class, $query->select['price']);
         $this->assertEquals('AVG(price) + ?', $query->select['price']->getSQL());
         $this->assertEquals([14], $query->select['price']->getBindings());
 
         // Multiple select calls
-        $query = (new Query('pref_'))->addSelect('id')->addSelect('name');
+        $query = (new Query())->addSelect('id')->addSelect('name');
         $this->assertEquals(['id', 'name'], $query->select);
 
         // Wrong argument
@@ -76,14 +76,14 @@ class SelectTraitTest extends TestCase
      */
     public function testAggregates()
     {
-        $query = (new Query('test_'))
+        $query = (new Query())
             ->addCount()
             ->addAvg('table.price', 'price')
             ->addSum(new Raw('price * ?', [1.6]))
             ->addMin(function (Query $query) {
                 $query->table('items');
             })
-            ->addMax((new Query('foo_'))->table('bar'));
+            ->addMax((new Query())->table('bar'));
 
         $this->assertCount(5, $query->select);
         foreach ($query->select as $column) {
@@ -91,17 +91,17 @@ class SelectTraitTest extends TestCase
         }
 
         $this->assertAttributes(['function' => 'COUNT', 'column' => '*'], $query->select[0]);
-        $this->assertAttributes(['function' => 'AVG', 'column' => 'test_table.price'], $query->select['price']);
+        $this->assertAttributes(['function' => 'AVG', 'column' => 'table.price'], $query->select['price']);
         $this->assertEquals('SUM', $query->select[1]->function);
         $this->assertInstanceOf(StatementInterface::class, $query->select[1]->column);
         $this->assertEquals('price * ?', $query->select[1]->column->getSQL());
         $this->assertEquals([1.6], $query->select[1]->column->getBindings());
         $this->assertEquals('MIN', $query->select[2]->function);
         $this->assertInstanceOf(Query::class, $query->select[2]->column);
-        $this->assertEquals('test_items', $query->select[2]->column->table);
+        $this->assertEquals('items', $query->select[2]->column->table);
         $this->assertEquals('MAX', $query->select[3]->function);
         $this->assertInstanceOf(Query::class, $query->select[3]->column);
-        $this->assertEquals('foo_bar', $query->select[3]->column->table);
+        $this->assertEquals('bar', $query->select[3]->column->table);
 
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query())->addAvg(['foo', 'bar']);
