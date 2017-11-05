@@ -518,7 +518,7 @@ Example of what is possible:
     ->limit(3);
 ```
 
-#### Using both table prefixe and table aliases
+#### Using both a table prefix and table aliases
 
 Tables names are prefixed in columns names. Query builder doesn't know which identifier is a table name and which is 
 alias therefor table prefix is applied both to table names and table aliases. So such queries are valid:
