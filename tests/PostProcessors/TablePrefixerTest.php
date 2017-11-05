@@ -220,4 +220,29 @@ class TablePrefixerTest extends TestCase
         $this->assertEquals('database.prefix_table.column1', $processor->addTablePrefixToColumn('database.table.column1'));
         $this->assertEquals('t.column1', $processor->addTablePrefixToColumn('t.column1', ['t', 'c']));
     }
+
+    /**
+     * Tests that the empty prefix is added correctly
+     */
+    public function testEmptyPrefix()
+    {
+        $processor = new TablePrefixer('');
+
+        $query = (new Query())
+            ->from('posts')
+            ->addSelect('posts.title', 'title')
+            ->whereExists(function (Query $query) {
+                $query
+                    ->from('comments', 'c')
+                    ->whereColumn('c.post_id', 'posts.id');
+            });
+
+        $prefixedQuery = $processor->process($query);
+
+        $this->assertEquals($prefixedQuery, $query);
+        $this->assertEquals('posts', $prefixedQuery->table);
+        $this->assertEquals(['title' => 'posts.title'], $prefixedQuery->select);
+        $this->assertEquals('comments', $prefixedQuery->where[0]->subQuery->table);
+        $this->assertAttributes(['column1' => 'c.post_id', 'column2' => 'posts.id'], $prefixedQuery->where[0]->subQuery->where[0]);
+    }
 }

@@ -88,14 +88,18 @@ class TablePrefixer implements PostProcessorInterface
     }
 
     /**
-     * Processes a Query object.
+     * Processes a Query object. DOES NOT change the given query or it's components by the link but may return it.
      *
-     * @param Query $query Subquery
+     * @param Query $query
      * @param string[] $tableAliases Known table aliases
      * @return Query
      */
-    protected function processQuery(Query $query, array $tableAliases): Query
+    public function processQuery(Query $query, array $tableAliases): Query
     {
+        if ($this->tablePrefix === '') {
+            return $query;
+        }
+
         $tableAliases = array_merge($tableAliases, $this->getTablesAliases($query));
         $queryProperties = [];
 

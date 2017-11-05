@@ -529,17 +529,17 @@ $query = (new Query())
 $prefixedQuery = $prefixer->process($query);
 
 /*
-	SELECT * FROM "prefix_posts" 
-	WHERE EXISTS (
-		SELECT * FROM "prefix_comments" AS "c" 
-		WHERE "c"."post_id" = "prefix_posts"."id"
-	) AND "prefix_posts"."date" > ?
+    SELECT * FROM "prefix_posts" 
+    WHERE EXISTS (
+        SELECT * FROM "prefix_comments" AS "c" 
+        WHERE "c"."post_id" = "prefix_posts"."id"
+    ) AND "prefix_posts"."date" > ?
  */
 ```
 
 As you can see table aliases are not prefixed. Prefixer automatically detects which identifiers are table aliases.
 
-Table prefixes are not added in raw expressions. You can use helper methods to add a prefix:
+Table prefixes are not added in raw expressions. You can use the helper methods to add a prefix:
 
 ```php
 (new Query())
