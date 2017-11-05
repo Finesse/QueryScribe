@@ -21,7 +21,7 @@ class SelectTraitTest extends TestCase
     public function testFrom()
     {
         $query = (new Query('demo_'))->from('table', 't');
-        $this->assertAttributes(['table' => 'demo_table', 'tableAlias' => 't'], $query);
+        $this->assertAttributes(['table' => 'demo_table', 'tableAlias' => 'demo_t'], $query);
     }
 
     /**

@@ -27,7 +27,7 @@ class QueryTest extends TestCase
 
         // Simple table
         $query->table('foo', 'f');
-        $this->assertAttributes(['table' => 'pref_foo', 'tableAlias' => 'f'], $query);
+        $this->assertAttributes(['table' => 'pref_foo', 'tableAlias' => 'pref_f'], $query);
 
         // Table with callback subquery
         $query->table(function (Query $query) {
@@ -48,8 +48,8 @@ class QueryTest extends TestCase
         // Table with subquery
         $query->table((new Query('sub_'))->table('table', 't'), 's');
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'sub_table', 'tableAlias' => 't'], $query->table);
-        $this->assertEquals('s', $query->tableAlias);
+        $this->assertAttributes(['table' => 'sub_table', 'tableAlias' => 'sub_t'], $query->table);
+        $this->assertEquals('pref_s', $query->tableAlias);
 
         // Raw table
         $query->table(new Raw('TABLES()'));

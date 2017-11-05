@@ -65,14 +65,14 @@ class CommonGrammarTest extends TestCase
                 "prefix_table".*,
                 "prefix_table"."foo" AS "f", 
                 "prefix_table"."bar" AS "b", 
-                (t.column) AS "r",
+                "prefix_t"."column" AS "r",
                 (SELECT "foo" FROM "test_bar") AS "sub""query",
                 COUNT(*) AS "count",
                 MIN("prefix_table"."bar"),
                 MAX("baz"),
                 AVG("boo") AS "avg",
                 SUM((baz * boo))
-            FROM "prefix_table" AS "t"
+            FROM "prefix_table" AS "prefix_t"
             WHERE "price" > ?
             ORDER BY "position" ASC
             LIMIT ?
@@ -83,7 +83,7 @@ class CommonGrammarTest extends TestCase
                     'table.*',
                     'f' => 'table.foo',
                     'b' => 'table.bar',
-                    'r' => new Raw('t.column'),
+                    'r' => 't.column',
                     'sub"query' => (new Query('test_'))->addSelect('foo')->from('bar')
                 ])
                 ->addCount('*', 'count')
@@ -106,7 +106,7 @@ class CommonGrammarTest extends TestCase
         // No columns
         $this->assertStatement('
             SELECT *
-            FROM "prefix_table" AS "t"
+            FROM "prefix_table" AS "prefix_t"
         ', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table', 't')
         ));
@@ -189,11 +189,11 @@ class CommonGrammarTest extends TestCase
 
         // Comprehensive case
         $this->assertStatement('
-            UPDATE "pref_table" AS "t"
+            UPDATE "pref_table" AS "pref_t"
             SET
                 "name" = ?,
                 "pref_table"."price" = ?,
-                "date" = (NEXT_DAY(?)),
+                "pref_t"."date" = (NEXT_DAY(?)),
                 "description" = (
                     SELECT "title"
                     FROM "pref_stories"
@@ -213,7 +213,7 @@ class CommonGrammarTest extends TestCase
                 ->addUpdate([
                     'name' => 'Hello darkness',
                     'table.price' => 145.5,
-                    'date' => new Raw('NEXT_DAY(?)', [56]),
+                    't.date' => new Raw('NEXT_DAY(?)', [56]),
                     'description' => function (Query $query) {
                         $query->from('stories')->addSelect('title')->limit(1);
                     }
@@ -302,7 +302,7 @@ class CommonGrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Simple from
-        $this->assertStatement('SELECT * FROM "database"."prefix_table" AS "t"', [], $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM "database"."prefix_table" AS "prefix_t"', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('database.table', 't')
         ));
 

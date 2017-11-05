@@ -55,7 +55,7 @@ class QueryProxy implements ClosureResolverInterface
             return $this->handleBaseQueryException($exception);
         }
 
-        // Is the base query returns itself, this object should also return itself
+        // If the base query returns itself, this object should also return itself
         if ($result === $this->baseQuery) {
             return $this;
         }

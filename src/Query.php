@@ -40,7 +40,7 @@ class Query
     public $table = null;
 
     /**
-     * @var string|null Target table alias
+     * @var string|null Target table alias (prefixed)
      */
     public $tableAlias = null;
 
@@ -92,7 +92,7 @@ class Query
         $table = $this->checkStringValue('Argument $table', $table);
 
         $this->table = is_string($table) ? $this->addTablePrefix($table) : $table;
-        $this->tableAlias = $alias;
+        $this->tableAlias = $alias === null ? null : $this->addTablePrefix($alias);
         return $this;
     }
 

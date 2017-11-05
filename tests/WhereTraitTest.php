@@ -47,7 +47,7 @@ class WhereTraitTest extends TestCase
 
         // Grouped criteria (by callback)
         $query = (new Query('pre_'))->table('foo', 'f')->where(function (Query $query) {
-            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'f'], $query);
+            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'pre_f'], $query);
             $query->where('table.column1', 'value1')->orWhere('table.column2', 'value2');
         });
         $this->assertCount(1, $query->where);
@@ -123,7 +123,7 @@ class WhereTraitTest extends TestCase
     {
         // Where not
         $query = (new Query('pre_'))->table('foo', 'f')->whereNot(function (Query $query) {
-            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'f'], $query);
+            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'pre_f'], $query);
             $query->where('table.column1', 'value1')->orWhere('table.column2', 'value2');
         });
         $this->assertCount(1, $query->where);

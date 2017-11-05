@@ -518,6 +518,30 @@ Example of what is possible:
     ->limit(3);
 ```
 
+#### Using both table prefixe and table aliases
+
+Tables names are prefixed in columns names. Query builder doesn't know which identifier is a table name and which is 
+alias therefor table prefix is applied both to table names and table aliases. So such queries are valid:
+
+```php
+(new Query('prefix_'))
+    ->from('table')
+    ->whereExists(function ($query) {
+        $query
+            ->from('table', 'subtable')
+            ->whereColumn('t2.id', 'table.parent_id')
+            ->where('t2.column', 'Test')
+    });
+    
+/*
+    SELECT * FROM "prefix_table"
+    WHERE EXISTS (
+        SELECT * FROM "prefix_table" AS "prefix_t2"
+        WHERE "prexif_t2"."id" = "prefix_table"."parent_id" AND "prefix_t2"."column" = ?
+    )
+ */
+```
+
 
 ## Versions compatibility
 
