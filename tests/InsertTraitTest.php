@@ -19,7 +19,7 @@ class InsertTraitTest extends TestCase
      */
     public function testAddInsert()
     {
-        $query = (new Query('pr_'))
+        $query = (new Query())
             ->addInsert([ 'foo' => 1, 'bar' => 'Bill'])
             ->addInsert([
                 ['foo' => new Raw('NOW()'), 'bar' => null],
@@ -36,7 +36,7 @@ class InsertTraitTest extends TestCase
         $this->assertCount(2, $query->insert[2]);
         $this->assertEquals(-123, $query->insert[2]['foo']);
         $this->assertInstanceOf(Query::class, $query->insert[2]['other']);
-        $this->assertEquals('pr_prices', $query->insert[2]['other']->table);
+        $this->assertEquals('prices', $query->insert[2]['other']->table);
 
         // Rows must me arrays
         $this->assertException(InvalidArgumentException::class, function () {
@@ -77,7 +77,7 @@ class InsertTraitTest extends TestCase
      */
     public function testAddInsertFromSelect()
     {
-        $query = (new Query('pr_'))
+        $query = (new Query())
             ->addInsertFromSelect(['name', 'address'], function (Query $query) {
                 return $query->addSelect(['username', 'home'])->from('users')->where('status', 5);
             })
@@ -88,11 +88,11 @@ class InsertTraitTest extends TestCase
         $this->assertInstanceOf(InsertFromSelect::class, $query->insert[0]);
         $this->assertEquals(['name', 'address'], $query->insert[0]->columns);
         $this->assertInstanceOf(Query::class, $query->insert[0]->selectQuery);
-        $this->assertEquals('pr_users', $query->insert[0]->selectQuery->table);
+        $this->assertEquals('users', $query->insert[0]->selectQuery->table);
         $this->assertInstanceOf(InsertFromSelect::class, $query->insert[1]);
         $this->assertNull($query->insert[1]->columns);
         $this->assertInstanceOf(Query::class, $query->insert[1]->selectQuery);
-        $this->assertEquals('pr_posts', $query->insert[1]->selectQuery->table);
+        $this->assertEquals('posts', $query->insert[1]->selectQuery->table);
 
         // Wrong columns argument
         $this->assertException(InvalidArgumentException::class, function () {

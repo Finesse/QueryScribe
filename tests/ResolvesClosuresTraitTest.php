@@ -18,7 +18,7 @@ class ResolvesClosuresTraitTest extends TestCase
      */
     public function testClosureResolve()
     {
-        $query = (new Query('prefix_'))
+        $query = (new Query())
             ->addSelect([
                 function (Query $query) {
                     $query->from('table1');
@@ -40,8 +40,8 @@ class ResolvesClosuresTraitTest extends TestCase
                 return (new Query())->where('table2.column2', 1);
             });
 
-        $this->assertEquals('prefix_table1', $query->select[0]->table);
-        $this->assertEquals('prefix_table2', $query->select[1]->table);
+        $this->assertEquals('table1', $query->select[0]->table);
+        $this->assertEquals('table2', $query->select[1]->table);
         $this->assertEquals('table3', $query->select[2]->table);
 
         $this->assertException(InvalidReturnValueException::class, function () {
@@ -61,7 +61,7 @@ class ResolvesClosuresTraitTest extends TestCase
      */
     public function testCustomClosureResolver()
     {
-        $query = (new Query('prefix_'))
+        $query = (new Query())
             ->setClosureResolver(new class implements ClosureResolverInterface {
                 public function resolveSubQueryClosure(\Closure $callback): Query
                 {

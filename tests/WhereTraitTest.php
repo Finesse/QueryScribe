@@ -28,26 +28,26 @@ class WhereTraitTest extends TestCase
     public function testWhere()
     {
         // Ordinary
-        $query = (new Query('pre_'))->where('table.foo', '>', 'bar');
+        $query = (new Query())->where('table.foo', '>', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
         $this->assertAttributes(['column' => 'table.foo', 'rule' => '>', 'value' => 'bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
 
         // Or where
-        $query = (new Query('pre_'))->orWhere('foo', '<', 'bar');
+        $query = (new Query())->orWhere('foo', '<', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
         $this->assertAttributes(['column' => 'foo', 'rule' => '<', 'value' => 'bar', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]);
 
         // Omit the rule
-        $query = (new Query('pre_'))->where('table.foo', 'bar');
+        $query = (new Query())->where('table.foo', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
         $this->assertAttributes(['column' => 'table.foo', 'rule' => '=', 'value' => 'bar'], $query->where[0]);
 
         // Grouped criteria (by callback)
-        $query = (new Query('pre_'))->table('foo', 'f')->where(function (Query $query) {
-            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'f'], $query);
+        $query = (new Query())->table('foo', 'f')->where(function (Query $query) {
+            $this->assertAttributes(['table' => 'foo', 'tableAlias' => 'f'], $query);
             $query->where('table.column1', 'value1')->orWhere('table.column2', 'value2');
         });
         $this->assertCount(1, $query->where);
@@ -60,7 +60,7 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
 
         // Grouped criteria (by array)
-        $query = (new Query('pre_'))->where([
+        $query = (new Query())->where([
             ['table.column1', 'value1'],
             ['table.column2', '!=', 'value2']
         ]);
@@ -74,7 +74,7 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['column' => 'table.column2', 'rule' => '!=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
 
         // Raw clause
-        $query = (new Query('pre_'))->where(new Raw('date + ? = NOW()', [10]));
+        $query = (new Query())->where(new Raw('date + ? = NOW()', [10]));
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(RawCriterion::class, $query->where[0]);
         $this->assertStatement('date + ? = NOW()', [10], $query->where[0]->raw);
@@ -85,7 +85,7 @@ class WhereTraitTest extends TestCase
         });
 
         // Ordinary with complex values
-        $query = (new Query('pre_'))
+        $query = (new Query())
             ->where(
                 function (Query $query) {
                     $query->addCount()->table('bar');
@@ -122,8 +122,8 @@ class WhereTraitTest extends TestCase
     public function testWhereNot()
     {
         // Where not
-        $query = (new Query('pre_'))->table('foo', 'f')->whereNot(function (Query $query) {
-            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'f'], $query);
+        $query = (new Query())->table('foo', 'f')->whereNot(function (Query $query) {
+            $this->assertAttributes(['table' => 'foo', 'tableAlias' => 'f'], $query);
             $query->where('table.column1', 'value1')->orWhere('table.column2', 'value2');
         });
         $this->assertCount(1, $query->where);
@@ -136,7 +136,7 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
 
         // Or where not
-        $query = (new Query('pre_'))->table('foo', 'f')->orWhereNot(function (Query $query) {
+        $query = (new Query())->table('foo', 'f')->orWhereNot(function (Query $query) {
             $query->where('column1', 'value1')->orWhere('column2', 'value2');
         });
         $this->assertCount(1, $query->where);
@@ -165,7 +165,7 @@ class WhereTraitTest extends TestCase
      */
     public function testBetween()
     {
-        $query = (new Query('test_'))
+        $query = (new Query())
             ->whereBetween('table.price', 13, 123891)
             ->orWhereBetween('date', new Raw('YESTERDAY()'), new Raw('NOW()'))
             ->whereNotBetween(
@@ -180,7 +180,7 @@ class WhereTraitTest extends TestCase
                 }
             )
             ->orWhereNotBetween(
-                (new Query('demo_'))->addSelect('name')->table('users'),
+                (new Query())->addSelect('name')->table('users'),
                 'Alice',
                 'Bob'
             );
@@ -206,7 +206,7 @@ class WhereTraitTest extends TestCase
      */
     public function testWhereIn()
     {
-        $query = (new Query('test_'))
+        $query = (new Query())
             ->whereIn('table.name', ['Anna', 'Bill', 'Carl'])
             ->orWhereIn('group', new Raw('TABLES()'))
             ->whereNotIn(
@@ -218,7 +218,7 @@ class WhereTraitTest extends TestCase
                 }
             )
             ->orWhereNotIn(
-                (new Query('demo_'))->addSelect('name')->table('users'),
+                (new Query())->addSelect('name')->table('users'),
                 [4, new Raw('foo'), function (Query $query) {
                     $query->addAvg('price')->table('products');
                 }]
@@ -242,7 +242,7 @@ class WhereTraitTest extends TestCase
         $this->assertInstanceOf(Query::class, $query->where[3]->values[2]);
 
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query('test_'))->whereIn('name', 'foo');
+            (new Query())->whereIn('name', 'foo');
         });
     }
 
@@ -251,13 +251,13 @@ class WhereTraitTest extends TestCase
      */
     public function testWhereNull()
     {
-        $query = (new Query('test_'))
+        $query = (new Query())
             ->whereNull('table.name')
             ->orWhereNull('group')
             ->whereNotNull(function (Query $query) {
                 $query->addSelect('foo')->table('bar');
             })
-            ->orWhereNotNull((new Query('demo_'))->addSelect('name')->table('users'));
+            ->orWhereNotNull((new Query())->addSelect('name')->table('users'));
 
         $this->assertCount(4, $query->where);
         foreach ($query->where as $criterion) {
@@ -277,25 +277,25 @@ class WhereTraitTest extends TestCase
     public function testWhereColumn()
     {
         // Ordinary
-        $query = (new Query('pre_'))->whereColumn('table1.foo', '>', 'table2.bar');
+        $query = (new Query())->whereColumn('table1.foo', '>', 'table2.bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
         $this->assertAttributes(['column1' => 'table1.foo', 'rule' => '>', 'column2' => 'table2.bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
 
         // Or where
-        $query = (new Query('pre_'))->orWhereColumn('foo', '<', 'bar');
+        $query = (new Query())->orWhereColumn('foo', '<', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
         $this->assertAttributes(['column1' => 'foo', 'rule' => '<', 'column2' => 'bar', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]);
 
         // Omit the rule
-        $query = (new Query('pre_'))->whereColumn('table.foo', 'bar');
+        $query = (new Query())->whereColumn('table.foo', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
         $this->assertAttributes(['column1' => 'table.foo', 'rule' => '=', 'column2' => 'bar'], $query->where[0]);
 
         // Grouped criteria
-        $query = (new Query('pre_'))->whereColumn([
+        $query = (new Query())->whereColumn([
             ['table1.column1', 'table2.column1'],
             ['table1.column2', '!=', 'table2.column2']
         ]);
@@ -319,7 +319,7 @@ class WhereTraitTest extends TestCase
      */
     public function testWhereExists()
     {
-        $query = (new Query('test_'))
+        $query = (new Query())
             ->table('table')
             ->whereExists(function (Query $query) {
                 $query->table('other_table')->whereColumn('table.foo', 'other_table.bar');
@@ -328,7 +328,7 @@ class WhereTraitTest extends TestCase
             ->whereNotExists(function (Query $query) {
                 $query->table('other_table')->whereColumn('table.foo', 'other_table.bar');
             })
-            ->orWhereNotExists((new Query('demo_'))->table('users'));
+            ->orWhereNotExists((new Query())->table('users'));
 
         $this->assertCount(4, $query->where);
         foreach ($query->where as $criterion) {
@@ -336,7 +336,7 @@ class WhereTraitTest extends TestCase
         }
         $this->assertAttributes(['not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
         $this->assertInstanceOf(Query::class, $query->where[0]->subQuery);
-        $this->assertEquals('test_other_table', $query->where[0]->subQuery->table);
+        $this->assertEquals('other_table', $query->where[0]->subQuery->table);
         $this->assertAttributes(['column1' => 'table.foo', 'column2' => 'other_table.bar'], $query->where[0]->subQuery->where[0]);
         $this->assertAttributes(['not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
         $this->assertStatement('TABLES()', [], $query->where[1]->subQuery);
@@ -346,7 +346,7 @@ class WhereTraitTest extends TestCase
         $this->assertInstanceOf(Query::class, $query->where[3]->subQuery);
 
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query('test_'))->whereExists('foo bar');
+            (new Query(''))->whereExists('foo bar');
         });
     }
 }

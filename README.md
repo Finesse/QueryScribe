@@ -10,7 +10,7 @@ Provides a convenient object syntax for building SQL queries. Compiles the queri
 Doesn't perform queries to a database.
 
 ```php
-$query = (new Query('demo_'))
+$query = (new Query())
     ->from('posts')
     ->where('level', '>', 3)
     ->whereIn('category_id', function ($query) {
@@ -23,19 +23,20 @@ $query = (new Query('demo_'))
     ->orderBy('date', 'desc')
     ->limit(10);
     
+$prefixer = new TablePrefixer('demo_');
 $grammar = new MySQLGrammar();
-$compiled = $grammar->compile($query);
+$compiled = $grammar->compile($prefixer->process($query));
 
 echo $compiled->getSQL();
 /*
     SELECT *
-    FROM `demo_posts` AS `posts`
+    FROM `demo_posts`
     WHERE
         `level` > ? AND
         `category_id` IN (
             SELECT `id`
-            FROM `demo_categories` AS `categories`
-            WHERE `categories`.`name` = ?
+            FROM `demo_categories`
+            WHERE `demo_categories`.`name` = ?
         ) AND
         (MONTH(date)) = ?
     ORDER BY `date` DESC
@@ -55,7 +56,7 @@ Key features:
   Examples will come soon.
 * Very flexible. You can pass a [raw SQL or a subquery](#raw-sql-and-subqueries) almost everywhere (see the PHPDoc 
   comments in the code to know where you can pass them).
-* Smart table prefixes. Work partially in raw expressions.
+* Smart table prefixes which consider table aliases (don't work in raw expressions).
 * All the values go to bindings, even from subqueries.
 * No dependencies. Requires only PHP ≥ 7.
 
@@ -99,7 +100,7 @@ Then make an empty query:
 ```php
 use Finesse\QueryScribe\Query;
 
-$query = new Query(); // You can add table prefix: new Query('prefix_')
+$query = new Query();
 ```
 
 Build a query:
@@ -313,12 +314,6 @@ Or using a closure:
 // Bindings: [1997]
 ```
 
-Tables in column names are not required to be prefixed. So doing this is safe:
-
-```php
-(new Query('prefix_'))->whereRaw('table1.column = table2.column');
-```
-
 You can also use `orWhereRaw`.
 
 ##### Between
@@ -400,7 +395,7 @@ You can also use `orWhereColumn`.
 ##### Exists
 
 ```php
-(new Query('demo_'))
+(new Query())
     ->from('posts')
     ->whereExists(function ($query) {
         $query
@@ -408,14 +403,7 @@ You can also use `orWhereColumn`.
             ->whereColumn('comments.post_id', 'posts.id');
     });
 
-/*
-    SELECT * 
-    FROM "demo_posts" AS "posts" 
-    WHERE EXISTS (
-        SELECT * FROM "demo_comments" AS "comments" 
-        WHERE "comments"."post_id" = "posts"."id"
-    )
- */
+// SELECT * FROM "posts" WHERE EXISTS (SELECT * FROM "comments" WHERE "comments"."post_id" = "posts"."id")
 ```
 
 ##### How clauses are appended to each other
@@ -480,18 +468,6 @@ $query = new Query();
 $raw = $query->raw('CONCAT(?, ?)', ['Bindings', 'here']);
 ```
 
-Column names are not required to be prefixed in raw expressions. Table names should be prefixed but they are not 
-prefixed automatically. You can use the helper methods to add a prefix:
-
-```php
-$query = new Query('test_');
-$query
-    ->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'), 'my_table')
-    ->addSelect($query->raw('REPLACE(my_table.name, ?, ?)', ['small', 'big']));
-
-// SELECT (REPLACE(my_table.name, ?, ?)) FROM (MAGIC(test_my_table)) AS "my_table"
-```
-
 Example of what is possible:
 
 ```php
@@ -535,6 +511,57 @@ Example of what is possible:
     ->limit(3);
 ```
 
+### Table prefix
+
+Use `TablePrefixer` to add prefixes to all the tables in a query:
+
+```php
+use Finesse\QueryScribe\PostProcessors\TablePrefixer;
+use Finesse\QueryScribe\Query;
+
+$prefixer = new TablePrefixer('prefix_'); // Needs to be created once
+
+$query = (new Query())
+    ->from('posts')
+    ->whereExists(function ($query) {
+        $query
+            ->from('comments', 'c')
+            ->whereColumn('c.post_id', 'posts.id');
+    })
+    ->where('posts.date', '>', '2017-11-11');
+    
+$prefixedQuery = $prefixer->process($query);
+
+/*
+    SELECT * FROM "prefix_posts" 
+    WHERE EXISTS (
+        SELECT * FROM "prefix_comments" AS "c" 
+        WHERE "c"."post_id" = "prefix_posts"."id"
+    ) AND "prefix_posts"."date" > ?
+ */
+```
+
+As you can see table aliases are not prefixed. Prefixer automatically detects which identifiers are table aliases.
+
+Table prefixes are not added in raw expressions. You can use the helper methods to add a prefix:
+
+```php
+(new Query())
+    ->from(new Raw('MAGIC('.$prefixer->addTablePrefix('my_table').')'))
+    ->addSelect(new Raw('REPLACE('.$prefixer->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
+```
+
+Prefixer doesn't modify a given `Query` object therefore doing this is safe:
+
+```php
+$prefixer1 = new TablePrefixer('prefix1_');
+$prefixer2 = new TablePrefixer('prefix2_');
+
+$query = (new Query())/* -> ... */;
+
+$prefixedQuery1 = $prefixer1->process($query); // The prefix is `prefix1_
+$prefixedQuery2 = $prefixer2->process($query); // The prefix is `prefix2_
+```
 
 ## Versions compatibility
 
