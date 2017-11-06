@@ -2,6 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests\Grammars;
 
+use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Grammars\SQLiteGrammar;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\Raw;
@@ -57,5 +58,23 @@ class SQLiteGrammarTest extends TestCase
             SELECT "first_name", "home_address"
             FROM "users"
         ', [], $statements[3]);
+    }
+
+    /**
+     * Tests the `compileDelete` method
+     */
+    public function testCompileDelete()
+    {
+        $grammar = new SQLiteGrammar();
+
+        $this->assertStatement('DELETE FROM "table"', [], $grammar->compileDelete(
+            (new Query())->setDelete()->from('table')
+        ));
+
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileDelete((new Query())->setDelete()->from('table', 't'));
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('Table alias is not allowed in delete query', $exception->getMessage());
+        });
     }
 }

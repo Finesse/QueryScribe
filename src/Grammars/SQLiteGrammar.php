@@ -2,6 +2,10 @@
 
 namespace Finesse\QueryScribe\Grammars;
 
+use Finesse\QueryScribe\Exceptions\InvalidQueryException;
+use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\StatementInterface;
+
 /**
  * A grammar that compiles queries to the SQLite SQL dialect
  *
@@ -9,6 +13,18 @@ namespace Finesse\QueryScribe\Grammars;
  */
 class SQLiteGrammar extends CommonGrammar
 {
+    /**
+     * {@inheritDoc}
+     */
+    public function compileDelete(Query $query): StatementInterface
+    {
+        if ($query->tableAlias !== null) {
+            throw new InvalidQueryException('Table alias is not allowed in delete query');
+        }
+
+        return parent::compileDelete($query);
+    }
+
     /**
      * {@inheritDoc}
      */

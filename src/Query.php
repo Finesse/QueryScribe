@@ -73,7 +73,8 @@ class Query
      * Sets the target table.
      *
      * @param string|\Closure|self|StatementInterface $table Not prefixed table name without quotes
-     * @param string|null $alias Table alias
+     * @param string|null $alias Table alias. Warning! Alias is not allowed in insert, update and delete queries in some
+     *     of the DBMSs.
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException

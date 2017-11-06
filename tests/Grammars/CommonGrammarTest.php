@@ -276,6 +276,14 @@ class CommonGrammarTest extends TestCase
         }, function (InvalidQueryException $exception) {
             $this->assertEquals('The FROM table is not set', $exception->getMessage());
         });
+
+        // With table alias
+        $this->assertStatement('
+            DELETE "n" FROM "names" AS "n"
+            WHERE "n"."title" = ?
+        ', ['Foo'], $grammar->compileDelete(
+            (new Query())->table('names', 'n')->where('n.title', 'Foo')
+        ));
     }
 
     /**
