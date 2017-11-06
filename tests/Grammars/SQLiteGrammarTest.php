@@ -61,6 +61,24 @@ class SQLiteGrammarTest extends TestCase
     }
 
     /**
+     * Tests the `compileUpdate` method
+     */
+    public function testCompileUpdate()
+    {
+        $grammar = new SQLiteGrammar();
+
+        $this->assertStatement('UPDATE "table" SET "foo" = ?', ['bar'], $grammar->compileUpdate(
+            (new Query())->table('table')->addUpdate(['foo' => 'bar'])
+        ));
+
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileUpdate((new Query())->from('table', 't')->addUpdate(['foo' => 'bar']));
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('Table alias is not allowed in update query', $exception->getMessage());
+        });
+    }
+
+    /**
      * Tests the `compileDelete` method
      */
     public function testCompileDelete()

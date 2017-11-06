@@ -16,6 +16,18 @@ class SQLiteGrammar extends CommonGrammar
     /**
      * {@inheritDoc}
      */
+    public function compileUpdate(Query $query): StatementInterface
+    {
+        if ($query->tableAlias !== null) {
+            throw new InvalidQueryException('Table alias is not allowed in update query');
+        }
+
+        return parent::compileUpdate($query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function compileDelete(Query $query): StatementInterface
     {
         if ($query->tableAlias !== null) {
