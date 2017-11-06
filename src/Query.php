@@ -35,12 +35,12 @@ class Query
     use SelectTrait, InsertTrait, WhereTrait, ResolvesClosuresTrait;
 
     /**
-     * @var string|self|StatementInterface|null Query target table name (prefixed)
+     * @var string|self|StatementInterface|null Query target table name
      */
     public $table = null;
 
     /**
-     * @var string|null Target table alias (prefixed)
+     * @var string|null Target table alias
      */
     public $tableAlias = null;
 
@@ -92,7 +92,15 @@ class Query
         $table = $this->checkStringValue('Argument $table', $table);
 
         $this->table = is_string($table) ? $this->addTablePrefix($table) : $table;
-        $this->tableAlias = $alias === null ? null : $this->addTablePrefix($alias);
+
+        if ($alias !== null) {
+            $this->tableAlias = $alias;
+        } elseif ($this->tablePrefix !== '' && is_string($table)) {
+            $this->tableAlias = $table;
+        } else {
+            $this->tableAlias = null;
+        }
+
         return $this;
     }
 
@@ -113,7 +121,6 @@ class Query
             }
 
             $value = $this->checkScalarOrNullValue('Argument $values['.$column.']', $value);
-            $column = $this->addTablePrefixToColumn($column);
             $this->update[$column] = $value;
         }
 
@@ -142,7 +149,7 @@ class Query
      */
     public function orderBy($column, string $direction = 'asc'): self
     {
-        $column = $this->checkAndPrepareColumn('Argument $column', $column);
+        $column = $this->checkStringValue('Argument $column', $column);
         $this->order[] = new Order($column, strtolower($direction) === 'desc');
         return $this;
     }
@@ -352,24 +359,5 @@ class Query
         }
 
         return $value;
-    }
-
-    /**
-     * Check that value is suitable for being a column name of a query. Retrieves the closure subquery. Adds a table
-     * prefix to a column name (if it contains a table name).
-     *
-     * @param string $name Value name
-     * @param string|\Closure|self|StatementInterface $column
-     * @return string|self|StatementInterface
-     * @throws InvalidArgumentException
-     * @throws InvalidReturnValueException
-     */
-    protected function checkAndPrepareColumn(string $name, $column)
-    {
-        $column = $this->checkStringValue($name, $column);
-        if (is_string($column)) {
-            $column = $this->addTablePrefixToColumn($column);
-        }
-        return $column;
     }
 }

@@ -31,7 +31,7 @@ class WhereTraitTest extends TestCase
         $query = (new Query('pre_'))->where('table.foo', '>', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column' => 'pre_table.foo', 'rule' => '>', 'value' => 'bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column' => 'table.foo', 'rule' => '>', 'value' => 'bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
 
         // Or where
         $query = (new Query('pre_'))->orWhere('foo', '<', 'bar');
@@ -43,11 +43,11 @@ class WhereTraitTest extends TestCase
         $query = (new Query('pre_'))->where('table.foo', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column' => 'pre_table.foo', 'rule' => '=', 'value' => 'bar'], $query->where[0]);
+        $this->assertAttributes(['column' => 'table.foo', 'rule' => '=', 'value' => 'bar'], $query->where[0]);
 
         // Grouped criteria (by callback)
         $query = (new Query('pre_'))->table('foo', 'f')->where(function (Query $query) {
-            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'pre_f'], $query);
+            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'f'], $query);
             $query->where('table.column1', 'value1')->orWhere('table.column2', 'value2');
         });
         $this->assertCount(1, $query->where);
@@ -55,9 +55,9 @@ class WhereTraitTest extends TestCase
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertFalse($query->where[0]->not);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column' => 'pre_table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column' => 'pre_table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
 
         // Grouped criteria (by array)
         $query = (new Query('pre_'))->where([
@@ -69,9 +69,9 @@ class WhereTraitTest extends TestCase
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertFalse($query->where[0]->not);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column' => 'pre_table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column' => 'pre_table.column2', 'rule' => '!=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column' => 'table.column2', 'rule' => '!=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
 
         // Raw clause
         $query = (new Query('pre_'))->where(new Raw('date + ? = NOW()', [10]));
@@ -123,7 +123,7 @@ class WhereTraitTest extends TestCase
     {
         // Where not
         $query = (new Query('pre_'))->table('foo', 'f')->whereNot(function (Query $query) {
-            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'pre_f'], $query);
+            $this->assertAttributes(['table' => 'pre_foo', 'tableAlias' => 'f'], $query);
             $query->where('table.column1', 'value1')->orWhere('table.column2', 'value2');
         });
         $this->assertCount(1, $query->where);
@@ -131,9 +131,9 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column' => 'pre_table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column' => 'pre_table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
 
         // Or where not
         $query = (new Query('pre_'))->table('foo', 'f')->orWhereNot(function (Query $query) {
@@ -189,7 +189,7 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(BetweenCriterion::class, $criterion);
         }
-        $this->assertAttributes(['column' => 'test_table.price', 'min' => 13, 'max' => 123891, 'not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column' => 'table.price', 'min' => 13, 'max' => 123891, 'not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
         $this->assertAttributes(['column' => 'date', 'not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
         $this->assertStatement('YESTERDAY()', [], $query->where[1]->min);
         $this->assertStatement('NOW()', [], $query->where[1]->max);
@@ -228,7 +228,7 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(InCriterion::class, $criterion);
         }
-        $this->assertAttributes(['column' => 'test_table.name', 'values' => ['Anna', 'Bill', 'Carl'], 'not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column' => 'table.name', 'values' => ['Anna', 'Bill', 'Carl'], 'not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
         $this->assertAttributes(['column' => 'group', 'not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
         $this->assertStatement('TABLES()', [], $query->where[1]->values);
         $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
@@ -263,7 +263,7 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(NullCriterion::class, $criterion);
         }
-        $this->assertAttributes(['column' => 'test_table.name', 'isNull' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column' => 'table.name', 'isNull' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
         $this->assertAttributes(['column' => 'group', 'isNull' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
         $this->assertAttributes(['isNull' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
         $this->assertInstanceOf(Query::class, $query->where[2]->column);
@@ -280,7 +280,7 @@ class WhereTraitTest extends TestCase
         $query = (new Query('pre_'))->whereColumn('table1.foo', '>', 'table2.bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column1' => 'pre_table1.foo', 'rule' => '>', 'column2' => 'pre_table2.bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column1' => 'table1.foo', 'rule' => '>', 'column2' => 'table2.bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
 
         // Or where
         $query = (new Query('pre_'))->orWhereColumn('foo', '<', 'bar');
@@ -292,7 +292,7 @@ class WhereTraitTest extends TestCase
         $query = (new Query('pre_'))->whereColumn('table.foo', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column1' => 'pre_table.foo', 'rule' => '=', 'column2' => 'bar'], $query->where[0]);
+        $this->assertAttributes(['column1' => 'table.foo', 'rule' => '=', 'column2' => 'bar'], $query->where[0]);
 
         // Grouped criteria
         $query = (new Query('pre_'))->whereColumn([
@@ -304,9 +304,9 @@ class WhereTraitTest extends TestCase
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertFalse($query->where[0]->not);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column1' => 'pre_table1.column1', 'rule' => '=', 'column2' => 'pre_table2.column1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column1' => 'table1.column1', 'rule' => '=', 'column2' => 'table2.column1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column1' => 'pre_table1.column2', 'rule' => '!=', 'column2' => 'pre_table2.column2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column1' => 'table1.column2', 'rule' => '!=', 'column2' => 'table2.column2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
 
         // Wrong rule value
         $this->assertException(InvalidArgumentException::class, function () {
@@ -337,7 +337,7 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
         $this->assertInstanceOf(Query::class, $query->where[0]->subQuery);
         $this->assertEquals('test_other_table', $query->where[0]->subQuery->table);
-        $this->assertAttributes(['column1' => 'test_table.foo', 'column2' => 'test_other_table.bar'], $query->where[0]->subQuery->where[0]);
+        $this->assertAttributes(['column1' => 'table.foo', 'column2' => 'other_table.bar'], $query->where[0]->subQuery->where[0]);
         $this->assertAttributes(['not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
         $this->assertStatement('TABLES()', [], $query->where[1]->subQuery);
         $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);

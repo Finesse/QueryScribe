@@ -26,8 +26,8 @@ class QueryProxyTest extends TestCase
             ->from('items')
             ->where('items.size', '>', 3);
 
-        $this->assertEquals('prefixitems', $query->table);
-        $this->assertEquals('prefixitems.size', $query->where[0]->column);
+        $this->assertAttributes(['table' => 'prefixitems', 'tableAlias' => 'items'], $query);
+        $this->assertEquals('items.size', $query->where[0]->column);
         $this->assertEquals(3, $query->where[0]->value);
         $this->assertEquals('prefixfoo', $superQuery->addTablePrefix('foo'));
 
@@ -94,10 +94,10 @@ class QueryProxyTest extends TestCase
                 $query->where('table4.column', 'foo');
             });
 
-        $this->assertEquals('prefix_table1', $query->select[0]->table);
-        $this->assertEquals('table2', $query->select[1]->table);
-        $this->assertEquals('table3', $query->select[2]->table);
-        $this->assertEquals('prefix_table4.column', $query->where[0]->criteria[0]->column);
+        $this->assertAttributes(['table' => 'prefix_table1', 'tableAlias' => 'table1'], $query->select[0]);
+        $this->assertAttributes(['table' => 'table2', 'tableAlias' => null], $query->select[1]);
+        $this->assertAttributes(['table' => 'table3', 'tableAlias' => null], $query->select[2]);
+        $this->assertEquals('table4.column', $query->where[0]->criteria[0]->column);
 
         $this->assertException(InvalidReturnValueException::class, function () use ($superQuery) {
             $superQuery->from(function () {

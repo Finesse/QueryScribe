@@ -27,14 +27,14 @@ class QueryTest extends TestCase
 
         // Simple table
         $query->table('foo', 'f');
-        $this->assertAttributes(['table' => 'pref_foo', 'tableAlias' => 'pref_f'], $query);
+        $this->assertAttributes(['table' => 'pref_foo', 'tableAlias' => 'f'], $query);
 
         // Table with callback subquery
         $query->table(function (Query $query) {
             $query->addSelect('foo')->from('bar');
         });
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'pref_bar', 'tableAlias' => null], $query->table);
+        $this->assertAttributes(['table' => 'pref_bar', 'tableAlias' => 'bar'], $query->table);
         $this->assertNull($query->tableAlias);
 
         // Table with another type of callback
@@ -42,14 +42,14 @@ class QueryTest extends TestCase
             return (new Query('test_'))->addSelect('foo2')->from('bar');
         });
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'test_bar', 'tableAlias' => null], $query->table);
+        $this->assertAttributes(['table' => 'test_bar', 'tableAlias' => 'bar'], $query->table);
         $this->assertNull($query->tableAlias);
 
         // Table with subquery
         $query->table((new Query('sub_'))->table('table', 't'), 's');
         $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'sub_table', 'tableAlias' => 'sub_t'], $query->table);
-        $this->assertEquals('pref_s', $query->tableAlias);
+        $this->assertAttributes(['table' => 'sub_table', 'tableAlias' => 't'], $query->table);
+        $this->assertEquals('s', $query->tableAlias);
 
         // Raw table
         $query->table(new Raw('TABLES()'));

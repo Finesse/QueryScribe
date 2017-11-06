@@ -29,10 +29,10 @@ $compiled = $grammar->compile($query);
 echo $compiled->getSQL();
 /*
     SELECT *
-    FROM `demo_posts`
+    FROM `demo_posts` AS `posts`
     WHERE
         `level` > ? AND
-        `category_id` IN (SELECT `id` FROM `demo_categories` WHERE `demo_categories`.`name` = ?) AND
+        `category_id` IN (SELECT `id` FROM `demo_categories` AS `categories` WHERE `categories`.`name` = ?) AND
         (MONTH(date)) = ?
     ORDER BY `date` DESC
     LIMIT ?
@@ -51,8 +51,7 @@ Key features:
   Examples will come soon.
 * Very flexible. You can pass a [raw SQL or a subquery](#raw-sql-and-subqueries) almost everywhere (see the PHPDoc 
   comments in the code to know where you can pass them).
-* Supports table prefixes. Once set to a `Query` object, the prefix will be applied to all the tables passing through 
-  the query (except raw expressions).
+* Smart table prefixes. Work partially in raw expressions.
 * All the values go to bindings, even from subqueries.
 * No dependencies. Requires only PHP ≥ 7.
 
@@ -310,6 +309,12 @@ Or using a closure:
 // Bindings: [1997]
 ```
 
+Tables in column names are not required to be prefixed. So doing this is safe:
+
+```php
+(new Query('prefix_'))->whereRaw('table1.column = table2.column');
+```
+
 Use can also use `orWhereRaw`.
 
 ##### Between
@@ -399,7 +404,14 @@ Use can also use `orWhereColumn`.
             ->whereColumn('comments.post_id', 'posts.id');
     });
 
-// SELECT * FROM "demo_posts" WHERE EXISTS (SELECT * FROM "demo_comments" WHERE "demo_comments"."post_id" = "demo_posts"."id")
+/*
+    SELECT * 
+    FROM "demo_posts" AS "posts" 
+    WHERE EXISTS (
+        SELECT * FROM "demo_comments" AS "comments" 
+        WHERE "comments"."post_id" = "posts"."id"
+    )
+ */
 ```
 
 ##### How clauses are appended to each other
@@ -464,15 +476,16 @@ $query = new Query();
 $raw = $query->raw('CONCAT(?, ?)', ['Bindings', 'here']);
 ```
 
-Tables and columns are not prefixed in raw SQL, but you can use the helper methods to add a prefix:
+Column names are not required to be prefixed in raw expressions. Table names should be prefixed but they are not 
+prefixed automatically. You can use the helper methods to add a prefix:
 
 ```php
 $query = new Query('test_');
 $query
-    ->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'))
-    ->addSelect($query->raw('REPLACE('.$query->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
+    ->from($query->raw('MAGIC('.$query->addTablePrefix('my_table').')'), 'my_table')
+    ->addSelect($query->raw('REPLACE(my_table.name, ?, ?)', ['small', 'big']));
 
-// SELECT (REPLACE(test_my_table.name, ?, ?)) FROM (MAGIC(test_my_table))
+// SELECT (REPLACE(my_table.name, ?, ?)) FROM (MAGIC(test_my_table)) AS "my_table"
 ```
 
 Example of what is possible:
@@ -516,30 +529,6 @@ Example of what is possible:
         $query->from('pages')->addMax('length');
     })
     ->limit(3);
-```
-
-#### Using both a table prefix and table aliases
-
-Tables names are prefixed in columns names. Query builder doesn't know which identifier is a table name and which is 
-alias therefor table prefix is applied both to table names and table aliases. So such queries are valid:
-
-```php
-(new Query('prefix_'))
-    ->from('table')
-    ->whereExists(function ($query) {
-        $query
-            ->from('table', 'subtable')
-            ->whereColumn('t2.id', 'table.parent_id')
-            ->where('t2.column', 'Test')
-    });
-    
-/*
-    SELECT * FROM "prefix_table"
-    WHERE EXISTS (
-        SELECT * FROM "prefix_table" AS "prefix_t2"
-        WHERE "prexif_t2"."id" = "prefix_table"."parent_id" AND "prefix_t2"."column" = ?
-    )
- */
 ```
 
 

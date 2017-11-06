@@ -58,7 +58,7 @@ trait SelectTrait
         }
 
         foreach ($columns as $alias => $column) {
-            $column = $this->checkAndPrepareColumn('Argument $columns['.$alias.']', $column);
+            $column = $this->checkStringValue('Argument $columns['.$alias.']', $column);
 
             if (is_string($alias)) {
                 $this->select[$alias] = $column;
@@ -152,7 +152,7 @@ trait SelectTrait
      */
     protected function addAggregate(string $function, $column, string $alias = null): self
     {
-        $column = $this->checkAndPrepareColumn('Argument $column', $column);
+        $column = $this->checkStringValue('Argument $column', $column);
 
         $aggregate = new Aggregate($function, $column);
         if ($alias === null) {

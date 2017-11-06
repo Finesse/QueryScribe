@@ -52,7 +52,6 @@ trait InsertTrait
                 }
 
                 $value = $this->checkScalarOrNullValue('Argument $rows['.$index.']['.$column.']', $value);
-                $column = $this->addTablePrefixToColumn($column);
                 $filteredRow[$column] = $value;
             }
 

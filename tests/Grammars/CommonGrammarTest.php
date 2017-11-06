@@ -62,17 +62,16 @@ class CommonGrammarTest extends TestCase
         // Comprehensive case
         $this->assertStatement('
             SELECT
-                "prefix_table".*,
-                "prefix_table"."foo" AS "f", 
-                "prefix_table"."bar" AS "b", 
-                "prefix_t"."column" AS "r",
-                (SELECT "foo" FROM "test_bar") AS "sub""query",
+                "t".*,
+                "t"."foo" AS "f", 
+                "t"."bar" AS "b", 
+                (SELECT "bar"."foo" FROM "test_bar" AS "bar") AS "sub""query",
                 COUNT(*) AS "count",
-                MIN("prefix_table"."bar"),
+                MIN("t"."bar"),
                 MAX("baz"),
                 AVG("boo") AS "avg",
                 SUM((baz * boo))
-            FROM "prefix_table" AS "prefix_t"
+            FROM "prefix_table" AS "t"
             WHERE "price" > ?
             ORDER BY "position" ASC
             LIMIT ?
@@ -80,14 +79,13 @@ class CommonGrammarTest extends TestCase
         ', [100, 12, 140], $grammar->compileSelect(
             (new Query('prefix_'))
                 ->addSelect([
-                    'table.*',
-                    'f' => 'table.foo',
-                    'b' => 'table.bar',
-                    'r' => 't.column',
-                    'sub"query' => (new Query('test_'))->addSelect('foo')->from('bar')
+                    't.*',
+                    'f' => 't.foo',
+                    'b' => 't.bar',
+                    'sub"query' => (new Query('test_'))->addSelect('bar.foo')->from('bar')
                 ])
                 ->addCount('*', 'count')
-                ->addMin('table.bar')
+                ->addMin('t.bar')
                 ->addMax('baz')
                 ->addAvg('boo', 'avg')
                 ->addSum(new Raw('baz * boo'))
@@ -99,14 +97,14 @@ class CommonGrammarTest extends TestCase
         ));
 
         // Simple count
-        $this->assertStatement('SELECT COUNT(*) FROM "prefix_table"', [], $grammar->compileSelect(
+        $this->assertStatement('SELECT COUNT(*) FROM "prefix_table" AS "table"', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table')->addCount()
         ));
 
         // No columns
         $this->assertStatement('
             SELECT *
-            FROM "prefix_table" AS "prefix_t"
+            FROM "prefix_table" AS "t"
         ', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('table', 't')
         ));
@@ -144,18 +142,18 @@ class CommonGrammarTest extends TestCase
 
         // Insert values
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("title", "author_id", "date", "description")
+            INSERT INTO "demo_posts" AS "posts" ("title", "author_id", "date", "description")
             VALUES
                 (?, ?, DEFAULT, DEFAULT),
                 (?, DEFAULT, (NOW()), DEFAULT),
-                (DEFAULT, DEFAULT, (SELECT MAX("start") FROM "demo_events" WHERE "type" = ?), ?)
+                (DEFAULT, DEFAULT, (SELECT MAX("start") FROM "demo_events" AS "events" WHERE "type" = ?), ?)
         ', ['Foo!!', 12, 'Bar?', 'post', null], $statements[0]);
 
         // Insert from select
         $this->assertStatement('
-            INSERT INTO "demo_posts" ("name", "address")
+            INSERT INTO "demo_posts" AS "posts" ("name", "address")
             SELECT "first_name", "home_address"
-            FROM "demo_users"
+            FROM "demo_users" AS "users"
         ', [], $statements[1]);
 
         // No table
@@ -189,14 +187,14 @@ class CommonGrammarTest extends TestCase
 
         // Comprehensive case
         $this->assertStatement('
-            UPDATE "pref_table" AS "pref_t"
+            UPDATE "pref_table" AS "t"
             SET
                 "name" = ?,
-                "pref_table"."price" = ?,
-                "pref_t"."date" = (NEXT_DAY(?)),
+                "t"."price" = ?,
+                "t"."date" = (NEXT_DAY(?)),
                 "description" = (
                     SELECT "title"
-                    FROM "pref_stories"
+                    FROM "pref_stories" AS "stories"
                     LIMIT ?
                 )
             WHERE "old" = ?
@@ -212,7 +210,7 @@ class CommonGrammarTest extends TestCase
                 ->limit(10)
                 ->addUpdate([
                     'name' => 'Hello darkness',
-                    'table.price' => 145.5,
+                    't.price' => 145.5,
                     't.date' => new Raw('NEXT_DAY(?)', [56]),
                     'description' => function (Query $query) {
                         $query->from('stories')->addSelect('title')->limit(1);
@@ -248,7 +246,7 @@ class CommonGrammarTest extends TestCase
 
         // Comprehensive case
         $this->assertStatement('
-            DELETE FROM "test_table"
+            DELETE FROM "test_table" AS "table"
             WHERE "date" < ?
             ORDER BY "name" ASC
             LIMIT ?
@@ -302,7 +300,7 @@ class CommonGrammarTest extends TestCase
         $grammar = new CommonGrammar();
 
         // Simple from
-        $this->assertStatement('SELECT * FROM "database"."prefix_table" AS "prefix_t"', [], $grammar->compileSelect(
+        $this->assertStatement('SELECT * FROM "database"."prefix_table" AS "t"', [], $grammar->compileSelect(
             (new Query('prefix_'))->from('database.table', 't')
         ));
 
@@ -334,7 +332,7 @@ class CommonGrammarTest extends TestCase
 
         $this->assertStatement('
             SELECT *
-            FROM "test_posts"
+            FROM "test_posts" AS "posts"
             WHERE
                 (
                     (
@@ -343,7 +341,7 @@ class CommonGrammarTest extends TestCase
                     ) AND
                     ("position" NOT BETWEEN ? AND (
                         SELECT MAX("price")
-                        FROM "test_products"
+                        FROM "test_products" AS "products"
                     )) AND (
                         "foo" = "bar" AND
                         "bar" != "baz"
@@ -353,9 +351,9 @@ class CommonGrammarTest extends TestCase
                     ) OR
                     NOT EXISTS(
                         SELECT *
-                        FROM "test_comments"
+                        FROM "test_comments" AS "comments"
                         WHERE
-                            "test_posts"."id" = "test_comments"."post_id" AND
+                            "posts"."id" = "comments"."post_id" AND
                             "content" = ?
                     )
                 ) AND
@@ -363,7 +361,7 @@ class CommonGrammarTest extends TestCase
                 "position" IS NULL AND
                 "author_id" NOT IN (
                     SELECT "id"
-                    FROM "test_users"
+                    FROM "test_users" AS "users"
                     WHERE "deleted" = ?
                 )
         ', [0, '%boss%', 'Important', 'Hello', 1, 4, 6, true], $grammar->compileSelect(
@@ -428,12 +426,12 @@ class CommonGrammarTest extends TestCase
 
         $this->assertStatement('
             SELECT *
-            FROM "test_stories"
+            FROM "test_stories" AS "stories"
             ORDER BY
                 "category" ASC,
                 (
                     SELECT "foo"
-                    FROM "test2_bar"
+                    FROM "test2_bar" AS "bar"
                     WHERE "foo" > ?
                 ) DESC,
                 RANDOM()

@@ -21,7 +21,7 @@ class SelectTraitTest extends TestCase
     public function testFrom()
     {
         $query = (new Query('demo_'))->from('table', 't');
-        $this->assertAttributes(['table' => 'demo_table', 'tableAlias' => 'demo_t'], $query);
+        $this->assertAttributes(['table' => 'demo_table', 'tableAlias' => 't'], $query);
     }
 
     /**
@@ -49,11 +49,11 @@ class SelectTraitTest extends TestCase
         ]);
         $this->assertCount(5, $query->select);
         $this->assertEquals('value', $query->select[0]);
-        $this->assertEquals('pref_table.title', $query->select['t']);
+        $this->assertEquals('table.title', $query->select['t']);
         $this->assertInstanceOf(Query::class, $query->select[1]);
-        $this->assertAttributes(['table' => 'pref_bar', 'select' => ['foo']], $query->select[1]);
+        $this->assertAttributes(['table' => 'pref_bar', 'tableAlias' => 'bar', 'select' => ['foo']], $query->select[1]);
         $this->assertInstanceOf(Query::class, $query->select[2]);
-        $this->assertAttributes(['table' => 'pref2_bar', 'select' => ['foo']], $query->select[2]);
+        $this->assertAttributes(['table' => 'pref2_bar', 'tableAlias' => 'bar', 'select' => ['foo']], $query->select[2]);
         $this->assertInstanceOf(StatementInterface::class, $query->select['price']);
         $this->assertEquals('AVG(price) + ?', $query->select['price']->getSQL());
         $this->assertEquals([14], $query->select['price']->getBindings());
@@ -91,7 +91,7 @@ class SelectTraitTest extends TestCase
         }
 
         $this->assertAttributes(['function' => 'COUNT', 'column' => '*'], $query->select[0]);
-        $this->assertAttributes(['function' => 'AVG', 'column' => 'test_table.price'], $query->select['price']);
+        $this->assertAttributes(['function' => 'AVG', 'column' => 'table.price'], $query->select['price']);
         $this->assertEquals('SUM', $query->select[1]->function);
         $this->assertInstanceOf(StatementInterface::class, $query->select[1]->column);
         $this->assertEquals('price * ?', $query->select[1]->column->getSQL());
@@ -101,7 +101,7 @@ class SelectTraitTest extends TestCase
         $this->assertEquals('test_items', $query->select[2]->column->table);
         $this->assertEquals('MAX', $query->select[3]->function);
         $this->assertInstanceOf(Query::class, $query->select[3]->column);
-        $this->assertEquals('foo_bar', $query->select[3]->column->table);
+        $this->assertAttributes(['table' => 'foo_bar', 'tableAlias' => 'bar'], $query->select[3]->column);
 
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query())->addAvg(['foo', 'bar']);
