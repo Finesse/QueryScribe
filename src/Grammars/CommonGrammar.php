@@ -69,6 +69,9 @@ class CommonGrammar implements GrammarInterface
         if ($query->table === null) {
             throw new InvalidQueryException('The INTO table is not set');
         }
+        if ($query->tableAlias !== null) {
+            throw new InvalidQueryException('Table alias is not allowed in insert query');
+        }
 
         /**
          * Divide inserts into two groups: values and select queries

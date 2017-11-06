@@ -178,6 +178,13 @@ class CommonGrammarTest extends TestCase
         $this->assertCount(0, $grammar->compileInsert(
             (new Query())->table('foo')
         ));
+
+        // With table alias
+        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
+            $grammar->compileInsert((new Query())->table('table', 't')->addInsert(['foo' => 'bar']));
+        }, function (InvalidQueryException $exception) {
+            $this->assertEquals('Table alias is not allowed in insert query', $exception->getMessage());
+        });
     }
 
     /**
