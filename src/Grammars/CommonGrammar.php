@@ -138,7 +138,7 @@ class CommonGrammar implements GrammarInterface
     {
         $bindings = [];
         $sql = [
-            'DELETE',
+            'DELETE'.($query->tableAlias === null ? '' : ' '.$this->quotePlainIdentifier($query->tableAlias)),
             $this->compileFromPart($query, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),

@@ -32,7 +32,11 @@ echo $compiled->getSQL();
     FROM `demo_posts` AS `posts`
     WHERE
         `level` > ? AND
-        `category_id` IN (SELECT `id` FROM `demo_categories` AS `categories` WHERE `categories`.`name` = ?) AND
+        `category_id` IN (
+            SELECT `id`
+            FROM `demo_categories` AS `categories`
+            WHERE `categories`.`name` = ?
+        ) AND
         (MONTH(date)) = ?
     ORDER BY `date` DESC
     LIMIT ?
@@ -315,7 +319,7 @@ Tables in column names are not required to be prefixed. So doing this is safe:
 (new Query('prefix_'))->whereRaw('table1.column = table2.column');
 ```
 
-Use can also use `orWhereRaw`.
+You can also use `orWhereRaw`.
 
 ##### Between
 
@@ -327,7 +331,7 @@ Use can also use `orWhereRaw`.
 // SELECT * FROM "table" WHERE ("age" BETWEEN ? AND ?)
 ```
 
-Use can also use `orWhereBetween`, `whereNotBetween` and `orWhereNotBetween`.
+You can also use `orWhereBetween`, `whereNotBetween` and `orWhereNotBetween`.
 
 ##### In
 
@@ -354,7 +358,7 @@ Using subquery:
 // SELECT * FROM "table" WHERE "category_id" IN (SELECT "id" FROM "users" WHERE "name" = ?)
 ```
 
-Use can also use `orWhereIn`, `whereNotIn` and `orWhereNotIn`.
+You can also use `orWhereIn`, `whereNotIn` and `orWhereNotIn`.
 
 ##### Is null
 
@@ -366,7 +370,7 @@ Use can also use `orWhereIn`, `whereNotIn` and `orWhereNotIn`.
 // SELECT * FROM "table" WHERE "description" IS NULL
 ```
 
-Use can also use `orWhereNull`, `whereNotNull` and `orWhereNotNull`.
+You can also use `orWhereNull`, `whereNotNull` and `orWhereNotNull`.
 
 ##### Compare columns
 
@@ -391,7 +395,7 @@ Or
 // SELECT * FROM "table" WHERE ("first_name" = "last_name" AND "account" >= "debpt")
 ```
 
-Use can also use `orWhereColumn`.
+You can also use `orWhereColumn`.
 
 ##### Exists
 

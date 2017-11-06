@@ -246,7 +246,7 @@ class CommonGrammarTest extends TestCase
 
         // Comprehensive case
         $this->assertStatement('
-            DELETE FROM "test_table" AS "table"
+            DELETE "table" FROM "test_table" AS "table"
             WHERE "date" < ?
             ORDER BY "name" ASC
             LIMIT ?
