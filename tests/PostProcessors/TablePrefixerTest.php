@@ -22,12 +22,7 @@ class TablePrefixerTest extends TestCase
         $processor = new TablePrefixer('test_');
 
         $query = (new Query())
-            ->table(function (Query $query) {
-                $query
-                    ->from('items')
-                    ->whereRaw('NOW()');
-            })
-            ->addSelect('database.items.name')
+            ->addSelect('items.name')
             ->addSelect(new Raw('FOO()'))
             ->addAvg('items.value')
             ->addInsert([
@@ -38,6 +33,7 @@ class TablePrefixerTest extends TestCase
             ->addInsertFromSelect(['items.title'], function (Query $query) {
                 $query->from('users')->addSelect('users.name');
             })
+            ->from('items')
             ->addUpdate([
                 'items.value' => function (Query $query) {
                     $query->from('products')->addAvg('products.price');
@@ -63,15 +59,18 @@ class TablePrefixerTest extends TestCase
             ->inRandomOrder()
             ->offset(150)
             ->limit(function (Query $query) {
-                $query->addCount()->from('comments');
+                $query->addCount()->from(function (Query $query) {
+                    $query
+                        ->from('comments')
+                        ->whereRaw('NOW()');
+                });
             });
 
         $prefixedQuery = $processor->process($query);
 
-        $this->assertEquals('test_items', $prefixedQuery->table->table);
-        $this->assertStatement('NOW()', [], $prefixedQuery->table->where[0]->raw);
+        $this->assertEquals('test_items', $prefixedQuery->table);
         $this->assertCount(3, $prefixedQuery->select);
-        $this->assertEquals('database.test_items.name', $prefixedQuery->select[0]);
+        $this->assertEquals('test_items.name', $prefixedQuery->select[0]);
         $this->assertStatement('FOO()', [], $prefixedQuery->select[1]);
         $this->assertEquals('test_items.value', $prefixedQuery->select[2]->column);
         $this->assertCount(2, $prefixedQuery->insert);
@@ -99,11 +98,12 @@ class TablePrefixerTest extends TestCase
         $this->assertEquals('test_items.foo', $prefixedQuery->order[0]->column);
         $this->assertEquals('random', $prefixedQuery->order[1]);
         $this->assertEquals(150, $prefixedQuery->offset);
-        $this->assertEquals('test_comments', $prefixedQuery->limit->table);
+        $this->assertEquals('test_comments', $prefixedQuery->limit->table->table);
+        $this->assertStatement('NOW()', [], $prefixedQuery->limit->table->where[0]->raw);
 
         // Original query must not be modified
         $this->assertNotEquals($prefixedQuery, $query);
-        $this->assertNotEquals($prefixedQuery->table->table, $query->table->table);
+        $this->assertNotEquals($prefixedQuery->table, $query->table);
         $this->assertNotEquals($prefixedQuery->insert[1], $query->insert[1]);
         $this->assertNotEquals($prefixedQuery->where[3]->values->table, $query->where[3]->values->table);
     }
@@ -198,7 +198,7 @@ class TablePrefixerTest extends TestCase
         $this->assertEquals('demo_comments', $prefixedQuery->where[0]->subQuery->table);
         $this->assertEquals('c', $prefixedQuery->where[0]->subQuery->tableAlias);
         $this->assertAttributes(['column1' => 'c.post_id', 'column2' => 'p.id'], $prefixedQuery->where[0]->subQuery->where[0]);
-        $this->assertEquals('demo_t.date', $prefixedQuery->where[0]->subQuery->where[1]->column);
+        $this->assertEquals('t.date', $prefixedQuery->where[0]->subQuery->where[1]->column);
         $this->assertEquals('c.type', $prefixedQuery->where[0]->subQuery->where[2]->column);
         $this->assertEquals('demo_types', $prefixedQuery->where[0]->subQuery->where[2]->values->table);
         $this->assertEquals('t', $prefixedQuery->where[0]->subQuery->where[2]->values->tableAlias);
@@ -216,9 +216,9 @@ class TablePrefixerTest extends TestCase
         $this->assertEquals('database.prefix_table', $processor->addTablePrefix('database.table'));
 
         $this->assertEquals('column1', $processor->addTablePrefixToColumn('column1'));
-        $this->assertEquals('prefix_table.column1', $processor->addTablePrefixToColumn('table.column1', ['t', 'c']));
+        $this->assertEquals('prefix_table.column1', $processor->addTablePrefixToColumn('table.column1', ['table', 'comments']));
         $this->assertEquals('database.prefix_table.column1', $processor->addTablePrefixToColumn('database.table.column1'));
-        $this->assertEquals('t.column1', $processor->addTablePrefixToColumn('t.column1', ['t', 'c']));
+        $this->assertEquals('t.column1', $processor->addTablePrefixToColumn('t.column1', ['table', 'comments']));
     }
 
     /**

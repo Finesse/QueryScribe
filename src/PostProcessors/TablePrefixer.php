@@ -68,10 +68,10 @@ class TablePrefixer implements PostProcessorInterface
      * Adds the table prefix to a column name which may contain table name or alias.
      *
      * @param string $column Column name without quotes
-     * @param string[] $tableAliases Known table aliases
+     * @param string[]|null $knownTables Known unprefixed table names. If null, every table name is prefixed.
      * @return string Column name with prefixed table name
      */
-    public function addTablePrefixToColumn(string $column, array $tableAliases = []): string
+    public function addTablePrefixToColumn(string $column, array $knownTables = null): string
     {
         $columnPosition = strrpos($column, '.');
         if ($columnPosition === false) {
@@ -79,7 +79,7 @@ class TablePrefixer implements PostProcessorInterface
         }
 
         $table = substr($column, 0, $columnPosition);
-        if (in_array($table, $tableAliases)) {
+        if ($knownTables !== null && !in_array($table, $knownTables)) {
             return $column;
         }
 
@@ -91,61 +91,61 @@ class TablePrefixer implements PostProcessorInterface
      * Processes a Query object. DOES NOT change the given query or it's components by the link but may return it.
      *
      * @param Query $query
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return Query
      */
-    public function processQuery(Query $query, array $tableAliases): Query
+    public function processQuery(Query $query, array $knownTables): Query
     {
         if ($this->tablePrefix === '') {
             return $query;
         }
 
-        $tableAliases = array_merge($tableAliases, $this->getTablesAliases($query));
+        $knownTables = array_merge($knownTables, $this->getTables($query));
         $queryProperties = [];
 
         // Table
         if (is_string($query->table)) {
             $queryProperties['table'] = $this->addTablePrefix($query->table);
         } else {
-            $queryProperties['table'] = $this->processSubQuery($query->table, $tableAliases);
+            $queryProperties['table'] = $this->processSubQuery($query->table, $knownTables);
         }
 
         // Select
         $queryProperties['select'] = [];
         foreach ($query->select as $alias => $select) {
-            $queryProperties['select'][$alias] = $this->processSelect($select, $tableAliases);
+            $queryProperties['select'][$alias] = $this->processSelect($select, $knownTables);
         }
 
         // Insert
         $queryProperties['insert'] = [];
         foreach ($query->insert as $index => $insert) {
-            $queryProperties['insert'][$index] = $this->processInsert($insert, $tableAliases);
+            $queryProperties['insert'][$index] = $this->processInsert($insert, $knownTables);
         }
 
         // Update
         $queryProperties['update'] = [];
         foreach ($query->update as $column => $update) {
-            $column = $this->addTablePrefixToColumn($column, $tableAliases);
-            $queryProperties['update'][$column] = $this->processValueOrSubQuery($update, $tableAliases);
+            $column = $this->addTablePrefixToColumn($column, $knownTables);
+            $queryProperties['update'][$column] = $this->processValueOrSubQuery($update, $knownTables);
         }
 
         // Where
         $queryProperties['where'] = [];
         foreach ($query->where as $index => $criterion) {
-            $queryProperties['where'][$index] = $this->processCriterion($criterion, $tableAliases);
+            $queryProperties['where'][$index] = $this->processCriterion($criterion, $knownTables);
         }
 
         // Order
         $queryProperties['order'] = [];
         foreach ($query->order as $index => $order) {
-            $queryProperties['order'][$index] = $this->processOrder($order, $tableAliases);
+            $queryProperties['order'][$index] = $this->processOrder($order, $knownTables);
         }
 
         // Offset
-        $queryProperties['offset'] = $this->processValueOrSubQuery($query->offset, $tableAliases);
+        $queryProperties['offset'] = $this->processValueOrSubQuery($query->offset, $knownTables);
 
         // Limit
-        $queryProperties['limit'] = $this->processValueOrSubQuery($query->limit, $tableAliases);
+        $queryProperties['limit'] = $this->processValueOrSubQuery($query->limit, $knownTables);
 
         // Is any property is changed?
         $isChanged = false;
@@ -168,15 +168,15 @@ class TablePrefixer implements PostProcessorInterface
     }
 
     /**
-     * Retrieves tables aliases used in a query (excluding subqueries).
+     * Retrieves unprefixed table names used in a query (excluding subqueries).
      *
      * @param Query $query
      * @return string[]
      */
-    protected function getTablesAliases(Query $query): array
+    protected function getTables(Query $query): array
     {
-        if ($query->tableAlias !== null) {
-            return [$query->tableAlias];
+        if (is_string($query->table)) {
+            return [$query->table];
         } else {
             return [];
         }
@@ -186,13 +186,13 @@ class TablePrefixer implements PostProcessorInterface
      * Processes a single select column.
      *
      * @param string|Aggregate|Query|StatementInterface $select
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return string|Aggregate|Query|StatementInterface
      */
-    protected function processSelect($select, array $tableAliases)
+    protected function processSelect($select, array $knownTables)
     {
         if ($select instanceof Aggregate) {
-            $column = $this->processColumnOrSubQuery($select->column, $tableAliases);
+            $column = $this->processColumnOrSubQuery($select->column, $knownTables);
             if ($column === $select->column) {
                 return $select;
             } else {
@@ -200,48 +200,48 @@ class TablePrefixer implements PostProcessorInterface
             }
         }
 
-        return $this->processColumnOrSubQuery($select, $tableAliases);
+        return $this->processColumnOrSubQuery($select, $knownTables);
     }
 
     /**
      * Processes a "column or subquery" value.
      *
      * @param string|Query|StatementInterface $column
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return string|Query|StatementInterface
      */
-    protected function processColumnOrSubQuery($column, array $tableAliases)
+    protected function processColumnOrSubQuery($column, array $knownTables)
     {
         if (is_string($column)) {
-            return $this->addTablePrefixToColumn($column, $tableAliases);
+            return $this->addTablePrefixToColumn($column, $knownTables);
         }
 
-        return $this->processSubQuery($column, $tableAliases);
+        return $this->processSubQuery($column, $knownTables);
     }
 
     /**
      * Processes a "value or subquery" value
      *
      * @param mixed|Query|StatementInterface $value
-     * @param array $tableAliases
+     * @param array $knownTables
      * @return mixed|Query|StatementInterface
      */
-    protected function processValueOrSubQuery($value, array $tableAliases)
+    protected function processValueOrSubQuery($value, array $knownTables)
     {
-        return $this->processSubQuery($value, $tableAliases);
+        return $this->processSubQuery($value, $knownTables);
     }
 
     /**
      * Processes a subquery. Not a subquery values are just passed through.
      *
      * @param Query|StatementInterface $subQuery
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return Query|StatementInterface
      */
-    protected function processSubQuery($subQuery, array $tableAliases)
+    protected function processSubQuery($subQuery, array $knownTables)
     {
         if ($subQuery instanceof Query) {
-            return $this->processQuery($subQuery, $tableAliases);
+            return $this->processQuery($subQuery, $knownTables);
         }
 
         return $subQuery;
@@ -251,10 +251,10 @@ class TablePrefixer implements PostProcessorInterface
      * Processes a single insert statement.
      *
      * @param mixed[]|Query[]|StatementInterface[]|InsertFromSelect $row
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return mixed[]|Query[]|StatementInterface[]|InsertFromSelect
      */
-    protected function processInsert($row, array $tableAliases)
+    protected function processInsert($row, array $knownTables)
     {
         if ($row instanceof InsertFromSelect) {
             if ($row->columns === null) {
@@ -262,10 +262,10 @@ class TablePrefixer implements PostProcessorInterface
             } else {
                 $columns = [];
                 foreach ($row->columns as $index => $column) {
-                    $columns[ $index ] = $this->addTablePrefixToColumn($column, $tableAliases);
+                    $columns[ $index ] = $this->addTablePrefixToColumn($column, $knownTables);
                 }
             }
-            $selectQuery = $this->processSubQuery($row->selectQuery, $tableAliases);
+            $selectQuery = $this->processSubQuery($row->selectQuery, $knownTables);
 
             if ($selectQuery === $row->selectQuery && $columns === $row->columns) {
                 return $row;
@@ -276,8 +276,8 @@ class TablePrefixer implements PostProcessorInterface
 
         $newRow = [];
         foreach ($row as $column => $value) {
-            $column = $this->addTablePrefixToColumn($column, $tableAliases);
-            $newRow[$column] = $this->processValueOrSubQuery($value, $tableAliases);
+            $column = $this->addTablePrefixToColumn($column, $knownTables);
+            $newRow[$column] = $this->processValueOrSubQuery($value, $knownTables);
         }
 
         return $newRow;
@@ -287,14 +287,14 @@ class TablePrefixer implements PostProcessorInterface
      * Processes a single criterion.
      *
      * @param Criterion $criterion
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return Criterion
      */
-    protected function processCriterion(Criterion $criterion, array $tableAliases): Criterion
+    protected function processCriterion(Criterion $criterion, array $knownTables): Criterion
     {
         if ($criterion instanceof ValueCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $tableAliases);
-            $value = $this->processValueOrSubQuery($criterion->value, $tableAliases);
+            $column = $this->processColumnOrSubQuery($criterion->column, $knownTables);
+            $value = $this->processValueOrSubQuery($criterion->value, $knownTables);
 
             if ($column === $criterion->column && $value === $criterion->value) {
                 return $criterion;
@@ -304,8 +304,8 @@ class TablePrefixer implements PostProcessorInterface
         }
 
         if ($criterion instanceof ColumnsCriterion) {
-            $column1 = $this->processColumnOrSubQuery($criterion->column1, $tableAliases);
-            $column2 = $this->processColumnOrSubQuery($criterion->column2, $tableAliases);
+            $column1 = $this->processColumnOrSubQuery($criterion->column1, $knownTables);
+            $column2 = $this->processColumnOrSubQuery($criterion->column2, $knownTables);
 
             if ($column1 === $criterion->column1 && $column2 === $criterion->column2) {
                 return $criterion;
@@ -315,9 +315,9 @@ class TablePrefixer implements PostProcessorInterface
         }
 
         if ($criterion instanceof BetweenCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $tableAliases);
-            $min = $this->processValueOrSubQuery($criterion->min, $tableAliases);
-            $max = $this->processValueOrSubQuery($criterion->max, $tableAliases);
+            $column = $this->processColumnOrSubQuery($criterion->column, $knownTables);
+            $min = $this->processValueOrSubQuery($criterion->min, $knownTables);
+            $max = $this->processValueOrSubQuery($criterion->max, $knownTables);
 
             if ($column === $criterion->column && $min === $criterion->min && $max === $criterion->max) {
                 return $criterion;
@@ -329,7 +329,7 @@ class TablePrefixer implements PostProcessorInterface
         if ($criterion instanceof CriteriaCriterion) {
             $criteria = [];
             foreach ($criterion->criteria as $index => $subCriterion) {
-                $criteria[$index] = $this->processCriterion($subCriterion, $tableAliases);
+                $criteria[$index] = $this->processCriterion($subCriterion, $knownTables);
             }
 
             if ($criteria === $criterion->criteria) {
@@ -340,7 +340,7 @@ class TablePrefixer implements PostProcessorInterface
         }
 
         if ($criterion instanceof ExistsCriterion) {
-            $subQuery = $this->processSubQuery($criterion->subQuery, $tableAliases);
+            $subQuery = $this->processSubQuery($criterion->subQuery, $knownTables);
 
             if ($subQuery === $criterion->subQuery) {
                 return $criterion;
@@ -350,14 +350,14 @@ class TablePrefixer implements PostProcessorInterface
         }
 
         if ($criterion instanceof InCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $tableAliases);
+            $column = $this->processColumnOrSubQuery($criterion->column, $knownTables);
             if (is_array($criterion->values)) {
                 $values = [];
                 foreach ($criterion->values as $index => $value) {
-                    $values[$index] = $this->processValueOrSubQuery($value, $tableAliases);
+                    $values[$index] = $this->processValueOrSubQuery($value, $knownTables);
                 }
             } else {
-                $values = $this->processSubQuery($criterion->values, $tableAliases);
+                $values = $this->processSubQuery($criterion->values, $knownTables);
             }
 
             if ($column === $criterion->column && $values === $criterion->values) {
@@ -368,7 +368,7 @@ class TablePrefixer implements PostProcessorInterface
         }
 
         if ($criterion instanceof NullCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $tableAliases);
+            $column = $this->processColumnOrSubQuery($criterion->column, $knownTables);
 
             if ($column === $criterion->column) {
                 return $criterion;
@@ -384,13 +384,13 @@ class TablePrefixer implements PostProcessorInterface
      * Processes a single order statement.
      *
      * @param Order|string $order
-     * @param string[] $tableAliases Known table aliases
+     * @param string[] $knownTables Known unprefixed table names
      * @return Order|string
      */
-    protected function processOrder($order, array $tableAliases)
+    protected function processOrder($order, array $knownTables)
     {
         if ($order instanceof Order) {
-            $column = $this->processColumnOrSubQuery($order->column, $tableAliases);
+            $column = $this->processColumnOrSubQuery($order->column, $knownTables);
 
             if ($column === $order->column) {
                 return $order;
