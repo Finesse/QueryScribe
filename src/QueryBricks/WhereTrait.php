@@ -90,7 +90,7 @@ trait WhereTrait
 
         $rule = strtoupper($rule);
 
-        $column = $this->checkStringValue('Argument $column', $column);
+        $column = $this->checkAndPrepareColumn('Argument $column', $column);
         $value = $this->checkScalarOrNullValue('Argument $value', $value);
         $this->where[] = new ValueCriterion($column, $rule, $value, $appendRule);
         return $this;
@@ -185,7 +185,7 @@ trait WhereTrait
         bool $not = false,
         int $appendRule = Criterion::APPEND_RULE_AND
     ): self {
-        $column = $this->checkStringValue('Argument $column', $column);
+        $column = $this->checkAndPrepareColumn('Argument $column', $column);
         $min = $this->checkScalarOrNullValue('The left between value', $min);
         $max = $this->checkScalarOrNullValue('The right between value', $max);
 
@@ -255,7 +255,7 @@ trait WhereTrait
      */
     public function whereIn($column, $values, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
-        $column = $this->checkStringValue('Argument $column', $column);
+        $column = $this->checkAndPrepareColumn('Argument $column', $column);
 
         if (
             !is_array($values) &&
@@ -340,7 +340,7 @@ trait WhereTrait
      */
     public function whereNull($column, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
     {
-        $column = $this->checkStringValue('Argument $column', $column);
+        $column = $this->checkAndPrepareColumn('Argument $column', $column);
 
         $this->where[] = new NullCriterion($column, !$not, $appendRule);
         return $this;
@@ -428,8 +428,8 @@ trait WhereTrait
         }
 
         $rule = strtoupper($rule);
-        $column1 = $this->checkStringValue('Argument $column1', $column1);
-        $column2 = $this->checkStringValue('Argument $column2', $column2);
+        $column1 = $this->checkAndPrepareColumn('Argument $column1', $column1);
+        $column2 = $this->checkAndPrepareColumn('Argument $column2', $column2);
 
         $this->where[] = new ColumnsCriterion($column1, $rule, $column2, $appendRule);
         return $this;

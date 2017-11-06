@@ -6,7 +6,6 @@ use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryProxy;
-use Finesse\QueryScribe\Raw;
 
 /**
  * Tests the QueryProxy class
@@ -20,17 +19,17 @@ class QueryProxyTest extends TestCase
      */
     public function testMethodProxying()
     {
-        $query = new Query();
+        $query = new Query('prefix');
         $superQuery = new QueryProxy($query);
 
         $superQuery = $superQuery
             ->from('items')
             ->where('items.size', '>', 3);
 
-        $this->assertEquals('items', $query->table);
-        $this->assertEquals('items.size', $query->where[0]->column);
+        $this->assertEquals('prefixitems', $query->table);
+        $this->assertEquals('prefixitems.size', $query->where[0]->column);
         $this->assertEquals(3, $query->where[0]->value);
-        $this->assertInstanceOf(Raw::class, $superQuery->raw('TEST'));
+        $this->assertEquals('prefixfoo', $superQuery->addTablePrefix('foo'));
 
         // Checks that a QueryProxy instance is returned
         $this->assertInstanceOf(QueryProxy::class, $superQuery);
@@ -77,7 +76,7 @@ class QueryProxyTest extends TestCase
     public function testClosureResolving()
     {
         // Stock resolver
-        $query = new Query();
+        $query = new Query('prefix_');
         $superQuery = new QueryProxy($query);
         $superQuery
             ->addSelect(function ($query) {
@@ -95,10 +94,10 @@ class QueryProxyTest extends TestCase
                 $query->where('table4.column', 'foo');
             });
 
-        $this->assertEquals('table1', $query->select[0]->table);
+        $this->assertEquals('prefix_table1', $query->select[0]->table);
         $this->assertEquals('table2', $query->select[1]->table);
         $this->assertEquals('table3', $query->select[2]->table);
-        $this->assertEquals('table4.column', $query->where[0]->criteria[0]->column);
+        $this->assertEquals('prefix_table4.column', $query->where[0]->criteria[0]->column);
 
         $this->assertException(InvalidReturnValueException::class, function () use ($superQuery) {
             $superQuery->from(function () {
@@ -129,7 +128,7 @@ class QueryProxyTest extends TestCase
      */
     public function testClone()
     {
-        $query1 = new Query();
+        $query1 = new Query('prefix_');
         $superQuery1 = new class ($query1) extends QueryProxy {
             public function getBaseQuery(): Query {
                 return parent::getBaseQuery();
@@ -139,13 +138,13 @@ class QueryProxyTest extends TestCase
         $superQuery2 = clone $superQuery1;
         $query2 = $superQuery2->getBaseQuery();
 
-        $this->assertEquals('table', $query1->table);
-        $this->assertEquals('table', $query2->table);
+        $this->assertEquals('prefix_table', $query1->table);
+        $this->assertEquals('prefix_table', $query2->table);
 
         $superQuery1->from('goods');
         $superQuery2->from('news');
 
-        $this->assertEquals('goods', $query1->table);
-        $this->assertEquals('news', $query2->table);
+        $this->assertEquals('prefix_goods', $query1->table);
+        $this->assertEquals('prefix_news', $query2->table);
     }
 }

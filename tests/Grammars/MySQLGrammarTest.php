@@ -31,10 +31,10 @@ class MySQLGrammarTest extends TestCase
         // Real query
         $this->assertStatement('
             SELECT `description` AS `des``ion`
-            FROM `table`
+            FROM `pref_table`
             WHERE `goal` LIKE ?
         ', ['win%'], $grammar->compileSelect(
-            (new Query())
+            (new Query('pref_'))
                 ->from('table')
                 ->addSelect('description', 'des`ion')
                 ->where('goal', 'like', 'win%')
@@ -50,12 +50,12 @@ class MySQLGrammarTest extends TestCase
 
         $this->assertStatement('
             SELECT *
-            FROM `table`
+            FROM `test_table`
             ORDER BY
                 `category` ASC,
                 RAND()
         ', [], $grammar->compileSelect(
-            (new Query())
+            (new Query('test_'))
                 ->from('table')
                 ->orderBy('category')
                 ->inRandomOrder()
