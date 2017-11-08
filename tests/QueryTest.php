@@ -242,4 +242,24 @@ class QueryTest extends TestCase
         $this->assertAttributes(['table' => 'date', 'select' => ['is_array']], $query);
         $this->assertAttributes(['column' => 'sprintf', 'value' => 'ucfirst'], $query->where[0]);
     }
+
+    /**
+     * Tests that exceptions are passed throw the `handleException` method
+     */
+    public function testHandleException()
+    {
+        $query = new class extends Query {
+            protected function handleException(\Throwable $exception)
+            {
+                throw new \TypeError('Test: '.$exception->getMessage(), $exception->getCode(), $exception);
+            }
+        };
+
+        $this->assertException(\TypeError::class, function () use ($query) {
+            $query->from(['foo', 'bar']);
+        }, function (\TypeError $exception) {
+            $this->assertStringStartsWith('Test: ', $exception->getMessage());
+            $this->assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious());
+        });
+    }
 }

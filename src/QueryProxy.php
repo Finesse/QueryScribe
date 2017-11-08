@@ -103,7 +103,8 @@ class QueryProxy implements ClosureResolverInterface
      * Handles exceptions thrown by the underlying query.
      *
      * @param \Throwable $exception Thrown exception
-     * @throws \Throwable It may rethrow them
+     * @return mixed A value to return in case of error
+     * @throws \Throwable It may rethrow it
      */
     protected function handleBaseQueryException(\Throwable $exception)
     {

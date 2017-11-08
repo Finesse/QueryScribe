@@ -18,6 +18,8 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *  - Takes an empty query the first argument;
  *  - Returns a Query or a HasQueryInterface object or modifies the given object by link.
  *
+ * All the exceptions must be passed to the handleException method instead of just throwing.
+ *
  * The Closure is used instead of callable to prevent ambiguities when a string column name or a value may be treated as
  * a function name.
  *
@@ -101,7 +103,11 @@ class Query
     {
         foreach ($values as $column => $value) {
             if (!is_string($column)) {
-                throw InvalidArgumentException::create('Argument $values indexes', $column, ['string']);
+                return $this->handleException(InvalidArgumentException::create(
+                    'Argument $values indexes',
+                    $column,
+                    ['string']
+                ));
             }
 
             $value = $this->checkScalarOrNullValue('Argument $values['.$column.']', $value);
@@ -230,11 +236,11 @@ class Query
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
-            throw InvalidArgumentException::create(
+            return $this->handleException(InvalidArgumentException::create(
                 $name,
                 $value,
                 ['string', \Closure::class, self::class, StatementInterface::class]
-            );
+            ));
         }
 
         if ($value instanceof \Closure) {
@@ -263,11 +269,11 @@ class Query
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
-            throw InvalidArgumentException::create(
+            return $this->handleException(InvalidArgumentException::create(
                 $name,
                 $value,
                 ['integer', \Closure::class, self::class, StatementInterface::class, 'null']
-            );
+            ));
         }
 
         if (is_numeric($value)) {
@@ -298,11 +304,11 @@ class Query
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
-            throw InvalidArgumentException::create(
+            return $this->handleException(InvalidArgumentException::create(
                 $name,
                 $value,
                 ['scalar', \Closure::class, self::class, StatementInterface::class, 'null']
-            );
+            ));
         }
 
         if ($value instanceof \Closure) {
@@ -328,11 +334,11 @@ class Query
             !($value instanceof self) &&
             !($value instanceof StatementInterface)
         ) {
-            throw InvalidArgumentException::create(
+            return $this->handleException(InvalidArgumentException::create(
                 $name,
                 $value,
                 [\Closure::class, self::class, StatementInterface::class]
-            );
+            ));
         }
 
         if ($value instanceof \Closure) {
@@ -340,5 +346,17 @@ class Query
         }
 
         return $value;
+    }
+
+    /**
+     * Handles an exception thrown by this class.
+     *
+     * @param \Throwable $exception Thrown exception
+     * @return mixed A value to return
+     * @throws \Throwable
+     */
+    protected function handleException(\Throwable $exception)
+    {
+        throw $exception;
     }
 }

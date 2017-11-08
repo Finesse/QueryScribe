@@ -41,14 +41,22 @@ trait InsertTrait
 
         foreach ($rows as $index => $row) {
             if (!is_array($row)) {
-                throw InvalidArgumentException::create('Argument $rows['.$index.']', $row, ['array']);
+                return $this->handleException(InvalidArgumentException::create(
+                    'Argument $rows['.$index.']',
+                    $row,
+                    ['array']
+                ));
             }
 
             $filteredRow = [];
 
             foreach ($row as $column => $value) {
                 if (!is_string($column)) {
-                    throw InvalidArgumentException::create('The argument $rows['.$index.'] indexes', $column, ['string']);
+                    return $this->handleException(InvalidArgumentException::create(
+                        'The argument $rows['.$index.'] indexes',
+                        $column,
+                        ['string']
+                    ));
                 }
 
                 $value = $this->checkScalarOrNullValue('Argument $rows['.$index.']['.$column.']', $value);
@@ -82,11 +90,19 @@ trait InsertTrait
 
         if ($columns !== null) {
             if (!is_array($columns)) {
-                throw InvalidArgumentException::create('Argument $columns', $columns, ['array', 'null']);
+                return $this->handleException(InvalidArgumentException::create(
+                    'Argument $columns',
+                    $columns,
+                    ['array', 'null']
+                ));
             }
             foreach ($columns as $index => $column) {
                 if (!is_string($column)) {
-                    throw InvalidArgumentException::create('Argument $columns['.$index.']', $column, ['string']);
+                    return $this->handleException(InvalidArgumentException::create(
+                        'Argument $columns['.$index.']',
+                        $column,
+                        ['string']
+                    ));
                 }
             }
         }

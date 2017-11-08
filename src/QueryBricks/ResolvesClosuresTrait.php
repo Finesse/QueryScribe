@@ -78,6 +78,10 @@ trait ResolvesClosuresTrait
             return $result;
         }
 
-        throw InvalidReturnValueException::create('The closure return value', $result, ['null', Query::class]);
+        return $this->handleException(InvalidReturnValueException::create(
+            'The closure return value',
+            $result,
+            ['null', Query::class]
+        ));
     }
 }

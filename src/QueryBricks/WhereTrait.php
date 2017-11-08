@@ -73,10 +73,10 @@ trait WhereTrait
                 return $this;
             }
 
-            throw new InvalidArgumentException(sprintf(
+            return $this->handleException(new InvalidArgumentException(sprintf(
                 'The following argument list is not supported: %s, null and null',
                 gettype($column)
-            ));
+            )));
         }
 
         if ($value === null) {
@@ -85,7 +85,7 @@ trait WhereTrait
         }
 
         if (!is_string($rule)) {
-            throw InvalidArgumentException::create('Argument $rule', $rule, ['string']);
+            return $this->handleException(InvalidArgumentException::create('Argument $rule', $rule, ['string']));
         }
 
         $rule = strtoupper($rule);
@@ -263,11 +263,11 @@ trait WhereTrait
             !($values instanceof Query) &&
             !($values instanceof StatementInterface)
         ) {
-            throw InvalidArgumentException::create(
+            return $this->handleException(InvalidArgumentException::create(
                 'The IN value',
                 $values,
                 ['array', \Closure::class, Query::class, StatementInterface::class, 'null']
-            );
+            ));
         }
 
         if (is_array($values)) {
@@ -424,7 +424,7 @@ trait WhereTrait
         }
 
         if (!is_string($rule)) {
-            throw InvalidArgumentException::create('Argument $rule', $rule, ['string']);
+            return $this->handleException(InvalidArgumentException::create('Argument $rule', $rule, ['string']));
         }
 
         $rule = strtoupper($rule);
