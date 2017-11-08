@@ -200,14 +200,13 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed|\Closure|Query|StatementInterface $min Left value
      * @param mixed|\Closure|Query|StatementInterface $max Right value
-     * @param bool $not Whether the rule should be NOT BETWEEN
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function orWhereBetween($column, $min, $max, bool $not = false): self
+    public function orWhereBetween($column, $min, $max): self
     {
-        return $this->whereBetween($column, $min, $max, $not, Criterion::APPEND_RULE_OR);
+        return $this->whereBetween($column, $min, $max, false, Criterion::APPEND_RULE_OR);
     }
 
     /**
@@ -288,14 +287,13 @@ trait WhereTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed[]|\Closure|Query|StatementInterface Haystack values
-     * @param bool $not Whether the rule should be NOT IN
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function orWhereIn($column, $values, bool $not = false): self
+    public function orWhereIn($column, $values): self
     {
-        return $this->whereIn($column, $values, $not, Criterion::APPEND_RULE_OR);
+        return $this->whereIn($column, $values, false, Criterion::APPEND_RULE_OR);
     }
 
     /**
@@ -351,14 +349,13 @@ trait WhereTrait
      * rules.
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
-     * @param bool $not Whether the rule should be NOT IN
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function orWhereNull($column, bool $not = false): self
+    public function orWhereNull($column): self
     {
-        return $this->whereNull($column, $not, Criterion::APPEND_RULE_OR);
+        return $this->whereNull($column, false, Criterion::APPEND_RULE_OR);
     }
 
     /**
@@ -479,14 +476,13 @@ trait WhereTrait
      *
      * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
-     * @param bool $not Whether the rule should be NOT EXISTS
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function orWhereExists($subQuery, bool $not = false): self
+    public function orWhereExists($subQuery): self
     {
-        return $this->whereExists($subQuery, $not, Criterion::APPEND_RULE_OR);
+        return $this->whereExists($subQuery, false, Criterion::APPEND_RULE_OR);
     }
 
     /**
