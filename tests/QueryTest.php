@@ -62,6 +62,28 @@ class QueryTest extends TestCase
     }
 
     /**
+     * Tests the `getTableBehalf` method
+     */
+    public function testGetTableBehalf()
+    {
+        // No table
+        $query = new Query();
+        $this->assertNull($query->getTableBehalf());
+
+        // Table is a subquery
+        $query->table(new Query());
+        $this->assertNull($query->getTableBehalf());
+
+        // Table is a string
+        $query->table('news');
+        $this->assertEquals('news', $query->getTableBehalf());
+
+        // Table has an alias
+        $query->table('items', 'i');
+        $this->assertEquals('i', $query->getTableBehalf());
+    }
+
+    /**
      * Tests the `addUpdate` method
      */
     public function testAddUpdate()

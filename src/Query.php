@@ -91,6 +91,22 @@ class Query
     }
 
     /**
+     * Returns the name which the target table can be appealed.
+     *
+     * @return string|null Alias or table name. Null if the target table has no string name.
+     */
+    public function getTableBehalf()
+    {
+        if ($this->tableAlias !== null) {
+            return $this->tableAlias;
+        }
+        if (is_string($this->table)) {
+            return $this->table;
+        }
+        return null;
+    }
+
+    /**
      * Adds values that should be updated
      *
      * @param mixed[]|\Closure[]|self[]|StatementInterface[] $values Fields to update. The indexes are the columns
