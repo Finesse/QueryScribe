@@ -91,11 +91,11 @@ class Query
     }
 
     /**
-     * Returns the name which the target table can be appealed.
+     * Returns the identifier which the target table can be appealed to.
      *
      * @return string|null Alias or table name. Null if the target table has no string name.
      */
-    public function getTableBehalf()
+    public function getTableIdentifier()
     {
         if ($this->tableAlias !== null) {
             return $this->tableAlias;
