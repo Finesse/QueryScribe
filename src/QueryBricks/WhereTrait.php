@@ -36,6 +36,8 @@ trait WhereTrait
      *  * array[] – criteria joined by the AND rule (the values are the arguments lists for this method);
      *  * Raw – raw SQL.
      *
+     * In LIKE criterion the escape symbol is backslash (\).
+     *
      * @param string|\Closure|Query|StatementInterface|array[] $column
      * @param string|mixed|\Closure|Query|StatementInterface|null $rule
      * @param mixed|\Closure|Query|StatementInterface|null $value
@@ -86,8 +88,6 @@ trait WhereTrait
         if (!is_string($rule)) {
             return $this->handleException(InvalidArgumentException::create('Argument $rule', $rule, ['string']));
         }
-
-        $rule = strtoupper($rule);
 
         $column = $this->checkStringValue('Argument $column', $column);
         $value = $this->checkScalarOrNullValue('Argument $value', $value);
@@ -412,7 +412,6 @@ trait WhereTrait
             return $this->handleException(InvalidArgumentException::create('Argument $rule', $rule, ['string']));
         }
 
-        $rule = strtoupper($rule);
         $column1 = $this->checkStringValue('Argument $column1', $column1);
         $column2 = $this->checkStringValue('Argument $column2', $column2);
 

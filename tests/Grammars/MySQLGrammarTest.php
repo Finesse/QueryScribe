@@ -35,12 +35,12 @@ class MySQLGrammarTest extends TestCase
         $this->assertStatement('
             SELECT `description` AS `des``ion`
             FROM `table`
-            WHERE `goal` LIKE ?
-        ', ['win%'], $grammar->compileSelect(
+            WHERE `goal` = ?
+        ', ['win'], $grammar->compileSelect(
             (new Query())
                 ->from('table')
                 ->addSelect('description', 'des`ion')
-                ->where('goal', 'like', 'win%')
+                ->where('goal', 'win')
         ));
     }
 
@@ -62,6 +62,24 @@ class MySQLGrammarTest extends TestCase
                 ->from('table')
                 ->orderBy('category')
                 ->inRandomOrder()
+        ));
+    }
+
+    /**
+     * Tests like criterion compilation
+     */
+    public function testLikeEscaping()
+    {
+        $grammar = new MySQLGrammar();
+
+        $this->assertStatement('
+            SELECT *
+            FROM `table`
+            WHERE `column` LIKE ?
+        ', ['\\%foo%'], $grammar->compileSelect(
+            (new Query())
+                ->table('table')
+                ->where('column', 'like', $grammar->escapeLikeWildcards('%foo').'%')
         ));
     }
 }

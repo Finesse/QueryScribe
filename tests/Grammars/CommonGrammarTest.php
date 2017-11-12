@@ -321,6 +321,7 @@ class CommonGrammarTest extends TestCase
 
         $this->assertEquals('foo"bar', $grammar->escapeLikeWildcards('foo"bar'));
         $this->assertEquals('50\\%\\_100\\%', $grammar->escapeLikeWildcards('50%_100%'));
+        $this->assertEquals('one\\\\\\%two', $grammar->escapeLikeWildcards('one\\%two'));
     }
 
     /**
@@ -377,7 +378,7 @@ class CommonGrammarTest extends TestCase
                         "foo" = "bar" AND
                         "bar" != "baz"
                     ) OR (
-                        "title" LIKE ? AND
+                        "title" LIKE ? ESCAPE ? AND
                         "type" = ?
                     ) OR
                     NOT EXISTS(
@@ -395,7 +396,7 @@ class CommonGrammarTest extends TestCase
                     FROM "users"
                     WHERE "deleted" = ?
                 )
-        ', [0, '%boss%', 'Important', 'Hello', 1, 4, 6, true], $grammar->compileSelect(
+        ', [0, '%boss%', '\\', 'Important', 'Hello', 1, 4, 6, true], $grammar->compileSelect(
             (new Query())
                 ->from('posts')
                 ->where('date', '<', new Raw('NOW()'))

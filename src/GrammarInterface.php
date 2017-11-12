@@ -77,8 +77,7 @@ interface GrammarInterface
     public function quoteIdentifier(string $identifier): string;
 
     /**
-     * Escapes the LIKE operator special characters. Doesn't escape general string wildcard characters because it is
-     * another job.
+     * Escapes the LIKE operator special characters. The escape symbol is backslash (\).
      *
      * @param string $string
      * @return string

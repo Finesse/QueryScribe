@@ -22,7 +22,7 @@ class ColumnsCriterion extends Criterion
     public $column1;
 
     /**
-     * @var string Compare rule (=, >, etc.)
+     * @var string Compare rule (=, >, etc.) (in uppercase)
      * @readonly
      */
     public $rule;
@@ -44,7 +44,7 @@ class ColumnsCriterion extends Criterion
     {
         parent::__construct($appendRule);
         $this->column1 = $column1;
-        $this->rule = $rule;
+        $this->rule = strtoupper($rule);
         $this->column2 = $column2;
     }
 }

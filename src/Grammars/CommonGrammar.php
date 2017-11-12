@@ -182,7 +182,7 @@ class CommonGrammar implements GrammarInterface
      */
     public function escapeLikeWildcards(string $string): string
     {
-        return str_replace(['%',  '_'], ['\%', '\_'], $string);
+        return str_replace(['\\', '%',  '_'], ['\\\\', '\%', '\_'], $string);
     }
 
     /**
@@ -435,12 +435,19 @@ class CommonGrammar implements GrammarInterface
     protected function compileCriterion(Criterion $criterion, array &$bindings): string
     {
         if ($criterion instanceof ValueCriterion) {
-            return sprintf(
+            $sql = sprintf(
                 '%s %s %s',
                 $this->compileIdentifier($criterion->column, $bindings),
                 $criterion->rule,
                 $this->compileValue($criterion->value, $bindings)
             );
+
+            if ($criterion->rule === 'LIKE' && is_string($criterion->value)) {
+                $sql .= ' ESCAPE ?';
+                $this->mergeBindings($bindings, ['\\']);
+            }
+
+            return $sql;
         }
 
         if ($criterion instanceof ColumnsCriterion) {
