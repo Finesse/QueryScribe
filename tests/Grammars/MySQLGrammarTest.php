@@ -75,11 +75,14 @@ class MySQLGrammarTest extends TestCase
         $this->assertStatement('
             SELECT *
             FROM `table`
-            WHERE `column` LIKE ?
+            WHERE
+                `column` LIKE ? AND
+                `created_at` = `updated_at`
         ', ['\\%foo%'], $grammar->compileSelect(
             (new Query())
                 ->table('table')
                 ->where('column', 'like', $grammar->escapeLikeWildcards('%foo').'%')
+                ->whereColumn('created_at', 'updated_at')
         ));
     }
 }
