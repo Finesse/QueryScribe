@@ -12,7 +12,6 @@ use Finesse\QueryScribe\QueryBricks\Criteria\InCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\RawCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
-use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Raw;
 
 /**
@@ -31,13 +30,13 @@ class WhereTraitTest extends TestCase
         $query = (new Query())->where('table.foo', '>', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column' => 'table.foo', 'rule' => '>', 'value' => 'bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column' => 'table.foo', 'rule' => '>', 'value' => 'bar', 'appendRule' => 'AND'], $query->where[0]);
 
         // Or where
         $query = (new Query())->orWhere('foo', '<', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column' => 'foo', 'rule' => '<', 'value' => 'bar', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]);
+        $this->assertAttributes(['column' => 'foo', 'rule' => '<', 'value' => 'bar', 'appendRule' => 'OR'], $query->where[0]);
 
         // Omit the rule
         $query = (new Query())->where('table.foo', 'bar');
@@ -55,9 +54,9 @@ class WhereTraitTest extends TestCase
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertFalse($query->where[0]->not);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => 'AND'], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => 'OR'], $query->where[0]->criteria[1]);
 
         // Grouped criteria (by array)
         $query = (new Query())->where([
@@ -69,9 +68,9 @@ class WhereTraitTest extends TestCase
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertFalse($query->where[0]->not);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => 'AND'], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column' => 'table.column2', 'rule' => '!=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column' => 'table.column2', 'rule' => '!=', 'value' => 'value2', 'appendRule' => 'AND'], $query->where[0]->criteria[1]);
 
         // Raw clause
         $query = (new Query())->where(new Raw('date + ? = NOW()', [10]));
@@ -128,12 +127,12 @@ class WhereTraitTest extends TestCase
         });
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(CriteriaCriterion::class, $query->where[0]);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'AND'], $query->where[0]);
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column' => 'table.column1', 'rule' => '=', 'value' => 'value1', 'appendRule' => 'AND'], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ValueCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column' => 'table.column2', 'rule' => '=', 'value' => 'value2', 'appendRule' => 'OR'], $query->where[0]->criteria[1]);
 
         // Or where not
         $query = (new Query())->table('foo', 'f')->orWhereNot(function (Query $query) {
@@ -141,7 +140,7 @@ class WhereTraitTest extends TestCase
         });
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(CriteriaCriterion::class, $query->where[0]);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'OR'], $query->where[0]);
         $this->assertCount(2, $query->where[0]->criteria);
     }
 
@@ -153,10 +152,10 @@ class WhereTraitTest extends TestCase
         $query = (new Query())->whereRaw('? = NOW()', [15])->orWhereRaw('DAY(column) = MONTH(column)');
         $this->assertCount(2, $query->where);
         $this->assertInstanceOf(RawCriterion::class, $query->where[0]);
-        $this->assertEquals(Criterion::APPEND_RULE_AND, $query->where[0]->appendRule);
+        $this->assertEquals('AND', $query->where[0]->appendRule);
         $this->assertStatement('? = NOW()', [15], $query->where[0]->raw);
         $this->assertInstanceOf(RawCriterion::class, $query->where[1]);
-        $this->assertEquals(Criterion::APPEND_RULE_OR, $query->where[1]->appendRule);
+        $this->assertEquals('OR', $query->where[1]->appendRule);
         $this->assertStatement('DAY(column) = MONTH(column)', [], $query->where[1]->raw);
     }
 
@@ -189,15 +188,15 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(BetweenCriterion::class, $criterion);
         }
-        $this->assertAttributes(['column' => 'table.price', 'min' => 13, 'max' => 123891, 'not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
-        $this->assertAttributes(['column' => 'date', 'not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
+        $this->assertAttributes(['column' => 'table.price', 'min' => 13, 'max' => 123891, 'not' => false, 'appendRule' => 'AND'], $query->where[0]);
+        $this->assertAttributes(['column' => 'date', 'not' => false, 'appendRule' => 'OR'], $query->where[1]);
         $this->assertStatement('YESTERDAY()', [], $query->where[1]->min);
         $this->assertStatement('NOW()', [], $query->where[1]->max);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'AND'], $query->where[2]);
         $this->assertInstanceOf(Query::class, $query->where[2]->column);
         $this->assertInstanceOf(Query::class, $query->where[2]->min);
         $this->assertInstanceOf(Query::class, $query->where[2]->max);
-        $this->assertAttributes(['min' => 'Alice', 'max' => 'Bob', 'not' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[3]);
+        $this->assertAttributes(['min' => 'Alice', 'max' => 'Bob', 'not' => true, 'appendRule' => 'OR'], $query->where[3]);
         $this->assertInstanceOf(Query::class, $query->where[3]->column);
     }
 
@@ -228,13 +227,13 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(InCriterion::class, $criterion);
         }
-        $this->assertAttributes(['column' => 'table.name', 'values' => ['Anna', 'Bill', 'Carl'], 'not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
-        $this->assertAttributes(['column' => 'group', 'not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
+        $this->assertAttributes(['column' => 'table.name', 'values' => ['Anna', 'Bill', 'Carl'], 'not' => false, 'appendRule' => 'AND'], $query->where[0]);
+        $this->assertAttributes(['column' => 'group', 'not' => false, 'appendRule' => 'OR'], $query->where[1]);
         $this->assertStatement('TABLES()', [], $query->where[1]->values);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'AND'], $query->where[2]);
         $this->assertInstanceOf(Query::class, $query->where[2]->column);
         $this->assertInstanceOf(Query::class, $query->where[2]->values);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[3]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'OR'], $query->where[3]);
         $this->assertInstanceOf(Query::class, $query->where[3]->column);
         $this->assertCount(3, $query->where[3]->values);
         $this->assertEquals(4, $query->where[3]->values[0]);
@@ -263,11 +262,11 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(NullCriterion::class, $criterion);
         }
-        $this->assertAttributes(['column' => 'table.name', 'isNull' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
-        $this->assertAttributes(['column' => 'group', 'isNull' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
-        $this->assertAttributes(['isNull' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
+        $this->assertAttributes(['column' => 'table.name', 'isNull' => true, 'appendRule' => 'AND'], $query->where[0]);
+        $this->assertAttributes(['column' => 'group', 'isNull' => true, 'appendRule' => 'OR'], $query->where[1]);
+        $this->assertAttributes(['isNull' => false, 'appendRule' => 'AND'], $query->where[2]);
         $this->assertInstanceOf(Query::class, $query->where[2]->column);
-        $this->assertAttributes(['isNull' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[3]);
+        $this->assertAttributes(['isNull' => false, 'appendRule' => 'OR'], $query->where[3]);
         $this->assertInstanceOf(Query::class, $query->where[3]->column);
     }
 
@@ -280,13 +279,13 @@ class WhereTraitTest extends TestCase
         $query = (new Query())->whereColumn('table1.foo', '>', 'table2.bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column1' => 'table1.foo', 'rule' => '>', 'column2' => 'table2.bar', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['column1' => 'table1.foo', 'rule' => '>', 'column2' => 'table2.bar', 'appendRule' => 'AND'], $query->where[0]);
 
         // Or where
         $query = (new Query())->orWhereColumn('foo', '<', 'bar');
         $this->assertCount(1, $query->where);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]);
-        $this->assertAttributes(['column1' => 'foo', 'rule' => '<', 'column2' => 'bar', 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[0]);
+        $this->assertAttributes(['column1' => 'foo', 'rule' => '<', 'column2' => 'bar', 'appendRule' => 'OR'], $query->where[0]);
 
         // Omit the rule
         $query = (new Query())->whereColumn('table.foo', 'bar');
@@ -304,9 +303,9 @@ class WhereTraitTest extends TestCase
         $this->assertCount(2, $query->where[0]->criteria);
         $this->assertFalse($query->where[0]->not);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]->criteria[0]);
-        $this->assertAttributes(['column1' => 'table1.column1', 'rule' => '=', 'column2' => 'table2.column1', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[0]);
+        $this->assertAttributes(['column1' => 'table1.column1', 'rule' => '=', 'column2' => 'table2.column1', 'appendRule' => 'AND'], $query->where[0]->criteria[0]);
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]->criteria[1]);
-        $this->assertAttributes(['column1' => 'table1.column2', 'rule' => '!=', 'column2' => 'table2.column2', 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]->criteria[1]);
+        $this->assertAttributes(['column1' => 'table1.column2', 'rule' => '!=', 'column2' => 'table2.column2', 'appendRule' => 'AND'], $query->where[0]->criteria[1]);
 
         // Wrong rule value
         $this->assertException(InvalidArgumentException::class, function () {
@@ -334,19 +333,19 @@ class WhereTraitTest extends TestCase
         foreach ($query->where as $criterion) {
             $this->assertInstanceOf(ExistsCriterion::class, $criterion);
         }
-        $this->assertAttributes(['not' => false, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[0]);
+        $this->assertAttributes(['not' => false, 'appendRule' => 'AND'], $query->where[0]);
         $this->assertInstanceOf(Query::class, $query->where[0]->subQuery);
         $this->assertEquals('other_table', $query->where[0]->subQuery->table);
         $this->assertAttributes(['column1' => 'table.foo', 'column2' => 'other_table.bar'], $query->where[0]->subQuery->where[0]);
-        $this->assertAttributes(['not' => false, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[1]);
+        $this->assertAttributes(['not' => false, 'appendRule' => 'OR'], $query->where[1]);
         $this->assertStatement('TABLES()', [], $query->where[1]->subQuery);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_AND], $query->where[2]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'AND'], $query->where[2]);
         $this->assertInstanceOf(Query::class, $query->where[2]->subQuery);
-        $this->assertAttributes(['not' => true, 'appendRule' => Criterion::APPEND_RULE_OR], $query->where[3]);
+        $this->assertAttributes(['not' => true, 'appendRule' => 'OR'], $query->where[3]);
         $this->assertInstanceOf(Query::class, $query->where[3]->subQuery);
 
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query(''))->whereExists('foo bar');
+            (new Query())->whereExists('foo bar');
         });
     }
 }

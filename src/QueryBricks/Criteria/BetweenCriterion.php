@@ -47,7 +47,7 @@ class BetweenCriterion extends Criterion
      * @param $max mixed|Query|StatementInterface|null Right value
      * @param bool $not Whether the rule should be NOT BETWEEN
      */
-    public function __construct($column, $min, $max, bool $not, int $appendRule)
+    public function __construct($column, $min, $max, bool $not, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->column = $column;

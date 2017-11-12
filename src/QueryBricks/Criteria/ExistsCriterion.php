@@ -33,7 +33,7 @@ class ExistsCriterion extends Criterion
      * @param $subQuery Query|StatementInterface Subquery
      * @param bool $not Whether the rule should be NOT EXISTS
      */
-    public function __construct($subQuery, bool $not, int $appendRule)
+    public function __construct($subQuery, bool $not, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->subQuery = $subQuery;

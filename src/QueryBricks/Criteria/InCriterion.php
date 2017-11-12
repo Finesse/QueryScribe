@@ -40,7 +40,7 @@ class InCriterion extends Criterion
      * @param $values mixed[]|Query|StatementInterface Haystack values
      * @param bool $not Whether the rule should be NOT IN
      */
-    public function __construct($column, $values, bool $not, int $appendRule)
+    public function __construct($column, $values, bool $not, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->column = $column;

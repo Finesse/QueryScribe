@@ -39,13 +39,12 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface|array[] $column
      * @param string|mixed|\Closure|Query|StatementInterface|null $rule
      * @param mixed|\Closure|Query|StatementInterface|null $value
-     * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function where($column, $rule = null, $value = null, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function where($column, $rule = null, $value = null, string $appendRule = 'AND'): self
     {
         if ($rule === null && $value === null) {
             if ($column instanceof \Closure) {
@@ -107,19 +106,18 @@ trait WhereTrait
      */
     public function orWhere($column, $rule = null, $value = null): self
     {
-        return $this->where($column, $rule, $value, Criterion::APPEND_RULE_OR);
+        return $this->where($column, $rule, $value, 'OR');
     }
 
     /**
      * Adds a group of criteria wrapped by NOT.
      *
      * @param \Closure $callback Makes a group of criteria
-     * @param int $appendRul eHow the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidReturnValueException
      */
-    public function whereNot(\Closure $callback, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereNot(\Closure $callback, string $appendRule = 'AND'): self
     {
         $groupQuery = $this->resolveCriteriaGroupClosure($callback);
         $this->where[] = new CriteriaCriterion($groupQuery->where, true, $appendRule);
@@ -135,7 +133,7 @@ trait WhereTrait
      */
     public function orWhereNot(\Closure $callback): self
     {
-        return $this->whereNot($callback, Criterion::APPEND_RULE_OR);
+        return $this->whereNot($callback, 'OR');
     }
 
     /**
@@ -143,11 +141,10 @@ trait WhereTrait
      *
      * @param string $query SQL statement
      * @param array $bindings Values to bind to the statement
-     * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      */
-    public function whereRaw(string $query, array $bindings = [], int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereRaw(string $query, array $bindings = [], string $appendRule = 'AND'): self
     {
         return $this->where(new Raw($query, $bindings), null, null, $appendRule);
     }
@@ -162,7 +159,7 @@ trait WhereTrait
      */
     public function orWhereRaw(string $query, array $bindings = []): self
     {
-        return $this->whereRaw($query, $bindings, Criterion::APPEND_RULE_OR);
+        return $this->whereRaw($query, $bindings, 'OR');
     }
 
     /**
@@ -172,19 +169,13 @@ trait WhereTrait
      * @param mixed|\Closure|Query|StatementInterface $min Left value
      * @param mixed|\Closure|Query|StatementInterface $max Right value
      * @param bool $not Whether the rule should be NOT BETWEEN
-     * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function whereBetween(
-        $column,
-        $min,
-        $max,
-        bool $not = false,
-        int $appendRule = Criterion::APPEND_RULE_AND
-    ): self {
+    public function whereBetween($column, $min, $max, bool $not = false, string $appendRule = 'AND'): self
+    {
         $column = $this->checkStringValue('Argument $column', $column);
         $min = $this->checkScalarOrNullValue('The left between value', $min);
         $max = $this->checkScalarOrNullValue('The right between value', $max);
@@ -206,7 +197,7 @@ trait WhereTrait
      */
     public function orWhereBetween($column, $min, $max): self
     {
-        return $this->whereBetween($column, $min, $max, false, Criterion::APPEND_RULE_OR);
+        return $this->whereBetween($column, $min, $max, false, 'OR');
     }
 
     /**
@@ -237,7 +228,7 @@ trait WhereTrait
      */
     public function orWhereNotBetween($column, $min, $max): self
     {
-        return $this->whereBetween($column, $min, $max, true, Criterion::APPEND_RULE_OR);
+        return $this->whereBetween($column, $min, $max, true, 'OR');
     }
 
     /**
@@ -246,13 +237,12 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param mixed[]\Closure[]|Query[]|StatementInterface[]|\Closure|Query|StatementInterface Haystack values
      * @param bool $not Whether the rule should be NOT IN
-     * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function whereIn($column, $values, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereIn($column, $values, bool $not = false, string $appendRule = 'AND'): self
     {
         $column = $this->checkStringValue('Argument $column', $column);
 
@@ -293,7 +283,7 @@ trait WhereTrait
      */
     public function orWhereIn($column, $values): self
     {
-        return $this->whereIn($column, $values, false, Criterion::APPEND_RULE_OR);
+        return $this->whereIn($column, $values, false, 'OR');
     }
 
     /**
@@ -322,7 +312,7 @@ trait WhereTrait
      */
     public function orWhereNotIn($column, $values): self
     {
-        return $this->whereIn($column, $values, true, Criterion::APPEND_RULE_OR);
+        return $this->whereIn($column, $values, true, 'OR');
     }
 
     /**
@@ -330,13 +320,12 @@ trait WhereTrait
      *
      * @param string|\Closure|Query|StatementInterface $column Target column
      * @param bool $not Whether the rule should be NOT NULL
-     * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function whereNull($column, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereNull($column, bool $not = false, string $appendRule = 'AND'): self
     {
         $column = $this->checkStringValue('Argument $column', $column);
 
@@ -355,7 +344,7 @@ trait WhereTrait
      */
     public function orWhereNull($column): self
     {
-        return $this->whereNull($column, false, Criterion::APPEND_RULE_OR);
+        return $this->whereNull($column, false, 'OR');
     }
 
     /**
@@ -382,7 +371,7 @@ trait WhereTrait
      */
     public function orWhereNotNull($column): self
     {
-        return $this->whereNull($column, true, Criterion::APPEND_RULE_OR);
+        return $this->whereNull($column, true, 'OR');
     }
 
     /**
@@ -393,13 +382,12 @@ trait WhereTrait
      * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
      * @param string|\Closure|Query|StatementInterface|null $rule Rule or target column 2
      * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
-     * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function whereColumn($column1, $rule = null, $column2 = null, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereColumn($column1, $rule = null, $column2 = null, string $appendRule = 'AND'): self
     {
         if (is_array($column1)) {
             return $this->where(
@@ -447,7 +435,7 @@ trait WhereTrait
      */
     public function orWhereColumn($column1, $rule, $column2 = null): self
     {
-        return $this->whereColumn($column1, $rule, $column2, Criterion::APPEND_RULE_OR);
+        return $this->whereColumn($column1, $rule, $column2, 'OR');
     }
 
     /**
@@ -456,13 +444,12 @@ trait WhereTrait
      * @param $subQuery \Closure|Query|StatementInterface Query to place inside the EXISTS clause. If closure, it
      *    should create the query.
      * @param bool $not Whether the rule should be NOT EXISTS
-     * @param int $appendRule How the criterion should be appended to the others (on of Criterion::APPEND_RULE_*
-     *    constants)
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function whereExists($subQuery, bool $not = false, int $appendRule = Criterion::APPEND_RULE_AND): self
+    public function whereExists($subQuery, bool $not = false, string $appendRule = 'AND'): self
     {
         $subQuery = $this->checkSubQueryValue('Argument $subQuery', $subQuery);
 
@@ -482,7 +469,7 @@ trait WhereTrait
      */
     public function orWhereExists($subQuery): self
     {
-        return $this->whereExists($subQuery, false, Criterion::APPEND_RULE_OR);
+        return $this->whereExists($subQuery, false, 'OR');
     }
 
     /**
@@ -511,6 +498,6 @@ trait WhereTrait
      */
     public function orWhereNotExists($subQuery): self
     {
-        return $this->whereExists($subQuery, true, Criterion::APPEND_RULE_OR);
+        return $this->whereExists($subQuery, true, 'OR');
     }
 }

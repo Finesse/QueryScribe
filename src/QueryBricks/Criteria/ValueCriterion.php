@@ -40,7 +40,7 @@ class ValueCriterion extends Criterion
      * @param $rule string Compare rule (=, >, etc.)
      * @param $value mixed|Query|StatementInterface|null Value
      */
-    public function __construct($column, string $rule, $value, int $appendRule)
+    public function __construct($column, string $rule, $value, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->column = $column;

@@ -12,26 +12,16 @@ namespace Finesse\QueryScribe\QueryBricks;
 abstract class Criterion
 {
     /**
-     * Append rule: AND
-     */
-    const APPEND_RULE_AND = 1;
-
-    /**
-     * Append rule: OR
-     */
-    const APPEND_RULE_OR = 2;
-
-    /**
-     * @var int Append rule. The value if a value of one of the self::APPEND_RULE_* constants.
+     * @var string Append rule. The value is SQL boolean operator name (in uppercase).
      * @readonly
      */
     public $appendRule;
 
     /**
-     * @param int $appendRule Append rule. The value if a value of one of the self::APPEND_RULE_* constants.
+     * @param int $appendRule Append rule. The value is SQL boolean operator name.
      */
-    public function __construct(int $appendRule)
+    public function __construct(string $appendRule)
     {
-        $this->appendRule = $appendRule;
+        $this->appendRule = strtoupper($appendRule);
     }
 }

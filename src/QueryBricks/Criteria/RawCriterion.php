@@ -25,7 +25,7 @@ class RawCriterion extends Criterion
      *
      * @param StatementInterface $raw A raw SQL criteria
      */
-    public function __construct(StatementInterface $raw, $appendRule)
+    public function __construct(StatementInterface $raw, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->raw = $raw;

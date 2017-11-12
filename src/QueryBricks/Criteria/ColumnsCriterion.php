@@ -40,7 +40,7 @@ class ColumnsCriterion extends Criterion
      * @param $rule string Compare rule (=, >, etc.)
      * @param $column2 string|Query|StatementInterface Target column 2 (with prefix)
      */
-    public function __construct($column1, string $rule, $column2, int $appendRule)
+    public function __construct($column1, string $rule, $column2, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->column1 = $column1;

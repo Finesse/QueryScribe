@@ -403,19 +403,10 @@ class CommonGrammar implements GrammarInterface
             if ($previousAppendRule === null) {
                 $criteriaSQL .= $criterionSQL;
             } else {
-                switch ($appendRule) {
-                    case Criterion::APPEND_RULE_OR:
-                        $criteriaSQL .= ' OR '.$criterionSQL;
-                        break;
-                    case Criterion::APPEND_RULE_AND:
-                        if ($previousAppendRule === Criterion::APPEND_RULE_OR) {
-                            $criteriaSQL = '('.$criteriaSQL.') AND '.$criterionSQL;
-                        } else {
-                            $criteriaSQL .= ' AND '.$criterionSQL;
-                        }
-                        break;
-                    default:
-                        throw new InvalidQueryException('Unknown criterion append rule `'.$appendRule.'`');
+                if ($appendRule === 'AND' && $previousAppendRule !== 'AND') {
+                    $criteriaSQL = '('.$criteriaSQL.') '.$appendRule.' '.$criterionSQL;
+                } else {
+                    $criteriaSQL .= ' '.$appendRule.' '.$criterionSQL;
                 }
             }
 

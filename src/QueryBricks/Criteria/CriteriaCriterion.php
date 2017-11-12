@@ -31,7 +31,7 @@ class CriteriaCriterion extends Criterion
      * @param Criterion[] $criteria Criteria of the group
      * @param bool $not Whether the group should be wrapped with NOT
      */
-    public function __construct(array $criteria, bool $not, int $appendRule)
+    public function __construct(array $criteria, bool $not, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->criteria = $criteria;

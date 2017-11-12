@@ -32,7 +32,7 @@ class NullCriterion extends Criterion
      *
      * @param bool $isNull Should a value be null (true) or not null (false)
      */
-    public function __construct($column, bool $isNull, int $appendRule)
+    public function __construct($column, bool $isNull, string $appendRule)
     {
         parent::__construct($appendRule);
         $this->column = $column;

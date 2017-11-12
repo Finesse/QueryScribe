@@ -415,22 +415,10 @@ class CommonGrammarTest extends TestCase
         // Unknown criterion type
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
             $query = (new Query())->from('test');
-            $query->where[] = new class(Criterion::APPEND_RULE_AND) extends Criterion {};
+            $query->where[] = new class('AND') extends Criterion {};
             $grammar->compileSelect($query);
         }, function (InvalidQueryException $exception) {
             $this->assertStringStartsWith('The given criterion', $exception->getMessage());
-        });
-
-        // Unknown append type
-        $this->assertException(InvalidQueryException::class, function () use ($grammar) {
-            $grammar->compileSelect(
-                (new Query())
-                    ->from('test')
-                    ->whereRaw('TRUE')
-                    ->where('foo', '=', 'bar', -2394723)
-            );
-        }, function (InvalidQueryException $exception) {
-            $this->assertStringStartsWith('Unknown criterion append rule', $exception->getMessage());
         });
     }
 
