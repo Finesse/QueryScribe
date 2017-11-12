@@ -310,6 +310,17 @@ class CommonGrammarTest extends TestCase
     }
 
     /**
+     * Tests the `escapeLikeWildcards` method.
+     */
+    public function testEscapeLikeWildcards()
+    {
+        $grammar = new CommonGrammar();
+
+        $this->assertEquals('foo"bar', $grammar->escapeLikeWildcards('foo"bar'));
+        $this->assertEquals('50\\%\\_100\\%', $grammar->escapeLikeWildcards('50%_100%'));
+    }
+
+    /**
      * Tests the FROM part compilation
      */
     public function testCompileFrom()

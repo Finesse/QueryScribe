@@ -178,6 +178,14 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function escapeLikeWildcards(string $string): string
+    {
+        return str_replace(['%',  '_'], ['\%', '\_'], $string);
+    }
+
+    /**
      * Compiles a SELECT part of a SQL query.
      *
      * @param Query $query Query data

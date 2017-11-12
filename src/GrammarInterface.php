@@ -75,4 +75,13 @@ interface GrammarInterface
      * @return string
      */
     public function quotePlainIdentifier(string $identifier): string;
+
+    /**
+     * Escapes the LIKE operator special characters. Doesn't escape general string wildcard characters because it is
+     * another job.
+     *
+     * @param string $string
+     * @return string
+     */
+    public function escapeLikeWildcards(string $string): string;
 }
