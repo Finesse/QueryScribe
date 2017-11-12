@@ -141,7 +141,7 @@ class CommonGrammar implements GrammarInterface
     {
         $bindings = [];
         $sql = [
-            'DELETE'.($query->tableAlias === null ? '' : ' '.$this->quotePlainIdentifier($query->tableAlias)),
+            'DELETE'.($query->tableAlias === null ? '' : ' '.$this->quoteIdentifier($query->tableAlias)),
             $this->compileFromPart($query, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),
@@ -154,7 +154,7 @@ class CommonGrammar implements GrammarInterface
     /**
      * {@inheritDoc}
      */
-    public function quoteIdentifier(string $name): string
+    public function quoteCompositeIdentifier(string $name): string
     {
         $components = explode('.', $name);
 
@@ -163,7 +163,7 @@ class CommonGrammar implements GrammarInterface
                 continue;
             }
 
-            $components[$index] = $this->quotePlainIdentifier($component);
+            $components[$index] = $this->quoteIdentifier($component);
         }
 
         return implode('.', $components);
@@ -172,7 +172,7 @@ class CommonGrammar implements GrammarInterface
     /**
      * {@inheritDoc}
      */
-    public function quotePlainIdentifier(string $name): string
+    public function quoteIdentifier(string $name): string
     {
         return '"'.str_replace('"', '""', $name).'"';
     }
@@ -308,7 +308,7 @@ class CommonGrammar implements GrammarInterface
         $parts = [];
 
         foreach ($values as $column => $value) {
-            $parts[] = $this->quoteIdentifier($column).' = '.$this->compileValue($value, $bindings);
+            $parts[] = $this->quoteCompositeIdentifier($column).' = '.$this->compileValue($value, $bindings);
         }
 
         return implode(', ', $parts);
@@ -327,7 +327,7 @@ class CommonGrammar implements GrammarInterface
             return $this->compileSubQuery($identifier, $bindings);
         }
 
-        return $this->quoteIdentifier($identifier);
+        return $this->quoteCompositeIdentifier($identifier);
     }
 
     /**
@@ -568,7 +568,7 @@ class CommonGrammar implements GrammarInterface
      */
     protected function compileAlias(string $alias): string
     {
-        return ' AS '.$this->quotePlainIdentifier($alias);
+        return ' AS '.$this->quoteIdentifier($alias);
     }
 
     /**
@@ -614,7 +614,7 @@ class CommonGrammar implements GrammarInterface
 
         // Step 3. Build the SQL
         $sqlLine1 = 'INSERT INTO '.$this->compileIdentifierWithAlias($table, $tableAlias, $bindings)
-            . ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], array_keys($columns))).')';
+            . ' ('.implode(', ', array_map([$this, 'quoteCompositeIdentifier'], array_keys($columns))).')';
         $sqlLine2 = 'VALUES '.implode(', ', $compiledRows);
 
         return [new Raw($this->implodeSQL([$sqlLine1, $sqlLine2]), $bindings)];
@@ -640,7 +640,7 @@ class CommonGrammar implements GrammarInterface
 
         $sqlLine1 = 'INSERT INTO '.$this->compileIdentifierWithAlias($table, $tableAlias, $bindings);
         if ($columns !== null) {
-            $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteIdentifier'], $columns)).')';
+            $sqlLine1 .= ' ('.implode(', ', array_map([$this, 'quoteCompositeIdentifier'], $columns)).')';
         }
 
         $sqlLine2 = $this->compileSubQuery($selectQuery, $bindings, false);

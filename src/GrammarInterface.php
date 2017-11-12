@@ -65,7 +65,7 @@ interface GrammarInterface
      * @param string $identifier
      * @return string
      */
-    public function quoteIdentifier(string $identifier): string;
+    public function quoteCompositeIdentifier(string $identifier): string;
 
     /**
      * Wraps a plain (without nesting by dots) identifier (table name, column, database, etc.) with quotes and screens
@@ -74,7 +74,7 @@ interface GrammarInterface
      * @param string $identifier
      * @return string
      */
-    public function quotePlainIdentifier(string $identifier): string;
+    public function quoteIdentifier(string $identifier): string;
 
     /**
      * Escapes the LIKE operator special characters. Doesn't escape general string wildcard characters because it is

@@ -294,19 +294,22 @@ class CommonGrammarTest extends TestCase
     }
 
     /**
-     * Tests the `quoteIdentifier` and `quotePlainIdentifier` methods
+     * Tests the `quoteCompositeIdentifier` and `quoteIdentifier` methods
      */
     public function testQuoteIdentifier()
     {
         $grammar = new CommonGrammar();
 
-        $this->assertEquals('"name"', $grammar->quotePlainIdentifier('name'));
-        $this->assertEquals('"sub""name"', $grammar->quotePlainIdentifier('sub"name'));
-        $this->assertEquals('"*"', $grammar->quotePlainIdentifier('*'));
-
         $this->assertEquals('"name"', $grammar->quoteIdentifier('name'));
-        $this->assertEquals('"table".*', $grammar->quoteIdentifier('table.*'));
-        $this->assertEquals('"database"."table"."col""umn"', $grammar->quoteIdentifier('database.table.col"umn'));
+        $this->assertEquals('"sub""name"', $grammar->quoteIdentifier('sub"name'));
+        $this->assertEquals('"*"', $grammar->quoteIdentifier('*'));
+
+        $this->assertEquals('"name"', $grammar->quoteCompositeIdentifier('name'));
+        $this->assertEquals('"table".*', $grammar->quoteCompositeIdentifier('table.*'));
+        $this->assertEquals(
+            '"database"."table"."col""umn"',
+            $grammar->quoteCompositeIdentifier('database.table.col"umn')
+        );
     }
 
     /**
