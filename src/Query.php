@@ -28,6 +28,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *  * todo union
  *  * todo group by and having
  *  * todo distinct
+ *  * todo order by is null
  *
  * @author Surgie
  */
