@@ -91,13 +91,14 @@ Insert from a select statement:
 
 ```php
 $grammar->compileInsert(
-(new Query())
-    ->table('users')
-    ->addInsertFromSelect(['name', 'phone'], function ($query) {
-        $query
-            ->addSelect(['first_name', 'primary_phone'])
-            ->from('contacts');
-    });
+    (new Query())
+        ->table('users')
+        ->addInsertFromSelect(['name', 'phone'], function ($query) {
+            $query
+                ->addSelect(['first_name', 'primary_phone'])
+                ->from('contacts');
+        }
+);
 
 // Value 1:
 //  - SQL: ("name", "phone") SELECT "first_name", "primary_phone" FROM "contacts"

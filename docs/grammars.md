@@ -45,7 +45,7 @@ $query->where('name', 'like', $grammar->escapeLikeWildcards($searchString).'_');
 
 The backslash (` \ `) is used as the escape character.
 
-Wrap a table or column name in quotes:
+Wrap a table or a column name in quotes:
 
 ```php
 $query->whereRaw('MIN('.$grammar->quoteIdentifier('data"base').'.'.$grammar->quoteIdentifier('ta"ble').') > 10'); // MIN("data""base"."ta""ble") > 10
