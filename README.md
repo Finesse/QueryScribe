@@ -76,6 +76,8 @@ If you need a dialect support please extend the `CommonGrammar` class and make a
 
 The documentation is located in [the `docs` directory](docs/getting-started.md).
 
+Also all the classes, methods and properties has a PHPDoc comment in the code.
+
 
 ## Versions compatibility
 

@@ -7,7 +7,7 @@ use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
 
 /**
- * Adds methods for turning closures to queries.
+ * Adds methods that turn closures to queries.
  *
  * @author Surgie
  */

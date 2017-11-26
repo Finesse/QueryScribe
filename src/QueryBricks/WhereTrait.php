@@ -73,11 +73,6 @@ trait WhereTrait
                 $this->where[] = new RawCriterion($column, $appendRule);
                 return $this;
             }
-
-            return $this->handleException(new InvalidArgumentException(sprintf(
-                'The following argument list is not supported: %s, null and null',
-                gettype($column)
-            )));
         }
 
         if ($value === null) {
