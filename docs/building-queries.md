@@ -97,7 +97,7 @@ $grammar->compileInsert(
             $query
                 ->addSelect(['first_name', 'primary_phone'])
                 ->from('contacts');
-        }
+        })
 );
 
 // Value 1:
