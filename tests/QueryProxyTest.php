@@ -2,6 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests;
 
+use Finesse\QueryScribe\ClosureResolverInterface;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
@@ -62,13 +63,56 @@ class QueryProxyTest extends TestCase
         // Custom handler
         $superQuery = new class ($query) extends QueryProxy {
             protected function handleException(\Throwable $exception) {
-                return 'Sorry, error: '.get_class($exception);
+                throw new \Exception('Sorry, error: '.$exception->getMessage());
             }
         };
-        $this->assertEquals(
-            'Sorry, error: '.InvalidArgumentException::class,
-            $superQuery->whereIn([1, 2, 3], 'column')
-        );
+        $this->assertException(\Exception::class, function () use ($superQuery) {
+            $superQuery->whereIn([1, 2, 3], 'column');
+        }, function (\Exception $exception) {
+            $this->assertStringStartsWith('Sorry, error: ', $exception->getMessage());
+        });
+
+        // Custom handler and an error in the constructor
+        $superQueryClass = get_class($superQuery);
+        $baseQuery = new class extends Query {
+            public function setClosureResolver(ClosureResolverInterface $closureResolver = null) {
+                throw new \Exception('error 1');
+            }
+        };
+        $this->assertException(\Exception::class, function () use ($superQueryClass, $baseQuery) {
+            new $superQueryClass($baseQuery);
+        }, function (\Exception $exception) {
+            $this->assertEquals('Sorry, error: error 1', $exception->getMessage());
+        });
+
+        // Custom handler and errors in the makeCopy... methods
+        $baseQuery = new class extends Query {
+            public function makeCopyForSubQuery(): Query {
+                throw new \Exception('error 1');
+            }
+            public function makeCopyForCriteriaGroup(): Query {
+                throw new \Exception('error 2');
+            }
+            public function __clone() {
+                throw new \Exception('error 3');
+            }
+        };
+        $superQuery = new $superQueryClass($baseQuery); /** @var QueryProxy $superQuery */
+        $this->assertException(\Exception::class, function () use ($superQuery) {
+            $superQuery->resolveSubQueryClosure(function () {});
+        }, function (\Exception $exception) {
+            $this->assertEquals('Sorry, error: error 1', $exception->getMessage());
+        });
+        $this->assertException(\Exception::class, function () use ($superQuery) {
+            $superQuery->resolveCriteriaGroupClosure(function () {});
+        }, function (\Exception $exception) {
+            $this->assertEquals('Sorry, error: error 2', $exception->getMessage());
+        });
+        $this->assertException(\Exception::class, function () use ($superQuery) {
+            $superQuery2 = clone $superQuery;
+        }, function (\Exception $exception) {
+            $this->assertEquals('Sorry, error: error 3', $exception->getMessage());
+        });
     }
 
     /**

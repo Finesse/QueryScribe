@@ -34,7 +34,11 @@ class QueryProxy implements ClosureResolverInterface
      */
     public function __construct(Query $baseQuery)
     {
-        $this->baseQuery = $baseQuery->setClosureResolver($this);
+        try {
+            $this->baseQuery = $baseQuery->setClosureResolver($this);
+        } catch (\Throwable $exception) {
+            $this->handleException($exception);
+        }
     }
 
     /**
@@ -70,7 +74,11 @@ class QueryProxy implements ClosureResolverInterface
      */
     public function __clone()
     {
-        $this->baseQuery = clone $this->baseQuery;
+        try {
+            $this->baseQuery = clone $this->baseQuery;
+        } catch (\Throwable $exception) {
+            $this->handleException($exception);
+        }
     }
 
     /**
@@ -101,7 +109,13 @@ class QueryProxy implements ClosureResolverInterface
      */
     public function resolveSubQueryClosure(\Closure $callback): Query
     {
-        return (new static($this->baseQuery->makeCopyForSubQuery()))->applyCallback($callback)->baseQuery;
+        try {
+            $baseQuery = $this->baseQuery->makeCopyForSubQuery();
+        } catch (\Throwable $exception) {
+            return $this->handleException($exception);
+        }
+
+        return (new static($baseQuery))->applyCallback($callback)->baseQuery;
     }
 
     /**
@@ -109,7 +123,13 @@ class QueryProxy implements ClosureResolverInterface
      */
     public function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
-        return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->applyCallback($callback)->baseQuery;
+        try {
+            $baseQuery = $this->baseQuery->makeCopyForCriteriaGroup();
+        } catch (\Throwable $exception) {
+            return $this->handleException($exception);
+        }
+
+        return (new static($baseQuery))->applyCallback($callback)->baseQuery;
     }
 
     /**
