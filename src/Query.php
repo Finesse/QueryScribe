@@ -18,7 +18,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *  - Takes an empty query the first argument;
  *  - Returns a Query or a HasQueryInterface object or modifies the given object by link.
  *
- * All the exceptions must be passed to the handleException method instead of just throwing.
+ * All the exceptions are passed to the `handleException` method instead of just throwing.
  *
  * The Closure is used instead of callable to prevent ambiguities when a string column name or a value may be treated as
  * a function name.

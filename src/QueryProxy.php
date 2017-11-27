@@ -8,6 +8,8 @@ use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
  * Helps to make a Query object extensions which don't fully inherit the Query interface. It keeps an original Query
  * object and passes all the methods calls to it. It helps to substitute the value passed to closures.
  *
+ * All the exceptions are passed to the `handleException` method instead of just throwing.
+ *
  * @mixin Query
  *
  * @author Surgie
