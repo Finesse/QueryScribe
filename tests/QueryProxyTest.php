@@ -61,7 +61,7 @@ class QueryProxyTest extends TestCase
 
         // Custom handler
         $superQuery = new class ($query) extends QueryProxy {
-            protected function handleBaseQueryException(\Throwable $exception) {
+            protected function handleException(\Throwable $exception) {
                 return 'Sorry, error: '.get_class($exception);
             }
         };

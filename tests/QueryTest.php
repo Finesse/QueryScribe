@@ -3,6 +3,7 @@
 namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\Raw;
@@ -237,6 +238,38 @@ class QueryTest extends TestCase
 
         // How is offset doing?
         $this->assertNull($query->offset);
+    }
+
+    /**
+     * Tests the `applyCallback` method
+     */
+    public function testApplyCallback()
+    {
+        // Modify the given query in the callback
+        $query = (new Query())->table('news')->where('title', 'Interesting');
+        $newQuery = $query->applyCallback(function (Query $query) {
+            $query->table('users')->where('name', 'George');
+        });
+        $this->assertAttributeEquals('users', 'table', $newQuery);
+        $this->assertAttributeCount(2, 'where', $newQuery);
+        $this->assertAttributes(['column' => 'title', 'value' => 'Interesting'], $newQuery->where[0]);
+        $this->assertAttributes(['column' => 'name', 'value' => 'George'], $newQuery->where[1]);
+
+        // Return a new query from the callback
+        $query = (new Query())->table('news')->where('title', 'Interesting');
+        $newQuery = $query->applyCallback(function () {
+            return (new Query())->table('users')->where('name', 'George');
+        });
+        $this->assertAttributeEquals('users', 'table', $newQuery);
+        $this->assertAttributeCount(1, 'where', $newQuery);
+        $this->assertAttributes(['column' => 'name', 'value' => 'George'], $newQuery->where[0]);
+
+        // Wrong return value
+        $this->assertException(InvalidReturnValueException::class, function () use ($query) {
+            $query->applyCallback(function () {
+                return 'Hello';
+            });
+        });
     }
 
     /**

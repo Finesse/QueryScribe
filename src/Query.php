@@ -236,6 +236,32 @@ class Query
     }
 
     /**
+     * Applies a callback to this query.
+     *
+     * Warning! In contrast to the other methods, this method can both change this object and return a new object. The
+     * returned query is the only query guaranteed to be a proper result query.
+     *
+     * @param callable $callback The callback. It recieves this query object as the first argument. It must either
+     *     change the given object or return a new query object.
+     * @return self Result query object
+     * @throws InvalidReturnValueException If the callback return value is wrong
+     */
+    public function applyCallback(callable $callback): self
+    {
+        $result = $callback($this) ?? $this;
+
+        if ($result instanceof self) {
+            return $result;
+        }
+
+        return $this->handleException(InvalidReturnValueException::create(
+            'The callback return value',
+            $result,
+            ['null', self::class]
+        ));
+    }
+
+    /**
      * Check that value is suitable for being a "string or subquery" property of a query. Retrieves the closure
      * subquery.
      *

@@ -40,7 +40,7 @@ trait ResolvesClosuresTrait
     protected function resolveSubQueryClosure(\Closure $callback): Query
     {
         if ($this->closureResolver === null) {
-            return $this->resolveClosure($callback, $this->makeCopyForSubQuery());
+            return $this->makeCopyForSubQuery()->applyCallback($callback);
         } else {
             return $this->closureResolver->resolveSubQueryClosure($callback);
         }
@@ -56,32 +56,9 @@ trait ResolvesClosuresTrait
     protected function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
         if ($this->closureResolver === null) {
-            return $this->resolveClosure($callback, $this->makeCopyForCriteriaGroup());
+            return $this->makeCopyForCriteriaGroup()->applyCallback($callback);
         } else {
             return $this->closureResolver->resolveCriteriaGroupClosure($callback);
         }
-    }
-
-    /**
-     * Retrieves the query object from a closure.
-     *
-     * @param \Closure $callback
-     * @param Query $emptyQuery Empty query object suitable for the callback
-     * @return Query Retrieved query
-     * @throws InvalidReturnValueException
-     */
-    protected function resolveClosure(\Closure $callback, Query $emptyQuery): Query
-    {
-        $result = $callback($emptyQuery) ?? $emptyQuery;
-
-        if ($result instanceof Query) {
-            return $result;
-        }
-
-        return $this->handleException(InvalidReturnValueException::create(
-            'The closure return value',
-            $result,
-            ['null', Query::class]
-        ));
     }
 }

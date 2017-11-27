@@ -78,11 +78,6 @@ class WhereTraitTest extends TestCase
         $this->assertInstanceOf(RawCriterion::class, $query->where[0]);
         $this->assertStatement('date + ? = NOW()', [10], $query->where[0]->raw);
 
-        // Wrong arguments set
-        $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->orWhere(new \stdClass());
-        });
-
         // Ordinary with complex values
         $query = (new Query())
             ->where(
@@ -103,6 +98,11 @@ class WhereTraitTest extends TestCase
         $this->assertInstanceOf(ValueCriterion::class, $query->where[1]);
         $this->assertAttributes(['column' => 'price', 'rule' => '<='], $query->where[1]);
         $this->assertInstanceOf(Query::class, $query->where[1]->value);
+
+        // Wrong column
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->orWhere(new \stdClass());
+        });
 
         // Wrong rule value
         $this->assertException(InvalidArgumentException::class, function () {

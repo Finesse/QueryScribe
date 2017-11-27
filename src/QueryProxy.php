@@ -39,20 +39,22 @@ class QueryProxy implements ClosureResolverInterface
 
     /**
      * {@inheritDoc}
-     * All the exception from the underlying query are sent to the `handleBaseQueryException` method.
+     * All the exception from the underlying query are sent to the `handleException` method.
      *
      * @throws \Error If the given method is not defined in a base query or forbidden
      */
     public function __call($name, $arguments)
     {
         if (in_array($name, $this->doNotProxy)) {
-            throw new \Error(sprintf('Call to undefined method %s::%s()', static::class, $name));
+            return $this->handleException(
+                new \Error(sprintf('Call to undefined method %s::%s()', static::class, $name))
+            );
         }
 
         try {
             $result = $this->baseQuery->$name(...$arguments);
         } catch (\Throwable $exception) {
-            return $this->handleBaseQueryException($exception);
+            return $this->handleException($exception);
         }
 
         // If the base query returns itself, this object should also return itself
@@ -73,11 +75,33 @@ class QueryProxy implements ClosureResolverInterface
 
     /**
      * {@inheritDoc}
+     * @return self
+     * @see Query::applyCallback
+     */
+    public function applyCallback($callback): self
+    {
+        $result = $callback($this) ?? $this;
+
+        if ($result instanceof self) {
+            return $result;
+        }
+        if ($result instanceof Query) {
+            return new static($result);
+        }
+
+        return $this->handleException(InvalidReturnValueException::create(
+            'The callback return value',
+            $result,
+            ['null', self::class, Query::class]
+        ));
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function resolveSubQueryClosure(\Closure $callback): Query
     {
-        $query = new static($this->baseQuery->makeCopyForSubQuery());
-        return $this->resolveClosure($callback, $query);
+        return (new static($this->baseQuery->makeCopyForSubQuery()))->applyCallback($callback)->baseQuery;
     }
 
     /**
@@ -85,8 +109,7 @@ class QueryProxy implements ClosureResolverInterface
      */
     public function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
-        $query = new static($this->baseQuery->makeCopyForCriteriaGroup());
-        return $this->resolveClosure($callback, $query);
+        return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->applyCallback($callback)->baseQuery;
     }
 
     /**
@@ -100,40 +123,14 @@ class QueryProxy implements ClosureResolverInterface
     }
 
     /**
-     * Handles exceptions thrown by the underlying query.
+     * Handles exceptions thrown by this object or the underlying query.
      *
      * @param \Throwable $exception Thrown exception
      * @return mixed A value to return in case of error
      * @throws \Throwable It may rethrow it
      */
-    protected function handleBaseQueryException(\Throwable $exception)
+    protected function handleException(\Throwable $exception)
     {
         throw $exception;
-    }
-
-    /**
-     * Retrieves the query object from a closure.
-     *
-     * @param \Closure $callback
-     * @param self $emptyQuery Empty query object suitable for the callback
-     * @return Query Retrieved query
-     * @throws InvalidReturnValueException
-     */
-    protected function resolveClosure(\Closure $callback, self $emptyQuery): Query
-    {
-        $result = $callback($emptyQuery) ?? $emptyQuery;
-
-        if ($result instanceof self) {
-            return $result->getBaseQuery();
-        }
-        if ($result instanceof Query) {
-            return $result;
-        }
-
-        throw InvalidReturnValueException::create(
-            'The closure return value',
-            $result,
-            ['null', self::class, Query::class]
-        );
     }
 }
