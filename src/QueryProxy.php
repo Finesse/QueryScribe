@@ -112,12 +112,10 @@ class QueryProxy implements ClosureResolverInterface
     public function resolveSubQueryClosure(\Closure $callback): Query
     {
         try {
-            $baseQuery = $this->baseQuery->makeCopyForSubQuery();
+            return (new static($this->baseQuery->makeCopyForSubQuery()))->applyCallback($callback)->baseQuery;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }
-
-        return (new static($baseQuery))->applyCallback($callback)->baseQuery;
     }
 
     /**
@@ -126,12 +124,10 @@ class QueryProxy implements ClosureResolverInterface
     public function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
         try {
-            $baseQuery = $this->baseQuery->makeCopyForCriteriaGroup();
+            return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->applyCallback($callback)->baseQuery;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }
-
-        return (new static($baseQuery))->applyCallback($callback)->baseQuery;
     }
 
     /**
