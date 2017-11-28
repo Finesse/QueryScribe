@@ -51,24 +51,22 @@ class QueryProxy implements ClosureResolverInterface
      */
     public function __call($name, $arguments)
     {
-        if (in_array($name, $this->doNotProxy)) {
-            return $this->handleException(
-                new \Error(sprintf('Call to undefined method %s::%s()', static::class, $name))
-            );
-        }
-
         try {
+            if (in_array($name, $this->doNotProxy)) {
+                throw new \Error(sprintf('Call to undefined method %s::%s()', static::class, $name));
+            }
+
             $result = $this->baseQuery->$name(...$arguments);
+
+            // If the base query returns itself, this object should also return itself
+            if ($result === $this->baseQuery) {
+                return $this;
+            }
+
+            return $result;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }
-
-        // If the base query returns itself, this object should also return itself
-        if ($result === $this->baseQuery) {
-            return $this;
-        }
-
-        return $result;
     }
 
     /**
