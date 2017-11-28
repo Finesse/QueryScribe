@@ -2,6 +2,8 @@
 
 namespace Finesse\QueryScribe;
 
+use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+
 /**
  * Represents an object that turns closures to Query objects.
  *
@@ -14,6 +16,7 @@ interface ClosureResolverInterface
      *
      * @param \Closure $callback
      * @return Query
+     * @throws InvalidReturnValueException
      */
     public function resolveSubQueryClosure(\Closure $callback): Query;
 
@@ -22,6 +25,7 @@ interface ClosureResolverInterface
      *
      * @param \Closure $callback
      * @return Query
+     * @throws InvalidReturnValueException
      */
     public function resolveCriteriaGroupClosure(\Closure $callback): Query;
 }
