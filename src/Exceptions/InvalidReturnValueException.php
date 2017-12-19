@@ -7,7 +7,7 @@ namespace Finesse\QueryScribe\Exceptions;
  *
  * @author Surgie
  */
-class InvalidReturnValueException extends \RuntimeException implements ExceptionInterface
+class InvalidReturnValueException extends \LogicException implements ExceptionInterface
 {
     /**
      * Makes an exception instance.
