@@ -243,7 +243,7 @@ class Query
      *
      * @param callable $callback The callback. It recieves this query object as the first argument. It must either
      *     change the given object or return a new query object.
-     * @return self Result query object
+     * @return static Result query object
      * @throws InvalidReturnValueException If the callback return value is wrong
      */
     public function applyCallback(callable $callback): self

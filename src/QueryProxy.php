@@ -83,7 +83,7 @@ class QueryProxy implements ClosureResolverInterface
 
     /**
      * {@inheritDoc}
-     * @return self
+     * @return static
      * @see Query::applyCallback
      */
     public function applyCallback($callback): self
