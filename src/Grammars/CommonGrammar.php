@@ -186,7 +186,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Compiles a SELECT part of a SQL query.
+     * Compiles a SELECT part of an SQL query.
      *
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
@@ -210,7 +210,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Compiles a FROM part of a SQL query.
+     * Compiles a FROM part of an SQL query.
      *
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
@@ -254,7 +254,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Compiles a WHERE part of a SQL query.
+     * Compiles a WHERE part of an SQL query.
      *
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
@@ -272,7 +272,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Compiles a ORDER part of a SQL query.
+     * Compiles a ORDER part of an SQL query.
      *
      * @param Query $query Query data
      * @param array $bindings Bound values (array is filled by link)
@@ -315,7 +315,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a identifier (table, column, database, etc.) to a part of a SQL query text. Screens all the stuff.
+     * Converts a identifier (table, column, database, etc.) to a part of an SQL query text. Screens all the stuff.
      *
      * @param string|Query|StatementInterface $identifier Identifier
      * @param array $bindings Bound values (array is filled by link)
@@ -331,7 +331,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a value to a part of a SQL query text. Actually it sends all the values to the bindings.
+     * Converts a value to a part of an SQL query text. Actually it sends all the values to the bindings.
      *
      * @param mixed|Query|StatementInterface $value Value (a scalar value or a subquery)
      * @param array $bindings Bound values (array is filled by link)
@@ -348,7 +348,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a subquery to a SQL query text.
+     * Converts a subquery to an SQL query text.
      *
      * @param Query|StatementInterface $subQuery Subquery
      * @param array $bindings Bound values (array is filled by link)
@@ -376,7 +376,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts an Aggregate object to a SQL query text.
+     * Converts an Aggregate object to an SQL query text.
      *
      * @param Aggregate $aggregate Aggregate
      * @param array $bindings Bound values (array is filled by link)
@@ -388,7 +388,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts an array of criteria (logical rules for WHERE, HAVING, etc.) to a SQL query text.
+     * Converts an array of criteria (logical rules for WHERE, HAVING, etc.) to an SQL query text.
      *
      * @param Criterion[] $criteria List of criteria
      * @param array $bindings Bound values (array is filled by link)
@@ -425,7 +425,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a single criterion to a SQL query text.
+     * Converts a single criterion to an SQL query text.
      *
      * @param Criterion $criterion Criterion
      * @param array $bindings Bound values (array is filled by link)
@@ -529,7 +529,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a single order to a SQL query text.
+     * Converts a single order to an SQL query text.
      *
      * @param Order|string $order Order. String `random` means that the order should be random.
      * @param array $bindings Bound values (array is filled by link)
@@ -553,7 +553,7 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Converts a identifier (table, column, database, etc.) with alias to a part of a SQL query text. Screens all the
+     * Converts a identifier (table, column, database, etc.) with alias to a part of an SQL query text. Screens all the
      * stuff.
      *
      * @param string|Query|StatementInterface $identifier Identifier

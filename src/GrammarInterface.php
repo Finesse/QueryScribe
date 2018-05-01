@@ -5,7 +5,7 @@ namespace Finesse\QueryScribe;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 
 /**
- * Converts query data to a SQL text. Implementing classes should adapt SQL text for different DBMS (database management
+ * Converts query data to an SQL text. Implementing classes should adapt SQL text for different DBMS (database management
  * systems).
  *
  * @author Surgie

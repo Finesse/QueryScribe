@@ -40,7 +40,7 @@ trait ResolvesClosuresTrait
     protected function resolveSubQueryClosure(\Closure $callback): Query
     {
         if ($this->closureResolver === null) {
-            return $this->makeCopyForSubQuery()->applyCallback($callback);
+            return $this->makeCopyForSubQuery()->pipe($callback);
         } else {
             return $this->closureResolver->resolveSubQueryClosure($callback);
         }
@@ -56,7 +56,7 @@ trait ResolvesClosuresTrait
     protected function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
         if ($this->closureResolver === null) {
-            return $this->makeCopyForCriteriaGroup()->applyCallback($callback);
+            return $this->makeCopyForCriteriaGroup()->pipe($callback);
         } else {
             return $this->closureResolver->resolveCriteriaGroupClosure($callback);
         }

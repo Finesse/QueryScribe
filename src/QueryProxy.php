@@ -84,11 +84,11 @@ class QueryProxy implements ClosureResolverInterface
     /**
      * {@inheritDoc}
      * @return static
-     * @see Query::applyCallback
+     * @see Query::pipe
      */
-    public function applyCallback($callback): self
+    public function pipe(callable $transform): self
     {
-        $result = $callback($this) ?? $this;
+        $result = $transform($this) ?? $this;
 
         if ($result instanceof self) {
             return $result;
@@ -98,7 +98,7 @@ class QueryProxy implements ClosureResolverInterface
         }
 
         return $this->handleException(InvalidReturnValueException::create(
-            'The callback return value',
+            'The transform function return value',
             $result,
             ['null', self::class, Query::class]
         ));
@@ -110,7 +110,7 @@ class QueryProxy implements ClosureResolverInterface
     public function resolveSubQueryClosure(\Closure $callback): Query
     {
         try {
-            return (new static($this->baseQuery->makeCopyForSubQuery()))->applyCallback($callback)->baseQuery;
+            return (new static($this->baseQuery->makeCopyForSubQuery()))->pipe($callback)->baseQuery;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }
@@ -122,7 +122,7 @@ class QueryProxy implements ClosureResolverInterface
     public function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
         try {
-            return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->applyCallback($callback)->baseQuery;
+            return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->pipe($callback)->baseQuery;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }

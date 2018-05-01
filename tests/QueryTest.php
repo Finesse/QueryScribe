@@ -241,13 +241,13 @@ class QueryTest extends TestCase
     }
 
     /**
-     * Tests the `applyCallback` method
+     * Tests the `pipe` method
      */
-    public function testApplyCallback()
+    public function testPipe()
     {
         // Modify the given query in the callback
         $query = (new Query())->table('news')->where('title', 'Interesting');
-        $newQuery = $query->applyCallback(function (Query $query) {
+        $newQuery = $query->pipe(function (Query $query) {
             $query->table('users')->where('name', 'George');
         });
         $this->assertAttributeEquals('users', 'table', $newQuery);
@@ -257,7 +257,7 @@ class QueryTest extends TestCase
 
         // Return a new query from the callback
         $query = (new Query())->table('news')->where('title', 'Interesting');
-        $newQuery = $query->applyCallback(function () {
+        $newQuery = $query->pipe(function () {
             return (new Query())->table('users')->where('name', 'George');
         });
         $this->assertAttributeEquals('users', 'table', $newQuery);
@@ -266,7 +266,7 @@ class QueryTest extends TestCase
 
         // Wrong return value
         $this->assertException(InvalidReturnValueException::class, function () use ($query) {
-            $query->applyCallback(function () {
+            $query->pipe(function () {
                 return 'Hello';
             });
         });

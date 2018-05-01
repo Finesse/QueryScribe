@@ -11,11 +11,11 @@ use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
- * Represents a built query. It contains only a basic query data, not a SQL text. All the stored identifiers a final. It
- * must not compile any SQL.
+ * Represents a built query. It contains only a basic query data, not an SQL text. All the stored identifiers are final.
+ * It must not compile any SQL.
  *
- * All the Closures mentioned here as a value type are the function of the following type (if other is not specified):
- *  - Takes an empty query the first argument;
+ * All the Closures mentioned here as a value type are a function of the following type (if other is not specified):
+ *  - Takes an empty query as the first argument;
  *  - Returns a Query or a HasQueryInterface object or modifies the given object by link.
  *
  * All the exceptions are passed to the `handleException` method instead of just throwing.
@@ -236,26 +236,26 @@ class Query
     }
 
     /**
-     * Applies a callback to this query.
+     * Modifies this query by passing it through a transform function.
      *
      * Warning! In contrast to the other methods, this method can both change this object and return a new object. The
      * returned query is the only query guaranteed to be a proper result query.
      *
-     * @param callable $callback The callback. It recieves this query object as the first argument. It must either
+     * @param callable $transform The function. It recieves this query object as the first argument. It must either
      *     change the given object or return a new query object.
      * @return static Result query object
      * @throws InvalidReturnValueException If the callback return value is wrong
      */
-    public function applyCallback(callable $callback): self
+    public function pipe(callable $transform): self
     {
-        $result = $callback($this) ?? $this;
+        $result = $transform($this) ?? $this;
 
         if ($result instanceof self) {
             return $result;
         }
 
         return $this->handleException(InvalidReturnValueException::create(
-            'The callback return value',
+            'The transform function return value',
             $result,
             ['null', self::class]
         ));

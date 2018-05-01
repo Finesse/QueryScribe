@@ -232,7 +232,7 @@ class TablePrefixer implements PostProcessorInterface
     }
 
     /**
-     * Processes a subquery. Not a subquery values are just passed through.
+     * Processes a subquery. Not-subquery values are just passed through.
      *
      * @param Query|StatementInterface $subQuery
      * @param string[] $knownTables Known unprefixed table names
@@ -262,7 +262,7 @@ class TablePrefixer implements PostProcessorInterface
             } else {
                 $columns = [];
                 foreach ($row->columns as $index => $column) {
-                    $columns[ $index ] = $this->addTablePrefixToColumn($column, $knownTables);
+                    $columns[$index] = $this->addTablePrefixToColumn($column, $knownTables);
                 }
             }
             $selectQuery = $this->processSubQuery($row->selectQuery, $knownTables);
