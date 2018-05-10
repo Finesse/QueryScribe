@@ -3,8 +3,8 @@
 [![Latest Stable Version](https://poser.pugx.org/finesse/query-scribe/v/stable)](https://packagist.org/packages/finesse/query-scribe)
 [![Total Downloads](https://poser.pugx.org/finesse/query-scribe/downloads)](https://packagist.org/packages/finesse/query-scribe)
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/finesse/query-scribe.svg)
-[![Build Status](https://travis-ci.org/FinesseRus/QueryScribe.svg?branch=master)](https://travis-ci.org/FinesseRus/QueryScribe)
-[![Coverage Status](https://coveralls.io/repos/github/FinesseRus/QueryScribe/badge.svg?branch=master)](https://coveralls.io/github/FinesseRus/QueryScribe?branch=master)
+[![Build Status](https://travis-ci.org/Finesse/QueryScribe.svg?branch=master)](https://travis-ci.org/Finesse/QueryScribe)
+[![Coverage Status](https://coveralls.io/repos/github/Finesse/QueryScribe/badge.svg?branch=master)](https://coveralls.io/github/Finesse/QueryScribe?branch=master)
 [![Dependency Status](https://www.versioneye.com/php/finesse:query-scribe/badge)](https://www.versioneye.com/php/finesse:query-scribe)
 
 Provides a convenient object syntax for building SQL queries. Compiles the queries to SQL text with values for binding.
@@ -48,9 +48,9 @@ echo $compiled->getBindings(); // [3, 'Interesting', 4, 10]
 ```
 
 To perform compiled queries to a database use a database connector like [PDO](http://php.net/manual/en/book.pdo.php), 
-[MicroDB](https://github.com/FinesseRus/MicroDB) or [DBAL](http://www.doctrine-project.org/projects/dbal.html) or use
-a ready database abstraction like [MiniDB](https://github.com/FinesseRus/MiniDB) or 
-[Wired](https://github.com/FinesseRus/Wired).
+[MicroDB](https://github.com/Finesse/MicroDB) or [DBAL](http://www.doctrine-project.org/projects/dbal.html) or use
+a ready database abstraction like [MiniDB](https://github.com/Finesse/MiniDB) or 
+[Wired](https://github.com/Finesse/Wired).
 
 Key features:
 

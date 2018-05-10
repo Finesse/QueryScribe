@@ -3,7 +3,7 @@
 	"description": "Light SQL query builder designed for extensibility and flexibility",
 	"keywords": ["sql", "query builder", "database", "mysql", "sqlite"],
 	"type": "library",
-	"homepage": "https://github.com/FinesseRus/QueryScribe",
+	"homepage": "https://github.com/Finesse/QueryScribe",
 	"license": "MIT",
 	"authors": [
 		{
