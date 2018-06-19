@@ -6,7 +6,7 @@
 
 # Grammars
 
-Grammar compiles queries to SQL with bindings.
+Grammar compiles queries to an SQL text with bindings.
 
 Available grammars:
 
@@ -14,11 +14,11 @@ Available grammars:
 * `Finesse\QueryScribe\Grammars\SQLiteGrammar` — SQLite
 * `Finesse\QueryScribe\Grammars\CommonGrammar` — everything else
 
-You can use the `compile` method to compile a query object. Grammar guesses the query type from it's content.
+Use the `compile` method to compile a query object. Grammar guesses the query type from it's content.
 You can use one of this methods to specify the query type explicitly:
 
 * `compileSelect`
-* `compileInsert` It returns an array of compiled statements instead of one statement
+* `compileInsert` returns an array of compiled statements instead of one statement
 * `compileUpdate`
 * `compileDelete`
 

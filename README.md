@@ -7,8 +7,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/Finesse/QueryScribe/badge.svg?branch=master)](https://coveralls.io/github/Finesse/QueryScribe?branch=master)
 [![Dependency Status](https://www.versioneye.com/php/finesse:query-scribe/badge)](https://www.versioneye.com/php/finesse:query-scribe)
 
-Provides a convenient object syntax for building SQL queries. Compiles the queries to SQL text with values for binding.
-Doesn't perform queries to a database.
+Provides a convenient object syntax to build SQL queries. Compiles the queries to an SQL text with values for binding.
+Doesn't perform queries to database.
 
 ```php
 $query = (new Query())
@@ -44,10 +44,13 @@ echo $compiled->getSQL();
     LIMIT ?
  */
 
-echo $compiled->getBindings(); // [3, 'Interesting', 4, 10]
+echo $compiled->getBindings();
+/*
+    [3, 'Interesting', 4, 10]
+ */
 ```
 
-To perform compiled queries to a database use a database connector like [PDO](http://php.net/manual/en/book.pdo.php), 
+To perform compiled queries to a database, use a database connector like [PDO](http://php.net/manual/en/book.pdo.php), 
 [MicroDB](https://github.com/Finesse/MicroDB) or [DBAL](http://www.doctrine-project.org/projects/dbal.html) or use
 a ready database abstraction like [MiniDB](https://github.com/Finesse/MiniDB) or 
 [Wired](https://github.com/Finesse/Wired).
