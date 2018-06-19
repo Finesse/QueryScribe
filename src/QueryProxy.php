@@ -84,9 +84,9 @@ class QueryProxy implements ClosureResolverInterface
     /**
      * {@inheritDoc}
      * @return static
-     * @see Query::pipe
+     * @see Query::apply
      */
-    public function pipe(callable $transform): self
+    public function apply(callable $transform): self
     {
         $result = $transform($this) ?? $this;
 
@@ -110,7 +110,7 @@ class QueryProxy implements ClosureResolverInterface
     public function resolveSubQueryClosure(\Closure $callback): Query
     {
         try {
-            return (new static($this->baseQuery->makeCopyForSubQuery()))->pipe($callback)->baseQuery;
+            return (new static($this->baseQuery->makeCopyForSubQuery()))->apply($callback)->baseQuery;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }
@@ -122,7 +122,7 @@ class QueryProxy implements ClosureResolverInterface
     public function resolveCriteriaGroupClosure(\Closure $callback): Query
     {
         try {
-            return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->pipe($callback)->baseQuery;
+            return (new static($this->baseQuery->makeCopyForCriteriaGroup()))->apply($callback)->baseQuery;
         } catch (\Throwable $exception) {
             return $this->handleException($exception);
         }

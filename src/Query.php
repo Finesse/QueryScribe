@@ -246,7 +246,7 @@ class Query
      * @return static Result query object
      * @throws InvalidReturnValueException If the callback return value is wrong
      */
-    public function pipe(callable $transform): self
+    public function apply(callable $transform): self
     {
         $result = $transform($this) ?? $this;
 
