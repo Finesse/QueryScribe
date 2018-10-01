@@ -15,7 +15,7 @@ use Finesse\QueryScribe\StatementInterface;
 class Order
 {
     /**
-     * @var string|Query|StatementInterface Target column (with prefix)
+     * @var string|Query|StatementInterface Target column
      * @readonly
      */
     public $column;
@@ -27,7 +27,7 @@ class Order
     public $isDescending;
 
     /**
-     * @param string|Query|StatementInterface $column Target column (with prefix)
+     * @param string|Query|StatementInterface $column Target column
      * @param bool $isDescending Should the order be ascending (true) or descending (false)
      */
     public function __construct($column, bool $isDescending)

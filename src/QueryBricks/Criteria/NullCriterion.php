@@ -16,7 +16,7 @@ use Finesse\QueryScribe\StatementInterface;
 class NullCriterion extends Criterion
 {
     /**
-     * @var string|Query|StatementInterface Target column (with prefix)
+     * @var string|Query|StatementInterface Target column
      * @readonly
      */
     public $column;

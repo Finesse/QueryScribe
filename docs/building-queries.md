@@ -290,7 +290,7 @@ You can also use `orWhereColumn`.
 
 ### How clauses are appended to each other
 
-By default where clauses are appended to previous clauses using the AND logical rule.
+By default "where" clauses are appended to previous clauses using the AND logical rule.
 
 Every logical clause is appended this way: _combined previous clauses APPEND_RULE clause_.
 

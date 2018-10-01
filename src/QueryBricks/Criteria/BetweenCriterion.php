@@ -16,7 +16,7 @@ use Finesse\QueryScribe\StatementInterface;
 class BetweenCriterion extends Criterion
 {
     /**
-     * @var string|Query|StatementInterface Target column (with prefix)
+     * @var string|Query|StatementInterface Target column
      * @readonly
      */
     public $column;
@@ -42,7 +42,7 @@ class BetweenCriterion extends Criterion
     /**
      * {@inheritDoc}
      *
-     * @param $column string|Query|StatementInterface Target column (with prefix)
+     * @param $column string|Query|StatementInterface Target column
      * @param $min mixed|Query|StatementInterface|null Left value
      * @param $max mixed|Query|StatementInterface|null Right value
      * @param bool $not Whether the rule should be NOT BETWEEN

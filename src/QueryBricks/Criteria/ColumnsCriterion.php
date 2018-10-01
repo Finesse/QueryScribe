@@ -16,7 +16,7 @@ use Finesse\QueryScribe\StatementInterface;
 class ColumnsCriterion extends Criterion
 {
     /**
-     * @var string|Query|StatementInterface Target column 1 (with prefix)
+     * @var string|Query|StatementInterface Target column 1
      * @readonly
      */
     public $column1;
@@ -28,7 +28,7 @@ class ColumnsCriterion extends Criterion
     public $rule;
 
     /**
-     * @var string|Query|StatementInterface Target column 2 (with prefix)
+     * @var string|Query|StatementInterface Target column 2
      * @readonly
      */
     public $column2;
@@ -36,9 +36,9 @@ class ColumnsCriterion extends Criterion
     /**
      * {@inheritDoc}
      *
-     * @param $column1 string|Query|StatementInterface Target column 1 (with prefix)
+     * @param $column1 string|Query|StatementInterface Target column 1
      * @param $rule string Compare rule (=, >, etc.)
-     * @param $column2 string|Query|StatementInterface Target column 2 (with prefix)
+     * @param $column2 string|Query|StatementInterface Target column 2
      */
     public function __construct($column1, string $rule, $column2, string $appendRule)
     {

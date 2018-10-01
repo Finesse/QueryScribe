@@ -52,6 +52,6 @@ $prefixer2 = new TablePrefixer('prefix2_');
 
 $query = (new Query())/* -> ... */;
 
-$prefixedQuery1 = $prefixer1->process($query); // The prefix is `prefix1_
-$prefixedQuery2 = $prefixer2->process($query); // The prefix is `prefix2_
+$prefixedQuery1 = $prefixer1->process($query); // The prefix is `prefix1_`
+$prefixedQuery2 = $prefixer2->process($query); // The prefix is `prefix2_`
 ```

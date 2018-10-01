@@ -16,7 +16,7 @@ use Finesse\QueryScribe\StatementInterface;
 class ValueCriterion extends Criterion
 {
     /**
-     * @var string|Query|StatementInterface Target column (with prefix)
+     * @var string|Query|StatementInterface Target column
      * @readonly
      */
     public $column;
@@ -36,7 +36,7 @@ class ValueCriterion extends Criterion
     /**
      * {@inheritDoc}
      *
-     * @param $column string|Query|StatementInterface Target column (with prefix)
+     * @param $column string|Query|StatementInterface Target column
      * @param $rule string Compare rule (=, >, etc.)
      * @param $value mixed|Query|StatementInterface|null Value
      */
