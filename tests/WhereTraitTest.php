@@ -78,6 +78,14 @@ class WhereTraitTest extends TestCase
         $this->assertInstanceOf(RawCriterion::class, $query->where[0]);
         $this->assertStatement('date + ? = NOW()', [10], $query->where[0]->raw);
 
+        // Null value
+        $query = (new Query())->where('foo', '<', null)->where('bar', null);
+        $this->assertCount(2, $query->where);
+        $this->assertInstanceOf(ValueCriterion::class, $query->where[0]);
+        $this->assertAttributes(['column' => 'foo', 'rule' => '<', 'value' => null], $query->where[0]);
+        $this->assertInstanceOf(ValueCriterion::class, $query->where[1]);
+        $this->assertAttributes(['column' => 'bar', 'rule' => '=', 'value' => null], $query->where[1]);
+
         // Ordinary with complex values
         $query = (new Query())
             ->where(
@@ -99,9 +107,14 @@ class WhereTraitTest extends TestCase
         $this->assertAttributes(['column' => 'price', 'rule' => '<='], $query->where[1]);
         $this->assertInstanceOf(Query::class, $query->where[1]->value);
 
+        // Wrong single argument
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->orWhere('name');
+        });
+
         // Wrong column
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->orWhere(new \stdClass());
+            (new Query())->orWhere(new \stdClass(), 'foo');
         });
 
         // Wrong rule value
@@ -112,6 +125,16 @@ class WhereTraitTest extends TestCase
         // Wrong value
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query())->where('name', 'like', ['foo', 'bar']);
+        });
+
+        // Too many arguments
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->where('name', 'like', 'foo', 'bar');
+        });
+
+        // Too few arguments
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->where();
         });
     }
 
@@ -307,9 +330,24 @@ class WhereTraitTest extends TestCase
         $this->assertInstanceOf(ColumnsCriterion::class, $query->where[0]->criteria[1]);
         $this->assertAttributes(['column1' => 'table1.column2', 'rule' => '!=', 'column2' => 'table2.column2', 'appendRule' => 'AND'], $query->where[0]->criteria[1]);
 
+        // Wrong single argument
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->whereColumn('column1');
+        });
+
         // Wrong rule value
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query())->whereColumn(new Raw(''), new Raw(''), new Raw(''));
+        });
+
+        // Too many arguments
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->whereColumn('column1', '!=', 'column2', 'foo');
+        });
+
+        // Too few arguments
+        $this->assertException(InvalidArgumentException::class, function () {
+            (new Query())->whereColumn();
         });
     }
 
