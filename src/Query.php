@@ -4,9 +4,9 @@ namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+use Finesse\QueryScribe\QueryBricks\OrderTrait;
 use Finesse\QueryScribe\QueryBricks\ResolvesClosuresTrait;
 use Finesse\QueryScribe\QueryBricks\InsertTrait;
-use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
@@ -35,7 +35,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  */
 class Query
 {
-    use MakeRawTrait, SelectTrait, InsertTrait, WhereTrait, ResolvesClosuresTrait;
+    use MakeRawTrait, SelectTrait, InsertTrait, WhereTrait, OrderTrait, ResolvesClosuresTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name
@@ -57,11 +57,6 @@ class Query
      * @var bool Should rows be deleted?
      */
     public $delete = false;
-
-    /**
-     * @var Order[]|string[] Orders. String value `random` means that the order should be random.
-     */
-    public $order = [];
 
     /**
      * @var int|self|StatementInterface|null Offset
@@ -143,33 +138,6 @@ class Query
     public function setDelete(): self
     {
         $this->delete = true;
-        return $this;
-    }
-
-    /**
-     * Adds an order to the orders list.
-     *
-     * @param string|\Closure|self|StatementInterface $column Column to order by
-     * @param string $direction Order direction: `asc` - ascending, `desc` - descending
-     * @return $this
-     * @throws InvalidArgumentException
-     * @throws InvalidReturnValueException
-     */
-    public function orderBy($column, string $direction = 'asc'): self
-    {
-        $column = $this->checkStringValue('Argument $column', $column);
-        $this->order[] = new Order($column, strtolower($direction) === 'desc');
-        return $this;
-    }
-
-    /**
-     * Adds a random order to the orders list.
-     *
-     * @return $this
-     */
-    public function inRandomOrder(): self
-    {
-        $this->order[] = 'random';
         return $this;
     }
 

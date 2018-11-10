@@ -5,7 +5,6 @@ namespace Finesse\QueryScribe\Tests;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
-use Finesse\QueryScribe\QueryBricks\Order;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -134,32 +133,6 @@ class QueryTest extends TestCase
         // Tests that sequential setDelete call doesn't toggle the delete flag
         $query->setDelete();
         $this->assertTrue($query->delete);
-    }
-
-    /**
-     * Tests the ordering methods
-     */
-    public function testOrder()
-    {
-        $query = (new Query())
-            ->from('post')
-            ->orderBy('name')
-            ->inRandomOrder()
-            ->orderBy(function (Query $query) {
-                $query
-                    ->addAvg('price')
-                    ->table('products')
-                    ->whereColumn('post.category_id', 'price.category_id');
-            }, 'desc');
-
-        $this->assertCount(3, $query->order);
-        $this->assertInstanceOf(Order::class, $query->order[0]);
-        $this->assertAttributes(['column' => 'name', 'isDescending' => false], $query->order[0]);
-        $this->assertEquals('random', $query->order[1]);
-        $this->assertInstanceOf(Order::class, $query->order[2]);
-        $this->assertEquals(true, $query->order[2]->isDescending);
-        $this->assertInstanceOf(Query::class, $query->order[2]->column);
-        $this->assertEquals('products', $query->order[2]->column->table);
     }
 
     /**
