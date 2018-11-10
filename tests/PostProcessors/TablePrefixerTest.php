@@ -216,9 +216,7 @@ class TablePrefixerTest extends TestCase
         $this->assertEquals('database.prefix_table', $processor->addTablePrefix('database.table'));
 
         $this->assertEquals('column1', $processor->addTablePrefixToColumn('column1'));
-        $this->assertEquals('prefix_table.column1', $processor->addTablePrefixToColumn('table.column1', ['table', 'comments']));
         $this->assertEquals('database.prefix_table.column1', $processor->addTablePrefixToColumn('database.table.column1'));
-        $this->assertEquals('t.column1', $processor->addTablePrefixToColumn('t.column1', ['table', 'comments']));
     }
 
     /**
