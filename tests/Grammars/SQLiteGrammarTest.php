@@ -23,7 +23,7 @@ class SQLiteGrammarTest extends TestCase
         $grammar = new SQLiteGrammar();
 
         $statements = $grammar->compileInsert(
-            (new Query())
+            (new Query)
                 ->table('posts')
                 ->addInsert([
                     ['title' => 'Foo!!', 'author_id' => 12],
@@ -68,11 +68,11 @@ class SQLiteGrammarTest extends TestCase
         $grammar = new SQLiteGrammar();
 
         $this->assertStatement('UPDATE "table" SET "foo" = ?', ['bar'], $grammar->compileUpdate(
-            (new Query())->table('table')->addUpdate(['foo' => 'bar'])
+            (new Query)->table('table')->addUpdate(['foo' => 'bar'])
         ));
 
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
-            $grammar->compileUpdate((new Query())->from('table', 't')->addUpdate(['foo' => 'bar']));
+            $grammar->compileUpdate((new Query)->from('table', 't')->addUpdate(['foo' => 'bar']));
         }, function (InvalidQueryException $exception) {
             $this->assertEquals('Table alias is not allowed in update query', $exception->getMessage());
         });
@@ -86,11 +86,11 @@ class SQLiteGrammarTest extends TestCase
         $grammar = new SQLiteGrammar();
 
         $this->assertStatement('DELETE FROM "table"', [], $grammar->compileDelete(
-            (new Query())->setDelete()->from('table')
+            (new Query)->setDelete()->from('table')
         ));
 
         $this->assertException(InvalidQueryException::class, function () use ($grammar) {
-            $grammar->compileDelete((new Query())->setDelete()->from('table', 't'));
+            $grammar->compileDelete((new Query)->setDelete()->from('table', 't'));
         }, function (InvalidQueryException $exception) {
             $this->assertEquals('Table alias is not allowed in delete query', $exception->getMessage());
         });

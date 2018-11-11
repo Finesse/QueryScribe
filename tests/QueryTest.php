@@ -5,6 +5,7 @@ namespace Finesse\QueryScribe\Tests;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -21,39 +22,37 @@ class QueryTest extends TestCase
     public function testTable()
     {
         // No table
-        $query = new Query();
+        $query = new Query;
         $this->assertNull($query->table);
         $this->assertNull($query->tableAlias);
 
         // Simple table
         $query->table('foo', 'f');
-        $this->assertAttributes(['table' => 'foo', 'tableAlias' => 'f'], $query);
+        $this->assertEquals('foo', $query->table);
+        $this->assertEquals('f', $query->tableAlias);
 
         // Table with callback subquery
         $query->table(function (Query $query) {
             $query->addSelect('foo')->from('bar');
         });
-        $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'bar', 'tableAlias' => null], $query->table);
+        $this->assertEquals((new Query)->addSelect('foo')->from('bar'), $query->table);
         $this->assertNull($query->tableAlias);
 
         // Table with another type of callback
         $query->table(function () {
-            return (new Query())->addSelect('foo2')->from('bar');
+            return (new Query)->addSelect('foo2')->from('bar');
         });
-        $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'bar', 'tableAlias' => null], $query->table);
+        $this->assertEquals((new Query)->addSelect('foo2')->from('bar'), $query->table);;
         $this->assertNull($query->tableAlias);
 
         // Table with subquery
-        $query->table((new Query())->table('table', 't'), 's');
-        $this->assertInstanceOf(Query::class, $query->table);
-        $this->assertAttributes(['table' => 'table', 'tableAlias' => 't'], $query->table);
+        $query->table((new Query)->table('table', 't'), 's');
+        $this->assertEquals((new Query)->table('table', 't'), $query->table);;
         $this->assertEquals('s', $query->tableAlias);
 
         // Raw table
         $query->table(new Raw('TABLES()'));
-        $this->assertStatement('TABLES()', [], $query->table);
+        $this->assertEquals(new Raw('TABLES()'), $query->table);
 
         // Wrong argument
         $this->assertException(InvalidArgumentException::class, function () use ($query) {
@@ -67,11 +66,11 @@ class QueryTest extends TestCase
     public function testGetTableIdentifier()
     {
         // No table
-        $query = new Query();
+        $query = new Query;
         $this->assertNull($query->getTableIdentifier());
 
         // Table is a subquery
-        $query->table(new Query());
+        $query->table(new Query);
         $this->assertNull($query->getTableIdentifier());
 
         // Table is a string
@@ -88,7 +87,7 @@ class QueryTest extends TestCase
      */
     public function testAddUpdate()
     {
-        $query = (new Query())
+        $query = (new Query)
             ->addUpdate([
                 'foo' => 'Bar',
                 'date' => new Raw('NOW()'),
@@ -101,21 +100,21 @@ class QueryTest extends TestCase
                 'field' => null
             ]);
 
-        $this->assertCount(4, $query->update);
-        $this->assertEquals(12345, $query->update['foo']);
-        $this->assertStatement('NOW()', [], $query->update['date']);
-        $this->assertInstanceOf(Query::class, $query->update['value']);
-        $this->assertEquals('table', $query->update['value']->table);
-        $this->assertNull($query->update['field']);
+        $this->assertEquals([
+            'foo' => 12345,
+            'date' => new Raw('NOW()'),
+            'value' => (new Query)->addAvg('height')->from('table'),
+            'field' => null
+        ], $query->update);
 
         // Incorrect column name
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->addUpdate([ 'foo' => 'bar', 'baq']);
+            (new Query)->addUpdate([ 'foo' => 'bar', 'baq']);
         });
 
         // Incorrect value
         $this->assertException(InvalidArgumentException::class, function () {
-            (new Query())->addUpdate([ 'foo' => [1, 2, 3]]);
+            (new Query)->addUpdate([ 'foo' => [1, 2, 3]]);
         });
     }
 
@@ -124,7 +123,7 @@ class QueryTest extends TestCase
      */
     public function testSetDelete()
     {
-        $query = new Query();
+        $query = new Query;
         $this->assertFalse($query->delete);
 
         $query->setDelete();
@@ -141,7 +140,7 @@ class QueryTest extends TestCase
     public function testOffset()
     {
         // No offset
-        $query = new Query();
+        $query = new Query;
         $this->assertNull($query->offset);
 
         // Integer offset
@@ -152,18 +151,15 @@ class QueryTest extends TestCase
         $query->offset(function (Query $query) {
             $query->addSelect('foo')->table('bar');
         });
-        $this->assertInstanceOf(Query::class, $query->offset);
-        $this->assertEquals('bar', $query->offset->table);
+        $this->assertEquals((new Query)->addSelect('foo')->table('bar'), $query->offset);
 
         // Subquery offset
-        $query->offset((new Query())->table('table'));
-        $this->assertInstanceOf(Query::class, $query->offset);
-        $this->assertEquals('table', $query->offset->table);
+        $query->offset((new Query)->table('table'));
+        $this->assertEquals((new Query)->table('table'), $query->offset);
 
         // Raw offset
         $query->offset(new Raw('AVG(price)'));
-        $this->assertInstanceOf(StatementInterface::class, $query->offset);
-        $this->assertEquals('AVG(price)', $query->offset->getSQL());
+        $this->assertEquals(new Raw('AVG(price)'), $query->offset);
 
         // Wrong argument
         $this->assertException(InvalidArgumentException::class, function () use ($query) {
@@ -180,7 +176,7 @@ class QueryTest extends TestCase
     public function testLimit()
     {
         // No limit
-        $query = new Query();
+        $query = new Query;
         $this->assertNull($query->limit);
 
         // Integer limit
@@ -191,18 +187,15 @@ class QueryTest extends TestCase
         $query->limit(function (Query $query) {
             $query->addSelect('foo')->table('bar');
         });
-        $this->assertInstanceOf(Query::class, $query->limit);
-        $this->assertEquals('bar', $query->limit->table);
+        $this->assertEquals((new Query)->addSelect('foo')->table('bar'), $query->limit);
 
         // Subquery limit
-        $query->limit((new Query())->table('table'));
-        $this->assertInstanceOf(Query::class, $query->limit);
-        $this->assertEquals('table', $query->limit->table);
+        $query->limit((new Query)->table('table'));
+        $this->assertEquals((new Query)->table('table'), $query->limit);
 
         // Raw limit
         $query->limit(new Raw('AVG(price)'));
-        $this->assertInstanceOf(StatementInterface::class, $query->limit);
-        $this->assertEquals('AVG(price)', $query->limit->getSQL());
+        $this->assertEquals(new Raw('AVG(price)'), $query->limit);
 
         // Wrong argument
         $this->assertException(InvalidArgumentException::class, function () use ($query) {
@@ -219,23 +212,24 @@ class QueryTest extends TestCase
     public function testApply()
     {
         // Modify the given query in the callback
-        $query = (new Query())->table('news')->where('title', 'Interesting');
+        $query = (new Query)->table('news')->where('title', 'Interesting');
         $newQuery = $query->apply(function (Query $query) {
             $query->table('users')->where('name', 'George');
         });
-        $this->assertAttributeEquals('users', 'table', $newQuery);
-        $this->assertAttributeCount(2, 'where', $newQuery);
-        $this->assertAttributes(['column' => 'title', 'value' => 'Interesting'], $newQuery->where[0]);
-        $this->assertAttributes(['column' => 'name', 'value' => 'George'], $newQuery->where[1]);
+        $this->assertEquals(
+            (new Query)
+                ->table('users')
+                ->where('title', 'Interesting')
+                ->where('name', 'George'),
+            $newQuery
+        );
 
         // Return a new query from the callback
-        $query = (new Query())->table('news')->where('title', 'Interesting');
+        $query = (new Query)->table('news')->where('title', 'Interesting');
         $newQuery = $query->apply(function () {
-            return (new Query())->table('users')->where('name', 'George');
+            return (new Query)->table('users')->where('name', 'George');
         });
-        $this->assertAttributeEquals('users', 'table', $newQuery);
-        $this->assertAttributeCount(1, 'where', $newQuery);
-        $this->assertAttributes(['column' => 'name', 'value' => 'George'], $newQuery->where[0]);
+        $this->assertEquals((new Query)->table('users')->where('name', 'George'), $newQuery);
 
         // Wrong return value
         $this->assertException(InvalidReturnValueException::class, function () use ($query) {
@@ -250,11 +244,9 @@ class QueryTest extends TestCase
      */
     public function testTraits()
     {
-        $query = new Query();
+        $query = new Query;
 
-        $raw = $query->raw('`column` = ?', ['orange']);
-        $this->assertInstanceOf(Raw::class, $raw);
-        $this->assertStatement('`column` = ?', ['orange'], $raw);
+        $this->assertEquals(new Raw('`column` = ?', ['orange']), $query->raw('`column` = ?', ['orange']));
     }
 
     /**
@@ -262,7 +254,7 @@ class QueryTest extends TestCase
      */
     public function testCallableColumnName()
     {
-        $query = (new Query())
+        $query = (new Query)
             ->table('date')
             ->addSelect('is_array')
             ->where('sprintf', 'ucfirst');

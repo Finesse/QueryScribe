@@ -17,7 +17,7 @@ class OrderTraitTest extends TestCase
      */
     public function testOrderBy()
     {
-        $query = (new Query())
+        $query = (new Query)
             ->from('post')
             ->orderBy('name')
             ->orderBy(function (Query $query) {
@@ -27,13 +27,10 @@ class OrderTraitTest extends TestCase
                     ->whereColumn('post.category_id', 'price.category_id');
             }, 'desc');
 
-        $this->assertCount(2, $query->order);
-        $this->assertInstanceOf(Order::class, $query->order[0]);
-        $this->assertAttributes(['column' => 'name', 'isDescending' => false], $query->order[0]);
-        $this->assertInstanceOf(Order::class, $query->order[1]);
-        $this->assertEquals(true, $query->order[1]->isDescending);
-        $this->assertInstanceOf(Query::class, $query->order[1]->column);
-        $this->assertEquals('products', $query->order[1]->column->table);
+        $this->assertEquals([
+            new Order('name', false),
+            new Order((new Query)->addAvg('price')->table('products')->whereColumn('post.category_id', 'price.category_id'), true)
+        ], $query->order);
     }
 
 
@@ -42,11 +39,10 @@ class OrderTraitTest extends TestCase
      */
     public function testInRandomOrder()
     {
-        $query = (new Query())
+        $query = (new Query)
             ->from('post')
             ->inRandomOrder();
 
-        $this->assertCount(1, $query->order);
-        $this->assertEquals('random', $query->order[0]);
+        $this->assertEquals(['random'], $query->order);
     }
 }

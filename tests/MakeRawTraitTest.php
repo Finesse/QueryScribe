@@ -19,10 +19,7 @@ class MakeRawTraitTest extends TestCase
     {
         /** @var Raw $raw */
         $obj = $this->createTestObject();
-        $raw = $obj->raw('`column` = ?', ['orange']);
-        $this->assertInstanceOf(Raw::class, $raw);
-        $this->assertEquals($this->plainSQL('`column` = ?'), $this->plainSQL($raw->getSQL()));
-        $this->assertEquals(['orange'], $raw->getBindings());
+        $this->assertEquals(new Raw('`column` = ?', ['orange']), $obj->raw('`column` = ?', ['orange']));
     }
 
     /**

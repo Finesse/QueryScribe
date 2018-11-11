@@ -3,7 +3,7 @@
 namespace Finesse\QueryScribe;
 
 /**
- * An object that can give SQL text and bindings to execute a database query.
+ * An object that can give SQL text and bindings to execute a database query or to add to another query.
  *
  * @author Surgie
  */

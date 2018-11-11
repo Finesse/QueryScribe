@@ -37,7 +37,7 @@ class MySQLGrammarTest extends TestCase
             FROM `table`
             WHERE `goal` = ?
         ', ['win'], $grammar->compileSelect(
-            (new Query())
+            (new Query)
                 ->from('table')
                 ->addSelect('description', 'des`ion')
                 ->where('goal', 'win')
@@ -58,7 +58,7 @@ class MySQLGrammarTest extends TestCase
                 `category` ASC,
                 RAND()
         ', [], $grammar->compileSelect(
-            (new Query())
+            (new Query)
                 ->from('table')
                 ->orderBy('category')
                 ->inRandomOrder()
@@ -79,7 +79,7 @@ class MySQLGrammarTest extends TestCase
                 `column` LIKE ? AND
                 `created_at` = `updated_at`
         ', ['\\%foo%'], $grammar->compileSelect(
-            (new Query())
+            (new Query)
                 ->table('table')
                 ->where('column', 'like', $grammar->escapeLikeWildcards('%foo').'%')
                 ->whereColumn('created_at', 'updated_at')

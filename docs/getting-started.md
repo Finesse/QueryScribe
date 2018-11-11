@@ -38,7 +38,7 @@ Then make an empty query:
 ```php
 use Finesse\QueryScribe\Query;
 
-$query = new Query();
+$query = new Query;
 ```
 
 Build a query:

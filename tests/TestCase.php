@@ -58,8 +58,8 @@ class TestCase extends BaseTestCase
      */
     protected function assertStatement(string $expectedSQL, array $expectedBindings, StatementInterface $statement)
     {
-        $this->assertEquals($this->plainSQL($expectedSQL), $this->plainSQL($statement->getSQL()));
-        $this->assertEquals($expectedBindings, $statement->getBindings());
+        $this->assertEquals($this->plainSQL($expectedSQL), $this->plainSQL($statement->getSQL()), 'The SQL string is not equivalent');
+        $this->assertEquals($expectedBindings, $statement->getBindings(), 'The bound values don\'t match');
     }
 
     /**

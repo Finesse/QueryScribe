@@ -11,7 +11,7 @@ Provides a convenient object syntax to build SQL queries. Compiles the queries t
 Doesn't perform queries to database.
 
 ```php
-$query = (new Query())
+$query = (new Query)
     ->from('posts')
     ->where('level', '>', 3)
     ->whereIn('category_id', function ($query) {

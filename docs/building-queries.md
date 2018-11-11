@@ -11,7 +11,7 @@
 If no fields are set, all fields are selected:
 
 ```php
-(new Query())
+(new Query)
     ->from('table');
 
 // SELECT * FROM "table"
@@ -20,7 +20,7 @@ If no fields are set, all fields are selected:
 Specify fields:
 
 ```php
-(new Query())
+(new Query)
     ->addSelect(['id', 'name'])
     ->table('table');
     
@@ -30,7 +30,7 @@ Specify fields:
 With aliases:
 
 ```php
-(new Query())
+(new Query)
     ->addSelect('id', 'i')
     ->addSelect(['n' => 'name', 'p' => 'price'])
     ->from('table', 't');
@@ -41,7 +41,7 @@ With aliases:
 ### Aggregates
 
 ```php
-(new Query())
+(new Query)
     ->addCount()
     ->addAvg('price', 'avg_price')
     ->addMin('value'),
@@ -59,7 +59,7 @@ DBMSs support all cases of inserting many rows at once.
 
 ```php
 $grammar->compileInsert(
-    (new Query())
+    (new Query)
         ->table('users')
         ->addInsert(['name' => 'John', 'role' => 5])
         ->addInsert(['name' => 'Bob', 'role' => 1])
@@ -74,7 +74,7 @@ Many rows at once:
 
 ```php
 $grammar->compileInsert(
-    (new Query())
+    (new Query)
         ->table('users')
         ->addInsert([
             ['name' => 'Jack', 'role' => 2],
@@ -91,7 +91,7 @@ Insert from a select statement:
 
 ```php
 $grammar->compileInsert(
-    (new Query())
+    (new Query)
         ->table('users')
         ->addInsertFromSelect(['name', 'phone'], function ($query) {
             $query
@@ -109,7 +109,7 @@ $grammar->compileInsert(
 Use `$grammar->compile()` or `$grammar->compileUpdate()` to compile an update query.
 
 ```php
-(new Query())
+(new Query)
     ->table('posts')
     ->addUpdate(['title' => 'Awesome', 'position' => 1])
     ->where('id', 55);
@@ -123,7 +123,7 @@ Use `$grammar->compile()` or `$grammar->compileUpdate()` to compile an update qu
 Use `$grammar->compile()` or `$grammar->compileDelete()` to compile a delete query.
 
 ```php
-(new Query())
+(new Query)
     ->setDelete()
     ->table('posts')
     ->where('date', '<', '2017-01-01');
@@ -136,7 +136,7 @@ Use `$grammar->compile()` or `$grammar->compileDelete()` to compile a delete que
 Simple where clauses:
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->where('name', 'Bill')
     ->where('age', '>', 5)
@@ -148,7 +148,7 @@ Simple where clauses:
 ### Grouped clauses
 
 ```php
-(new Query())
+(new Query)
     ->from('fruits')
     ->where([
         ['name', 'Orange'],
@@ -165,7 +165,7 @@ Simple where clauses:
 Or using a closure:
 
 ```php
-(new Query())
+(new Query)
     ->from('fruits')
     ->where(function ($query) {
         $query
@@ -184,11 +184,11 @@ Or using a closure:
 ### Raw SQL criterion
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereRaw('YEAR(date) = ?', [1997]);
 // or
-(new Query())
+(new Query)
     ->from('table')
     ->where(new Raw('YEAR(date) = ?', [1997]));
 
@@ -201,7 +201,7 @@ You can also use `orWhereRaw`.
 ### Between
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereBetween('age', 13, 19);
 
@@ -213,7 +213,7 @@ You can also use `orWhereBetween`, `whereNotBetween` and `orWhereNotBetween`.
 ### In
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereIn('caterogy_id', [5, 17, 10]);
 
@@ -223,7 +223,7 @@ You can also use `orWhereBetween`, `whereNotBetween` and `orWhereNotBetween`.
 Using subquery:
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereIn('user_id', function ($query) {
         $query
@@ -240,7 +240,7 @@ You can also use `orWhereIn`, `whereNotIn` and `orWhereNotIn`.
 ### Is null
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereNull('description');
 
@@ -252,7 +252,7 @@ You can also use `orWhereNull`, `whereNotNull` and `orWhereNotNull`.
 ### Compare columns
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereColumn('age', '<', 'experiance');
 
@@ -262,7 +262,7 @@ You can also use `orWhereNull`, `whereNotNull` and `orWhereNotNull`.
 Or
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->whereColumn([
         ['first_name', 'last_name'],
@@ -277,7 +277,7 @@ You can also use `orWhereColumn`.
 ### Exists
 
 ```php
-(new Query())
+(new Query)
     ->from('posts')
     ->whereExists(function ($query) {
         $query
@@ -300,7 +300,7 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 ## Order
 
 ```php
-(new Query())
+(new Query)
     ->from('demo')
     ->orderBy('date', 'desc')
     ->orderBy('id');
@@ -311,7 +311,7 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 ### In random order
 
 ```php
-(new Query())
+(new Query)
     ->from('demo')
     ->inRandomOrder();
 
@@ -323,7 +323,7 @@ You can combine the random order with a column order.
 ## Limit and offset
 
 ```php
-(new Query())
+(new Query)
     ->from('table')
     ->offset(150)
     ->limit(12);
@@ -346,21 +346,21 @@ $raw = new Raw('CONCAT(?, ?) # Your raw SQL', ['Bindings', 'here']);
 
 // or
 use Finesse\QueryScribe\Query;
-$query = new Query();
+$query = new Query;
 $raw = $query->raw('CONCAT(?, ?)', ['Bindings', 'here']);
 ```
 
 Example of what is possible:
 
 ```php
-(new Query())
+(new Query)
     ->from(function($query) {
         $query
             ->addSelect(new Raw('SOMETHING()'))
             ->from('other_table');
     }, 'table')
     ->addSelect([
-        'column1' => (new Query())->addAvg('price')->from('products'),
+        'column1' => (new Query)->addAvg('price')->from('products'),
         'column2' => function ($query) {
             $query
                 ->addSelect('name')
@@ -382,7 +382,7 @@ Example of what is possible:
         $query
             ->addMax(new Raw('price * quantity'))
             ->from('orders')
-            ->whereExists((new Query())->addSelect('height')->from('person')->whereColumn([
+            ->whereExists((new Query)->addSelect('height')->from('person')->whereColumn([
                 ['orders.person_id', 'order.id'],
                 ['person.id', new Raw('table.user_id')]
             ]));

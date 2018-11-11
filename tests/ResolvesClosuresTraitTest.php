@@ -18,7 +18,7 @@ class ResolvesClosuresTraitTest extends TestCase
      */
     public function testClosureResolve()
     {
-        $query = (new Query())
+        $query = (new Query)
             ->addSelect([
                 function (Query $query) {
                     $query->from('table1');
@@ -27,7 +27,7 @@ class ResolvesClosuresTraitTest extends TestCase
                     return $query->from('table2');
                 },
                 function () {
-                    return (new Query())->from('table3');
+                    return (new Query)->from('table3');
                 }
             ])
             ->where(function (Query $query) {
@@ -37,7 +37,7 @@ class ResolvesClosuresTraitTest extends TestCase
                 return $query->where('table2.column2', 1);
             })
             ->where(function () {
-                return (new Query())->where('table2.column2', 1);
+                return (new Query)->where('table2.column2', 1);
             });
 
         $this->assertEquals('table1', $query->select[0]->table);
@@ -45,12 +45,12 @@ class ResolvesClosuresTraitTest extends TestCase
         $this->assertEquals('table3', $query->select[2]->table);
 
         $this->assertException(InvalidReturnValueException::class, function () {
-            (new Query())->addSelect(function () {
+            (new Query)->addSelect(function () {
                 return 'Big bang';
             });
         });
         $this->assertException(InvalidReturnValueException::class, function () {
-            (new Query())->where(function () {
+            (new Query)->where(function () {
                 return 'Big bang';
             });
         });
@@ -61,15 +61,15 @@ class ResolvesClosuresTraitTest extends TestCase
      */
     public function testCustomClosureResolver()
     {
-        $query = (new Query())
+        $query = (new Query)
             ->setClosureResolver(new class implements ClosureResolverInterface {
                 public function resolveSubQueryClosure(\Closure $callback): Query
                 {
-                    return (new Query())->from('I am for subquery');
+                    return (new Query)->from('I am for subquery');
                 }
                 public function resolveCriteriaGroupClosure(\Closure $callback): Query
                 {
-                    return (new Query())->where('I am for criteria group', 0);
+                    return (new Query)->where('I am for criteria group', 0);
                 }
             })
             ->addSelect(function () {})

@@ -14,7 +14,7 @@ use Finesse\QueryScribe\Query;
 
 $prefixer = new TablePrefixer('prefix_'); // Needs to be created once
 
-$query = (new Query())
+$query = (new Query)
     ->from('posts')
     ->whereExists(function ($query) {
         $query
@@ -39,7 +39,7 @@ As you can see table aliases are not prefixed. Prefixer automatically detects wh
 Table prefixes are not added in raw expressions. You can use the helper methods to add a prefix:
 
 ```php
-(new Query())
+(new Query)
     ->from(new Raw('MAGIC('.$prefixer->addTablePrefix('my_table').')'))
     ->addSelect(new Raw('REPLACE('.$prefixer->addTablePrefixToColumn('my_table.name').', ?, ?)', ['small', 'big']));
 ```
@@ -50,7 +50,7 @@ Prefixer doesn't modify a given `Query` object therefore doing this is safe:
 $prefixer1 = new TablePrefixer('prefix1_');
 $prefixer2 = new TablePrefixer('prefix2_');
 
-$query = (new Query())/* -> ... */;
+$query = (new Query)/* -> ... */;
 
 $prefixedQuery1 = $prefixer1->process($query); // The prefix is `prefix1_`
 $prefixedQuery2 = $prefixer2->process($query); // The prefix is `prefix2_`

@@ -21,16 +21,17 @@ class QueryProxyTest extends TestCase
      */
     public function testMethodProxying()
     {
-        $query = new Query();
+        $query = new Query;
         $superQuery = new QueryProxy($query);
 
         $superQuery = $superQuery
             ->from('items')
             ->where('items.size', '>', 3);
 
-        $this->assertEquals('items', $query->table);
-        $this->assertEquals('items.size', $query->where[0]->column);
-        $this->assertEquals(3, $query->where[0]->value);
+        $this->assertEquals(
+            (new Query)->from('items')->where('items.size', '>', 3),
+            (clone $query)->setClosureResolver(null)
+        );
         $this->assertInstanceOf(Raw::class, $superQuery->raw('TEST'));
 
         // Checks that a QueryProxy instance is returned
@@ -41,7 +42,7 @@ class QueryProxyTest extends TestCase
             $superQuery->makeCopyForSubQuery();
         }, function (\Error $error) {
             $this->assertEquals(
-                'Call to undefined method Finesse\QueryScribe\QueryProxy::makeCopyForSubQuery()',
+                'Call to undefined method '.QueryProxy::class.'::makeCopyForSubQuery()',
                 $error->getMessage()
             );
         });
@@ -52,7 +53,7 @@ class QueryProxyTest extends TestCase
      */
     public function testExceptionsHandling()
     {
-        $query = new Query();
+        $query = new Query;
 
         // Stock handler
         $superQuery = new QueryProxy($query);
@@ -121,7 +122,7 @@ class QueryProxyTest extends TestCase
     public function testClosureResolving()
     {
         // Stock resolver
-        $query = new Query();
+        $query = new Query;
         $superQuery = new QueryProxy($query);
         $superQuery
             ->addSelect(function ($query) {
@@ -129,10 +130,10 @@ class QueryProxyTest extends TestCase
                 $query->from('table1');
             })
             ->addSelect(function () {
-                return (new QueryProxy(new Query()))->from('table2');
+                return (new QueryProxy(new Query))->from('table2');
             })
             ->addSelect(function () {
-                return (new Query())->from('table3');
+                return (new Query)->from('table3');
             })
             ->where(function ($query) {
                 $this->assertInstanceOf(QueryProxy::class, $query);
@@ -151,15 +152,15 @@ class QueryProxyTest extends TestCase
         });
 
         // Custom resolver
-        $query = new Query();
+        $query = new Query;
         $superQuery = new class ($query) extends QueryProxy {
             public function resolveSubQueryClosure(\Closure $callback): Query
             {
-                return (new Query())->from('I am for subquery');
+                return (new Query)->from('I am for subquery');
             }
             public function resolveCriteriaGroupClosure(\Closure $callback): Query
             {
-                return (new Query())->where('I am for criteria group', 0);
+                return (new Query)->where('I am for criteria group', 0);
             }
         };
         $superQuery->addSelect(function () {})->where(function () {});
@@ -173,7 +174,7 @@ class QueryProxyTest extends TestCase
      */
     public function testClone()
     {
-        $query1 = new Query();
+        $query1 = new Query;
         $superQuery1 = new class ($query1) extends QueryProxy {
             public function getBaseQuery(): Query {
                 return parent::getBaseQuery();
