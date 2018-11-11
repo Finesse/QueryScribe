@@ -57,6 +57,8 @@ class TablePrefixerTest extends TestCase
             })
             ->orderBy('items.foo', 'desc')
             ->orderByNullLast('items.comment')
+            ->orderByNullFirst('items.review')
+            ->inExplicitOrder('items.version', [5, (new Query)->from('versions')], true)
             ->inRandomOrder()
             ->offset(150)
             ->limit(function (Query $query) {
@@ -106,6 +108,8 @@ class TablePrefixerTest extends TestCase
                 })
                 ->orderBy('test_items.foo', 'desc')
                 ->orderByNullLast('test_items.comment')
+                ->orderByNullFirst('test_items.review')
+                ->inExplicitOrder('test_items.version', [5, (new Query)->from('test_versions')], true)
                 ->inRandomOrder()
                 ->offset(150)
                 ->limit(function (Query $query) {
@@ -158,7 +162,8 @@ class TablePrefixerTest extends TestCase
                     ->addSelect('id')
                     ->whereNotNull('name');
             })
-            ->orderBy('foo', 'desc');
+            ->orderBy('foo', 'desc')
+            ->inExplicitOrder('version', [5, (new Query)->addSelect('number')]);
 
         $prefixedQuery = $processor->process($query);
 
@@ -190,7 +195,8 @@ class TablePrefixerTest extends TestCase
                         ->addSelect('id')
                         ->whereNotNull('name');
                 })
-                ->orderBy('foo', 'desc'),
+                ->orderBy('foo', 'desc')
+                ->inExplicitOrder('version', [5, (new Query)->addSelect('number')]),
             $prefixedQuery
         );
     }

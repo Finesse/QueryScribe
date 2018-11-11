@@ -3,11 +3,13 @@
 namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
 use Finesse\QueryScribe\QueryBricks\Orders\Order;
 use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
+use Finesse\QueryScribe\Raw;
 
 /**
- * Tests the Query class
+ * Tests the OrderTrait trait
  *
  * @author Surgie
  */
@@ -34,6 +36,9 @@ class OrderTraitTest extends TestCase
         ], 'order', $query);
     }
 
+    /**
+     * Tests the orderByNullFirst and orderByNullLast methods
+     */
     public function testOrderByIsNull()
     {
         $query = (new Query)
@@ -46,6 +51,23 @@ class OrderTraitTest extends TestCase
         $this->assertAttributeEquals([
             new OrderByIsNull('name', false),
             new OrderByIsNull((new Query)->addSelect('price')->from('products'), true)
+        ], 'order', $query);
+    }
+
+    /**
+     * Tests the inExplicitOrder method
+     */
+    public function testInExplicitOrder()
+    {
+        $query = (new Query)
+            ->inExplicitOrder('name', ['Alice', 'Bob', function (Query $query) {
+                $query->addSelect('login')->from('users');
+            }])
+            ->inExplicitOrder('group', [4, new Raw('NOW()'), 3, 6], true);
+
+        $this->assertAttributeEquals([
+            new ExplicitOrder('name', ['Alice', 'Bob', (new Query)->addSelect('login')->from('users')], false),
+            new ExplicitOrder('group', [4, new Raw('NOW()'), 3, 6], true)
         ], 'order', $query);
     }
 

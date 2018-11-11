@@ -24,15 +24,15 @@ class OrderByIsNull
      * @var bool Must the null values go first
      * @readonly
      */
-    public $nullFirst;
+    public $areNullFirst;
 
     /**
      * @param string|Query|StatementInterface $column Target column
-     * @param bool $nullFirst Must the null values go first
+     * @param bool $areNullFirst Must the null values go first
      */
-    public function __construct($column, bool $nullFirst)
+    public function __construct($column, bool $areNullFirst)
     {
         $this->column = $column;
-        $this->nullFirst = $nullFirst;
+        $this->areNullFirst = $areNullFirst;
     }
 }

@@ -16,6 +16,7 @@ use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
+use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
 use Finesse\QueryScribe\QueryBricks\Orders\Order;
 use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\Raw;
@@ -393,7 +394,7 @@ class CommonGrammar implements GrammarInterface
      *
      * @param Criterion[] $criteria List of criteria
      * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or empty string
+     * @return string SQL text or an empty string
      * @throws InvalidQueryException
      */
     protected function compileCriteria(array $criteria, array &$bindings): string
@@ -430,7 +431,7 @@ class CommonGrammar implements GrammarInterface
      *
      * @param Criterion $criterion Criterion
      * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or empty string
+     * @return string SQL text or an empty string
      * @throws InvalidQueryException
      */
     protected function compileCriterion(Criterion $criterion, array &$bindings): string
@@ -532,9 +533,9 @@ class CommonGrammar implements GrammarInterface
     /**
      * Converts a single order to an SQL query text.
      *
-     * @param Order|string $order Order. String `random` means that the order should be random.
+     * @param Order|OrderByIsNull|ExplicitOrder|string $order Order. String `random` means that the order should be random.
      * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or empty string
+     * @return string SQL text or an empty string
      * @throws InvalidQueryException
      */
     protected function compileOneOrder($order, array &$bindings): string
@@ -544,7 +545,22 @@ class CommonGrammar implements GrammarInterface
         }
 
         if ($order instanceof OrderByIsNull) {
-            return $this->compileIdentifier($order->column, $bindings).' IS'.($order->nullFirst ? ' NOT' : '').' NULL';
+            return $this->compileIdentifier($order->column, $bindings).' IS'.($order->areNullFirst ? ' NOT' : '').' NULL';
+        }
+
+        if ($order instanceof ExplicitOrder) {
+            if (!$order->order) {
+                return '';
+            }
+
+            $sql = 'CASE '.$this->compileIdentifier($order->column, $bindings);
+            foreach (array_values($order->order) as $index => $value) {
+                $sql .= ' WHEN '.$this->compileValue($value, $bindings).' THEN ?';
+                $this->mergeBindings($bindings, [$index]);
+            }
+            $sql .= ' ELSE ?';
+            $this->mergeBindings($bindings, [$order->areOtherFirst ? -1 : count($order->order)]);
+            return $sql;
         }
 
         if ($order === 'random') {

@@ -14,6 +14,7 @@ use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
+use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
 use Finesse\QueryScribe\QueryBricks\Orders\Order;
 use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\StatementInterface;
@@ -348,7 +349,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
     /**
      * Processes a single order statement.
      *
-     * @param Order|string $order
+     * @param Order|OrderByIsNull|ExplicitOrder|string $order
      * @param string[] $knownTables Known unprocessed table names
      * @return Order|string
      */
@@ -362,7 +363,22 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
             } elseif ($order instanceof Order) {
                 return new Order($column, $order->isDescending);
             } else {
-                return new OrderByIsNull($column, $order->nullFirst);
+                return new OrderByIsNull($column, $order->areNullFirst);
+            }
+        }
+
+        if ($order instanceof ExplicitOrder) {
+            $column = $this->processColumnOrSubQuery($order->column, $knownTables);
+
+            $values = [];
+            foreach ($order->order as $index => $value) {
+                $values[$index] = $this->processValueOrSubQuery($value, $knownTables);
+            }
+
+            if ($column === $order->column && $values === $order->order) {
+                return $order;
+            } else {
+                return new ExplicitOrder($column, $values, $order->areOtherFirst);
             }
         }
 

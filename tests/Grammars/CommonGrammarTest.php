@@ -456,14 +456,19 @@ class CommonGrammarTest extends TestCase
                 ) DESC,
                 "author" IS NULL,
                 "review" IS NOT NULL,
+                CASE "type" WHEN ? THEN ? WHEN ? THEN ? WHEN ? THEN ? ELSE ?,
+                CASE "status" WHEN ? THEN ? WHEN ? THEN ? ELSE ?,
                 RANDOM()
-        ', [3], $grammar->compileSelect(
+        ', [3, 'one', 0, 'two', 1, 'three', 2, 3, 15, 0, 13, 1, -1], $grammar->compileSelect(
             (new Query)
                 ->from('stories')
                 ->orderBy('category', 'asc')
                 ->orderBy((new Query)->addSelect('foo')->from('bar')->where('foo', '>', 3), 'DESC')
                 ->orderByNullLast('author')
                 ->orderByNullFirst('review')
+                ->inExplicitOrder('type', ['one', 'two', 'three'])
+                ->inExplicitOrder('status', [15, 13], true)
+                ->inExplicitOrder('foo', [])
                 ->inRandomOrder()
         ));
 

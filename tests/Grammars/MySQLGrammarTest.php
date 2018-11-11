@@ -45,6 +45,28 @@ class MySQLGrammarTest extends TestCase
     }
 
     /**
+     * Tests an explicit order compilation
+     */
+    public function testExplicitOrder()
+    {
+        $grammar = new MySQLGrammar();
+
+        $this->assertStatement('
+            SELECT *
+            FROM `table`
+            ORDER BY
+                FIELD(`type`, ?, ?, ?) DESC,
+                FIELD(`category`, ?, ?, ?) ASC
+        ', ['third', 'second', 'first', 11, 12, 13], $grammar->compileSelect(
+            (new Query)
+                ->from('table')
+                ->inExplicitOrder('type', ['first', 'second', 'third'])
+                ->inExplicitOrder('category', [11, 12, 13], true)
+                ->inExplicitOrder('foo', [])
+        ));
+    }
+
+    /**
      * Tests random order compilation
      */
     public function testRandomOrder()

@@ -4,6 +4,8 @@ namespace Finesse\QueryScribe\QueryBricks;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
 use Finesse\QueryScribe\QueryBricks\Orders\Order;
 use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\StatementInterface;
@@ -16,7 +18,8 @@ use Finesse\QueryScribe\StatementInterface;
 trait OrderTrait
 {
     /**
-     * @var Order[]|OrderByIsNull[]|string[] Orders. String value `random` means that the order should be random.
+     * @var Order[]|OrderByIsNull[]|ExplicitOrder[]|string[] Orders. String value `random` means that the order should
+     *  be random.
      */
     public $order = [];
 
@@ -40,15 +43,15 @@ trait OrderTrait
      * Adds such order that the null column values go last.
      *
      * @param string|\Closure|self|StatementInterface $column The column
-     * @param boolean $reverse Do reverse the order (the null values go first)
+     * @param boolean $doReverse Do reverse the order (the null values go first)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function orderByNullLast($column, bool $reverse = false): self
+    public function orderByNullLast($column, bool $doReverse = false): self
     {
         $column = $this->checkStringValue('Argument $column', $column);
-        $this->order[] = new OrderByIsNull($column, $reverse);
+        $this->order[] = new OrderByIsNull($column, $doReverse);
         return $this;
     }
 
@@ -63,6 +66,27 @@ trait OrderTrait
     public function orderByNullFirst($column): self
     {
         return $this->orderByNullLast($column, true);
+    }
+
+    /**
+     * Adds such order that makes a column values follow the explicitly given order.
+     *
+     * @param string|\Closure|self|StatementInterface $column The column
+     * @param mixed[]|\Closure[]|Query[]|StatementInterface[] $order The values in the required order
+     * @param bool $areOtherFirst Must the values not in the list go first; otherwise they will go last
+     * @return $this
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
+     */
+    public function inExplicitOrder($column, array $order, bool $areOtherFirst = false): self
+    {
+        $column = $this->checkStringValue('Argument $column', $column);
+        foreach ($order as $index => &$value) {
+            $value = $this->checkScalarOrNullValue('Argument $order['.$index.']', $value);
+        }
+
+        $this->order[] = new ExplicitOrder($column, $order, $areOtherFirst);
+        return $this;
     }
 
     /**

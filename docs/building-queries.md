@@ -319,6 +319,20 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 // SELECT * FROM "demo" ORDER BY "review" IS NULL, "comment" IS NOT NULL
 ```
 
+### In explicit order
+
+This query makes the items with `"fruit" = 'Orange'` come first, the items with `"fruit" = 'Apple'` come next
+and then all the rest:
+
+```php
+(new Query)
+    ->from('demo')
+    ->inExplicitOrder('fruit', ['Orange', 'Apple']);
+
+// SELECT * FROM "demo" ORDER BY CASE "fruit" WHEN ? THEN ? WHEN ? THEN ? ELSE ?
+// Bindings: ['Orange', 0, 'Apple', 1, 2]
+```
+
 ### In random order
 
 ```php
