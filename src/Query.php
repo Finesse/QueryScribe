@@ -35,7 +35,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  */
 class Query
 {
-    use MakeRawTrait, SelectTrait, InsertTrait, WhereTrait, OrderTrait, ResolvesClosuresTrait;
+    use MakeStatementTrait, SelectTrait, InsertTrait, WhereTrait, OrderTrait, ResolvesClosuresTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name
@@ -48,8 +48,7 @@ class Query
     public $tableAlias = null;
 
     /**
-     * @var mixed[]|self[]|StatementInterface[] Fields to update. The indexes are the columns names, the
-     *     values are the values.
+     * @var StatementInterface[]|self[] Fields to update. The indexes are the columns names, the  values are the values.
      */
     public $update = [];
 
@@ -303,7 +302,7 @@ class Query
      *
      * @param string $name Value name
      * @param mixed|\Closure|self|StatementInterface|null $value
-     * @return mixed|self|StatementInterface|null
+     * @return StatementInterface|self
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
@@ -326,8 +325,10 @@ class Query
         if ($value instanceof \Closure) {
             return $this->resolveSubQueryClosure($value);
         }
-
-        return $value;
+        if ($value instanceof self || $value instanceof StatementInterface) {
+            return $value;
+        }
+        return new Value($value);
     }
 
     /**

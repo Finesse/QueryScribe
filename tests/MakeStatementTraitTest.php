@@ -2,15 +2,17 @@
 
 namespace Finesse\QueryScribe\Tests;
 
-use Finesse\QueryScribe\MakeRawTrait;
+use Finesse\QueryScribe\Column;
+use Finesse\QueryScribe\MakeStatementTrait;
 use Finesse\QueryScribe\Raw;
+use Finesse\QueryScribe\Value;
 
 /**
  * Tests the TMakeRaw trait
  *
  * @author Surgie
  */
-class MakeRawTraitTest extends TestCase
+class MakeStatementTraitTest extends TestCase
 {
     /**
      * Tests the raw method
@@ -20,6 +22,8 @@ class MakeRawTraitTest extends TestCase
         /** @var Raw $raw */
         $obj = $this->createTestObject();
         $this->assertEquals(new Raw('`column` = ?', ['orange']), $obj->raw('`column` = ?', ['orange']));
+        $this->assertEquals(new Value('John'), $obj->value('John'));
+        $this->assertEquals(new Column('identity'), $obj->column('identity'));
     }
 
     /**
@@ -28,7 +32,7 @@ class MakeRawTraitTest extends TestCase
     protected function createTestObject()
     {
         return new class () {
-            use MakeRawTrait;
+            use MakeStatementTrait;
         };
     }
 }
