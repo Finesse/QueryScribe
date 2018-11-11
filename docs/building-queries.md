@@ -313,8 +313,8 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 ```php
 (new Query)
     ->from('demo')
-    ->orderByIsNull('review')         // Null last
-    ->orderByIsNull('comment', true); // Null first
+    ->orderByNullLast('review')
+    ->orderByNullFirst('comment');
 
 // SELECT * FROM "demo" ORDER BY "review" IS NULL, "comment" IS NOT NULL
 ```

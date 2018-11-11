@@ -37,19 +37,32 @@ trait OrderTrait
     }
 
     /**
-     * Adds an order by is null to the orders list.
+     * Adds such order that the null column values go last.
      *
-     * @param string|\Closure|self|StatementInterface $column Column to order by
-     * @param boolean $nullFirst Must the null values go first; otherwise they will go last
+     * @param string|\Closure|self|StatementInterface $column The column
+     * @param boolean $reverse Do reverse the order (the null values go first)
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
-    public function orderByIsNull($column, bool $nullFirst = false): self
+    public function orderByNullLast($column, bool $reverse = false): self
     {
         $column = $this->checkStringValue('Argument $column', $column);
-        $this->order[] = new OrderByIsNull($column, $nullFirst);
+        $this->order[] = new OrderByIsNull($column, $reverse);
         return $this;
+    }
+
+    /**
+     * Adds such order that the null column values go first.
+     *
+     * @param string|\Closure|self|StatementInterface $column The column
+     * @return $this
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
+     */
+    public function orderByNullFirst($column): self
+    {
+        return $this->orderByNullLast($column, true);
     }
 
     /**

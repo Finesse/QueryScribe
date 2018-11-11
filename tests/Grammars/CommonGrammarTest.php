@@ -462,8 +462,8 @@ class CommonGrammarTest extends TestCase
                 ->from('stories')
                 ->orderBy('category', 'asc')
                 ->orderBy((new Query)->addSelect('foo')->from('bar')->where('foo', '>', 3), 'DESC')
-                ->orderByIsNull('author', false)
-                ->orderByIsNull('review', true)
+                ->orderByNullLast('author')
+                ->orderByNullFirst('review')
                 ->inRandomOrder()
         ));
 

@@ -38,10 +38,10 @@ class OrderTraitTest extends TestCase
     {
         $query = (new Query)
             ->from('post')
-            ->orderByIsNull('name')
-            ->orderByIsNull(function (Query $query) {
+            ->orderByNullLast('name')
+            ->orderByNullFirst(function (Query $query) {
                 $query->addSelect('price')->from('products');
-            }, true);
+            });
 
         $this->assertAttributeEquals([
             new OrderByIsNull('name', false),
