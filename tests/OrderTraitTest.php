@@ -3,7 +3,8 @@
 namespace Finesse\QueryScribe\Tests;
 
 use Finesse\QueryScribe\Query;
-use Finesse\QueryScribe\QueryBricks\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 
 /**
  * Tests the Query class
@@ -27,12 +28,26 @@ class OrderTraitTest extends TestCase
                     ->whereColumn('post.category_id', 'price.category_id');
             }, 'desc');
 
-        $this->assertEquals([
+        $this->assertAttributeEquals([
             new Order('name', false),
             new Order((new Query)->addAvg('price')->table('products')->whereColumn('post.category_id', 'price.category_id'), true)
-        ], $query->order);
+        ], 'order', $query);
     }
 
+    public function testOrderByIsNull()
+    {
+        $query = (new Query)
+            ->from('post')
+            ->orderByIsNull('name')
+            ->orderByIsNull(function (Query $query) {
+                $query->addSelect('price')->from('products');
+            }, true);
+
+        $this->assertAttributeEquals([
+            new OrderByIsNull('name', false),
+            new OrderByIsNull((new Query)->addSelect('price')->from('products'), true)
+        ], 'order', $query);
+    }
 
     /**
      * Tests the inRandomOrder method
@@ -43,6 +58,6 @@ class OrderTraitTest extends TestCase
             ->from('post')
             ->inRandomOrder();
 
-        $this->assertEquals(['random'], $query->order);
+        $this->assertAttributeEquals(['random'], 'order', $query);
     }
 }

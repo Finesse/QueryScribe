@@ -14,7 +14,8 @@ use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
-use Finesse\QueryScribe\QueryBricks\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
@@ -353,13 +354,15 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      */
     protected function processOrder($order, array $knownTables)
     {
-        if ($order instanceof Order) {
+        if ($order instanceof Order || $order instanceof OrderByIsNull) {
             $column = $this->processColumnOrSubQuery($order->column, $knownTables);
 
             if ($column === $order->column) {
                 return $order;
-            } else {
+            } elseif ($order instanceof Order) {
                 return new Order($column, $order->isDescending);
+            } else {
+                return new OrderByIsNull($column, $order->nullFirst);
             }
         }
 

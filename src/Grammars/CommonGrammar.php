@@ -16,7 +16,8 @@ use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
-use Finesse\QueryScribe\QueryBricks\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -540,6 +541,10 @@ class CommonGrammar implements GrammarInterface
     {
         if ($order instanceof Order) {
             return $this->compileIdentifier($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
+        }
+
+        if ($order instanceof OrderByIsNull) {
+            return $this->compileIdentifier($order->column, $bindings).' IS'.($order->nullFirst ? ' NOT' : '').' NULL';
         }
 
         if ($order === 'random') {

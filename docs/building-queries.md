@@ -308,6 +308,17 @@ is compiled to `((... OR ...) AND ...) OR ...`.
 // SELECT * FROM "demo" ORDER BY "date" DESC, "id" ASC
 ```
 
+### Null values first/last
+
+```php
+(new Query)
+    ->from('demo')
+    ->orderByIsNull('review')         // Null last
+    ->orderByIsNull('comment', true); // Null first
+
+// SELECT * FROM "demo" ORDER BY "review" IS NULL, "comment" IS NOT NULL
+```
+
 ### In random order
 
 ```php

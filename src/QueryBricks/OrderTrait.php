@@ -4,6 +4,8 @@ namespace Finesse\QueryScribe\QueryBricks;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+use Finesse\QueryScribe\QueryBricks\Orders\Order;
+use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
@@ -14,12 +16,12 @@ use Finesse\QueryScribe\StatementInterface;
 trait OrderTrait
 {
     /**
-     * @var Order[]|string[] Orders. String value `random` means that the order should be random.
+     * @var Order[]|OrderByIsNull[]|string[] Orders. String value `random` means that the order should be random.
      */
     public $order = [];
 
     /**
-     * Adds an order to the orders list.
+     * Adds a simple order to the orders list.
      *
      * @param string|\Closure|self|StatementInterface $column Column to order by
      * @param string $direction Order direction: `asc` - ascending, `desc` - descending
@@ -31,6 +33,22 @@ trait OrderTrait
     {
         $column = $this->checkStringValue('Argument $column', $column);
         $this->order[] = new Order($column, strtolower($direction) === 'desc');
+        return $this;
+    }
+
+    /**
+     * Adds an order by is null to the orders list.
+     *
+     * @param string|\Closure|self|StatementInterface $column Column to order by
+     * @param boolean $nullFirst Must the null values go first; otherwise they will go last
+     * @return $this
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
+     */
+    public function orderByIsNull($column, bool $nullFirst = false): self
+    {
+        $column = $this->checkStringValue('Argument $column', $column);
+        $this->order[] = new OrderByIsNull($column, $nullFirst);
         return $this;
     }
 

@@ -56,6 +56,7 @@ class TablePrefixerTest extends TestCase
                     ->whereNotNull('statuses.name');
             })
             ->orderBy('items.foo', 'desc')
+            ->orderByIsNull('items.comment')
             ->inRandomOrder()
             ->offset(150)
             ->limit(function (Query $query) {
@@ -104,6 +105,7 @@ class TablePrefixerTest extends TestCase
                         ->whereNotNull('test_statuses.name');
                 })
                 ->orderBy('test_items.foo', 'desc')
+                ->orderByIsNull('test_items.comment')
                 ->inRandomOrder()
                 ->offset(150)
                 ->limit(function (Query $query) {

@@ -1,18 +1,18 @@
 <?php
 
-namespace Finesse\QueryScribe\QueryBricks;
+namespace Finesse\QueryScribe\QueryBricks\Orders;
 
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
- * One order for the ORDER section.
+ * One order by is null for the ORDER section.
  *
  * You MUST NOT change the public variables values.
  *
  * @author Surgie
  */
-class Order
+class OrderByIsNull
 {
     /**
      * @var string|Query|StatementInterface Target column
@@ -21,18 +21,18 @@ class Order
     public $column;
 
     /**
-     * @var bool Should the order be ascending (true) or descending (false)
+     * @var bool Must the null values go first
      * @readonly
      */
-    public $isDescending;
+    public $nullFirst;
 
     /**
      * @param string|Query|StatementInterface $column Target column
-     * @param bool $isDescending Should the order be ascending (true) or descending (false)
+     * @param bool $nullFirst Must the null values go first
      */
-    public function __construct($column, bool $isDescending)
+    public function __construct($column, bool $nullFirst)
     {
         $this->column = $column;
-        $this->isDescending = $isDescending;
+        $this->nullFirst = $nullFirst;
     }
 }

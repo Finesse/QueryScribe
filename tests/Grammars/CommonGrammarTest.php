@@ -454,12 +454,16 @@ class CommonGrammarTest extends TestCase
                     FROM "bar"
                     WHERE "foo" > ?
                 ) DESC,
+                "author" IS NULL,
+                "review" IS NOT NULL,
                 RANDOM()
         ', [3], $grammar->compileSelect(
             (new Query)
                 ->from('stories')
                 ->orderBy('category', 'asc')
                 ->orderBy((new Query)->addSelect('foo')->from('bar')->where('foo', '>', 3), 'DESC')
+                ->orderByIsNull('author', false)
+                ->orderByIsNull('review', true)
                 ->inRandomOrder()
         ));
 
