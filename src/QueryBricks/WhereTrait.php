@@ -88,15 +88,13 @@ trait WhereTrait
                 }
 
                 if (is_array($argument)) {
-                    return $this->_where(
-                        [function (self $query) use ($argument, $valueIsColumn) {
-                            foreach ($argument as $criterionData) {
-                                $query = $query->_where($criterionData, 'AND', $valueIsColumn);
-                            }
-                            return $query;
-                        }],
-                        $appendRule
-                    );
+                    /** @var self $groupQuery */
+                    $groupQuery = $this->makeCopyForCriteriaGroup();
+                    foreach ($argument as $criterionData) {
+                        $groupQuery = $groupQuery->_where($criterionData, 'AND', $valueIsColumn);
+                    }
+                    $this->where[] = new CriteriaCriterion($groupQuery->where, false, $appendRule);
+                    return $this;
                 }
 
                 if ($argument instanceof StatementInterface) {

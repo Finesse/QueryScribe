@@ -16,7 +16,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  *
  * All the Closures mentioned here as a value type are a function of the following type (if other is not specified):
  *  - Takes an empty query as the first argument;
- *  - Returns a Query or a HasQueryInterface object or modifies the given object by link.
+ *  - Returns a Query object or modifies the given object by reference.
  *
  * All the exceptions are passed to the `handleException` method instead of just throwing.
  *
@@ -24,10 +24,12 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  * todo join
- *  * todo union
- *  * todo group by and having
- *  * todo distinct
+ *  - todo join
+ *  - todo union
+ *  - todo group by and having
+ *  - todo distinct
+ *
+ * @ignore The Closure behaviour can be changed if you pass a custom closure resolver through `setClosureResolver`.
  *
  * @author Surgie
  */
@@ -176,7 +178,9 @@ class Query
      */
     public function makeEmptyCopy(): self
     {
-        return new static();
+        $query = $this->constructEmptyCopy();
+        $query->setClosureResolver($this->closureResolver);
+        return $query;
     }
 
     /**
@@ -226,6 +230,17 @@ class Query
             $result,
             ['null', self::class]
         ));
+    }
+
+    /**
+     * Creates a new object of the current instance class. Override this method when you extend this class and the
+     * extending class constructor have mandatory arguments or you need to inject some dependencies.
+     *
+     * @return static
+     */
+    protected function constructEmptyCopy(): self
+    {
+        return new static();
     }
 
     /**
