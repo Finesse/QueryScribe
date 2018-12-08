@@ -2,6 +2,7 @@
 
 namespace Finesse\QueryScribe\Tests;
 
+use Finesse\QueryScribe\ClosureResolverInterface;
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\Criteria\BetweenCriterion;
@@ -343,5 +344,48 @@ class WhereTraitTest extends TestCase
         $this->assertException(InvalidArgumentException::class, function () {
             (new Query)->whereExists('foo bar');
         });
+    }
+
+    public function testWhereWithCustomClosureResolver()
+    {
+        $closureResolver = new class implements ClosureResolverInterface {
+            public function resolveSubQueryClosure(\Closure $callback): Query
+            {
+                return new Query;
+            }
+            public function resolveCriteriaGroupClosure(\Closure $callback): Query
+            {
+                $callback('foo');
+                return (new Query)->where('column2', 'value2');
+            }
+        };
+
+        $query = new Query;
+        $query->setClosureResolver($closureResolver);
+        $query->where(function ($arg) {
+            $this->assertEquals('foo', $arg);
+        });
+        $this->assertAttributeEquals([
+            new CriteriaCriterion([
+                new ValueCriterion('column2', '=', 'value2', 'AND')
+            ], false, 'AND')
+        ], 'where', $query);
+
+        $query = new Query;
+        $query->setClosureResolver($closureResolver);
+        $query->where([
+            ['column1', 'value1'],
+            [function ($arg) {
+                $this->assertEquals('foo', $arg);
+            }]
+        ]);
+        $this->assertAttributeEquals([
+            new CriteriaCriterion([
+                new ValueCriterion('column1', '=', 'value1', 'AND'),
+                new CriteriaCriterion([
+                    new ValueCriterion('column2', '=', 'value2', 'AND')
+                ], false, 'AND')
+            ], false, 'AND')
+        ], 'where', $query);
     }
 }
