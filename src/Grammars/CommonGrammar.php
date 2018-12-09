@@ -16,6 +16,7 @@ use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
+use Finesse\QueryScribe\QueryBricks\Join;
 use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
 use Finesse\QueryScribe\QueryBricks\Orders\Order;
 use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
@@ -55,6 +56,7 @@ class CommonGrammar implements GrammarInterface
         $sql = [
             $this->compileSelectPart($query, $bindings),
             $this->compileFromPart($query, $bindings),
+            $this->compileJoinPart($query, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),
             $this->compileOffsetAndLimitPart($query, $bindings)
@@ -127,6 +129,7 @@ class CommonGrammar implements GrammarInterface
         $bindings = [];
         $sql = [
             'UPDATE '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings),
+            $this->compileJoinPart($query, $bindings),
             'SET '.$this->compileUpdateValues($query->update, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),
@@ -145,6 +148,7 @@ class CommonGrammar implements GrammarInterface
         $sql = [
             'DELETE'.($query->tableAlias === null ? '' : ' '.$this->quoteIdentifier($query->tableAlias)),
             $this->compileFromPart($query, $bindings),
+            $this->compileJoinPart($query, $bindings),
             $this->compileWherePart($query, $bindings),
             $this->compileOrderPart($query, $bindings),
             $this->compileOffsetAndLimitPart($query, $bindings)
@@ -226,6 +230,25 @@ class CommonGrammar implements GrammarInterface
         }
 
         return 'FROM '.$this->compileIdentifierWithAlias($query->table, $query->tableAlias, $bindings);
+    }
+
+    /**
+     * Compiles a JOIN parts of an SQL query.
+     *
+     * @param Query $query Query data
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     * @throws InvalidQueryException
+     */
+    protected function compileJoinPart(Query $query, array &$bindings): string
+    {
+        $joinsSQL = [];
+
+        foreach ($query->join as $join) {
+            $joinsSQL[] = $this->compileOneJoin($join, $bindings);
+        }
+
+        return $this->implodeSQL($joinsSQL);
     }
 
     /**
@@ -387,6 +410,24 @@ class CommonGrammar implements GrammarInterface
     protected function compileAggregate(Aggregate $aggregate, array &$bindings): string
     {
         return $aggregate->function.'('.$this->compileIdentifier($aggregate->column, $bindings).')';
+    }
+
+    /**
+     * Converts a Join object ot an SQL query text.
+     *
+     * @param Join $join Join
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text
+     */
+    protected function compileOneJoin(Join $join, array &$bindings): string
+    {
+        $sql = $join->type.' JOIN '.$this->compileIdentifierWithAlias($join->table, $join->tableAlias, $bindings);
+
+        if ($join->criteria) {
+            $sql .= ' ON '.$this->compileCriteria($join->criteria, $bindings);
+        }
+
+        return $sql;
     }
 
     /**

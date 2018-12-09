@@ -17,7 +17,6 @@ trait JoinTrait
 {
     /**
      * @var Join[] Joins
-     * @todo Grammar
      * @todo Documentation
      */
     public $join = [];
