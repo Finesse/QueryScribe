@@ -131,6 +131,63 @@ Use `$grammar->compile()` or `$grammar->compileDelete()` to compile a delete que
 // DELETE FROM "posts" WHERE "date" < ?
 ```
 
+## Join
+
+Join a table to a query:
+
+```php
+(new Query)
+    ->from('posts')
+    ->join('authors', 'authors.id', '=', 'posts.author_id');
+    
+// SELECT * FROM "posts" INNER JOIN "authors" ON "authors"."id" = "posts"."author_id"
+```
+
+You can also use `innerJoin`, `outerJoin`, `leftJoin`, `rightJoin` and `crossJoin`.
+
+You can omit the equal sign and add a table alias:
+
+```php
+(new Query)
+    ->from('posts', 'p')
+    ->join(['authors', 'a'], 'a.id', 'p.author_id');
+```
+
+More complex joining conditions:
+
+```php
+(new Query)
+    ->from('posts')
+    ->join('authors', [
+        ['posts.author_id', '=', 'authors.id'], // Appended with the AND rule
+        ['posts.created_at', '>', 'authors.updated_at']
+    ]);
+```
+
+```php
+(new Query)
+    ->from('posts')
+    ->join('authors', function ($query) {
+        $query
+            ->on('posts.author_id', 'authors.id')
+            ->orOn('posts.reviewer_id', 'authors.id');
+    });
+```
+
+Joining a subquery:
+
+```php
+(new Query)
+    ->from('posts')
+    ->join([function ($query) {
+        $query
+            ->addSelect('name')
+            ->from('states')
+    }, 'statuses']);
+    
+// SELECT * FROM "posts" INNER JOIN (SELECT "name" FROM "states") AS "statuses"
+```
+
 ## Where
 
 Simple where clauses:
@@ -383,7 +440,11 @@ Example of what is possible:
         $query
             ->addSelect(new Raw('SOMETHING()'))
             ->from('other_table');
-    }, 'table')
+    }, 'records')
+    ->leftJoin(
+        [(new Query)->addSelect('id')->addSelect('name')->from(new Raw('TABLES()')), 'tables'],
+        'tables.id', '=', 'records.rate'
+    )
     ->addSelect([
         'column1' => (new Query)->addAvg('price')->from('products'),
         'column2' => function ($query) {
@@ -398,7 +459,7 @@ Example of what is possible:
         $query
             ->from('events')
             ->addSelect('date')
-            ->whereColumn('events.type', new Raw('table.id'))
+            ->whereColumn('events.type', new Raw('records.id'))
             ->orderBy('date')
             ->offest(1)
             ->limit(1);
@@ -409,7 +470,7 @@ Example of what is possible:
             ->from('orders')
             ->whereExists((new Query)->addSelect('height')->from('person')->whereColumn([
                 ['orders.person_id', 'order.id'],
-                ['person.id', new Raw('table.user_id')]
+                ['person.id', new Raw('records.user_id')]
             ]));
     }, 'desc')
     ->offset(function ($query) {

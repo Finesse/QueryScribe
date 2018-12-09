@@ -7,6 +7,7 @@ use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
 /**
  * Represents an object that turns closures to Query objects.
  *
+ * @todo Expand it to resolving any values
  * @author Surgie
  */
 interface ClosureResolverInterface

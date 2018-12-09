@@ -34,6 +34,7 @@ class TablePrefixerTest extends TestCase
                 $query->from('users')->addSelect('users.name');
             })
             ->from('items')
+            ->join('orders', 'orders.item_id', 'items.id')
             ->addUpdate([
                 'items.value' => function (Query $query) {
                     $query->from('products')->addAvg('products.price');
@@ -56,7 +57,7 @@ class TablePrefixerTest extends TestCase
                     ->whereNotNull('statuses.name');
             })
             ->orderBy('items.foo', 'desc')
-            ->orderByNullLast('items.comment')
+            ->orderByNullLast('orders.comment')
             ->orderByNullFirst('items.review')
             ->inExplicitOrder('items.version', [5, (new Query)->from('versions')], true)
             ->inRandomOrder()
@@ -85,6 +86,7 @@ class TablePrefixerTest extends TestCase
                     $query->from('test_users')->addSelect('test_users.name');
                 })
                 ->from('test_items')
+                ->join('test_orders', 'test_orders.item_id', 'test_items.id')
                 ->addUpdate([
                     'test_items.value' => function (Query $query) {
                         $query->from('test_products')->addAvg('test_products.price');
@@ -107,7 +109,7 @@ class TablePrefixerTest extends TestCase
                         ->whereNotNull('test_statuses.name');
                 })
                 ->orderBy('test_items.foo', 'desc')
-                ->orderByNullLast('test_items.comment')
+                ->orderByNullLast('test_orders.comment')
                 ->orderByNullFirst('test_items.review')
                 ->inExplicitOrder('test_items.version', [5, (new Query)->from('test_versions')], true)
                 ->inRandomOrder()
@@ -148,6 +150,7 @@ class TablePrefixerTest extends TestCase
             ->addUpdate([
                 'value' => 'Bar'
             ])
+            ->join(new Raw('TABLES()'), 'id', 'table_id')
             ->where('date', '>', 12121)
             ->whereBetween('position', 1, 3)
             ->orWhere(function (Query $query) {
@@ -181,6 +184,7 @@ class TablePrefixerTest extends TestCase
                 ->addUpdate([
                     'value' => 'Bar'
                 ])
+                ->join(new Raw('TABLES()'), 'id', 'table_id')
                 ->where('date', '>', 12121)
                 ->whereBetween('position', 1, 3)
                 ->orWhere(function (Query $query) {

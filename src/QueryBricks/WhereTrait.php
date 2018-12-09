@@ -30,11 +30,11 @@ trait WhereTrait
 
     /**
      * Adds a criterion to the WHERE section. Possible formats:
-     *  * column, rule, value — column compared to value by the given rule;
-     *  * column, value — column is equal to value;
-     *  * Closure – grouped criteria;
-     *  * array[] – criteria joined by the AND rule (the values are the arguments lists for this method);
-     *  * Raw – raw SQL.
+     *  - column, rule, value — column compared to value by the given rule;
+     *  - column, value — column is equal to value;
+     *  - Closure – grouped criteria;
+     *  - array[] – criteria joined by the AND rule (the values are the arguments lists for this method);
+     *  - Raw – raw SQL.
      *
      * In LIKE criterion the escape symbol is backslash (\).
      *
@@ -47,7 +47,8 @@ trait WhereTrait
      */
     public function where(...$arguments): self
     {
-        return $this->_where($arguments);
+        $this->where[] = $this->whereArgumentsToCriterion($arguments);
+        return $this;
     }
 
     /**
@@ -61,78 +62,8 @@ trait WhereTrait
      */
     public function orWhere(...$arguments): self
     {
-        return $this->_where($arguments, 'OR');
-    }
-
-    /**
-     * Another form of the `where` and `whereColumn` method which can take an append rule
-     *
-     * @see WhereTrait::where
-     * @see WhereTrait::whereColumn
-     * @param array $arguments The original method arguments
-     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
-     * @param bool $valueIsColumn Treat the second or the third argument as a column name
-     */
-    protected function _where(array $arguments, string $appendRule = 'AND', bool $valueIsColumn = false): self
-    {
-        switch ($argumentsCount = count($arguments)) {
-            case 0:
-                return $this->handleException(new InvalidArgumentException('Too few arguments'));
-            case 1:
-                $argument = $arguments[0];
-
-                if ($argument instanceof \Closure) {
-                    $groupQuery = $this->resolveCriteriaGroupClosure($argument);
-                    $this->where[] = new CriteriaCriterion($groupQuery->where, false, $appendRule);
-                    return $this;
-                }
-
-                if (is_array($argument)) {
-                    /** @var self $groupQuery */
-                    $groupQuery = $this->makeCopyForCriteriaGroup();
-                    foreach ($argument as $criterionData) {
-                        $groupQuery = $groupQuery->_where($criterionData, 'AND', $valueIsColumn);
-                    }
-                    $this->where[] = new CriteriaCriterion($groupQuery->where, false, $appendRule);
-                    return $this;
-                }
-
-                if ($argument instanceof StatementInterface) {
-                    $this->where[] = new RawCriterion($argument, $appendRule);
-                    return $this;
-                }
-
-                return $this->handleException(InvalidArgumentException::create(
-                    'The argument',
-                    $argument,
-                    ['Closure', 'array', StatementInterface::class]
-                ));
-            case 2:
-            case 3:
-                if ($argumentsCount === 2) {
-                    list($column, $value) = $arguments;
-                    $rule = '=';
-                } else {
-                    list($column, $rule, $value) = $arguments;
-                    if (!is_string($rule)) {
-                        return $this->handleException(InvalidArgumentException::create('Argument $rule', $rule, ['string']));
-                    }
-                }
-
-                if ($valueIsColumn) {
-                    $column1 = $this->checkStringValue('Argument $column1', $column);
-                    $column2 = $this->checkStringValue('Argument $column2', $value);
-                    $this->where[] = new ColumnsCriterion($column1, $rule, $column2, $appendRule);
-                } else {
-                    $column = $this->checkStringValue('Argument $column', $column);
-                    $value = $this->checkScalarOrNullValue('Argument $value', $value);
-                    $this->where[] = new ValueCriterion($column, $rule, $value, $appendRule);
-                }
-
-                return $this;
-            default:
-                return $this->handleException(new InvalidArgumentException('Too many arguments'));
-        }
+        $this->where[] = $this->whereArgumentsToCriterion($arguments, 'OR');
+        return $this;
     }
 
     /**
@@ -172,7 +103,8 @@ trait WhereTrait
      */
     public function whereRaw(string $query, array $bindings = [], string $appendRule = 'AND'): self
     {
-        return $this->_where([new Raw($query, $bindings)], $appendRule);
+        $this->where[] = new RawCriterion(new Raw($query, $bindings), $appendRule);
+        return $this;
     }
 
     /**
@@ -405,24 +337,23 @@ trait WhereTrait
      * `whereColumn($column1, $column2)`, in this case the rule is `=`. Or you may pass an array of compares as the
      * first argument (they are appended with the AND rule).
      *
-     * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
+     * @param string|\Closure|Query|StatementInterface|array[] $column1 Target column 1
      * @param string|\Closure|Query|StatementInterface|null $rule Rule or target column 2
-     * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
+     * @param string|\Closure|Query|StatementInterface|null $column2 Target column 2 or nothing
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
      */
     public function whereColumn(...$arguments): self
     {
-        return $this->_where($arguments, 'AND', true);
+        $this->where[] = $this->whereArgumentsToCriterion($arguments, 'AND', true);
+        return $this;
     }
 
     /**
-     * Adds a columns comparing rule to the WHERE section with the OR append rule. You may either pass two columns and
-     * rule or only two columns: `whereColumn($column1, $column2)`, in this case the rule is `=`. Or you may pass an
-     * array of compares as the first argument (they are appended with the AND rule). See the readme for more info about
-     * append rules.
+     * The same as `whereColumn` but the result criterion is appended to the "where" group with the OR append rule.
      *
+     * @see whereColumn
      * @param string|\Closure|Query|StatementInterface|array[] $column Target column 1
      * @param string|\Closure|Query|StatementInterface $rule Rule or target column 2
      * @param string|\Closure|Query|StatementInterface|null $column Target column 2 or nothing
@@ -432,7 +363,8 @@ trait WhereTrait
      */
     public function orWhereColumn(...$arguments): self
     {
-        return $this->_where($arguments, 'OR', true);
+        $this->where[] = $this->whereArgumentsToCriterion($arguments, 'OR', true);
+        return $this;
     }
 
     /**
@@ -496,5 +428,76 @@ trait WhereTrait
     public function orWhereNotExists($subQuery): self
     {
         return $this->whereExists($subQuery, true, 'OR');
+    }
+
+    /**
+     * Converts `where` method arguments to a criterion object
+     *
+     * @see where
+     * @see whereColumn
+     * @param array $arguments The original method arguments
+     * @param string $appendRule How the criterion should be appended to the others (SQL boolean operator name)
+     * @param bool $valueIsColumn Treat the second or the third argument as a column name
+     * @return Criterion
+     * @throws InvalidArgumentException
+     * @throws InvalidReturnValueException
+     */
+    protected function whereArgumentsToCriterion(
+        array $arguments,
+        string $appendRule = 'AND',
+        bool $valueIsColumn = false
+    ): Criterion {
+        switch ($argumentsCount = count($arguments)) {
+            case 0:
+                return $this->handleException(new InvalidArgumentException('Too few arguments'));
+            case 1:
+                $argument = $arguments[0];
+
+                if ($argument instanceof \Closure) {
+                    $groupQuery = $this->resolveCriteriaGroupClosure($argument);
+                    return new CriteriaCriterion($groupQuery->where, false, $appendRule);
+                }
+
+                if (is_array($argument)) {
+                    $criteria = [];
+                    foreach ($argument as $criterionData) {
+                        $criteria[] = $this->whereArgumentsToCriterion($criterionData, 'AND', $valueIsColumn);
+                    }
+                    return new CriteriaCriterion($criteria, false, $appendRule);
+                }
+
+                if ($argument instanceof StatementInterface) {
+                    return new RawCriterion($argument, $appendRule);
+                }
+
+                return $this->handleException(InvalidArgumentException::create(
+                    'The argument',
+                    $argument,
+                    ['Closure', 'array', StatementInterface::class]
+                ));
+            case 2:
+            case 3:
+                if ($argumentsCount === 2) {
+                    list($column, $value) = $arguments;
+                    $rule = '=';
+                } else {
+                    list($column, $rule, $value) = $arguments;
+                    if (!is_string($rule)) {
+                        return $this->handleException(InvalidArgumentException::create('Argument $rule', $rule, ['string']));
+                    }
+                }
+
+                if ($valueIsColumn) {
+                    $column1 = $this->checkStringValue('Argument $column1', $column);
+                    $column2 = $this->checkStringValue('Argument $column2', $value);
+                    return new ColumnsCriterion($column1, $rule, $column2, $appendRule);
+                } else {
+                    $column = $this->checkStringValue('Argument $column', $column);
+                    $value = $this->checkScalarOrNullValue('Argument $value', $value);
+                    return new ValueCriterion($column, $rule, $value, $appendRule);
+                }
+            default:
+                return $this->handleException(new InvalidArgumentException('Too many arguments'));
+        }
     }
 }

@@ -73,6 +73,7 @@ class CommonGrammarTest extends TestCase
                 AVG("boo") AS "avg",
                 SUM((baz * boo))
             FROM "table" AS "t"
+            INNER JOIN "table2"
             WHERE "price" > ?
             ORDER BY "position" ASC
             LIMIT ?
@@ -92,6 +93,7 @@ class CommonGrammarTest extends TestCase
                 ->addAvg('boo', 'avg')
                 ->addSum(new Raw('baz * boo'))
                 ->from('table', 't')
+                ->join('table2')
                 ->where('price', '>', 100)
                 ->orderBy('position')
                 ->offset(140)
@@ -197,6 +199,7 @@ class CommonGrammarTest extends TestCase
         // Comprehensive case
         $this->assertStatement('
             UPDATE "table" AS "t"
+            INNER JOIN "table2"
             SET
                 "name" = ?,
                 "table"."price" = ?,
@@ -213,6 +216,7 @@ class CommonGrammarTest extends TestCase
         ', ['Hello darkness', 145.5, 56, 1, true, 10, 2], $grammar->compileUpdate(
             (new Query)
                 ->table('table', 't')
+                ->join('table2')
                 ->where('old', true)
                 ->orderBy('date', 'desc')
                 ->offset(2)
@@ -256,6 +260,7 @@ class CommonGrammarTest extends TestCase
         // Comprehensive case
         $this->assertStatement('
             DELETE FROM "table"
+            INNER JOIN "table2"
             WHERE "date" < ?
             ORDER BY "name" ASC
             LIMIT ?
@@ -264,6 +269,7 @@ class CommonGrammarTest extends TestCase
             (new Query)
                 ->setDelete()
                 ->from('table')
+                ->join('table2')
                 ->where('date', '<', '2017-01-01')
                 ->orderBy('name')
                 ->offset(10)
@@ -352,6 +358,35 @@ class CommonGrammarTest extends TestCase
             (new Query)->from(function (Query $query) {
                 $query->addSelect(['foo', new Raw('? + ?', [2, 3])])->from('other');
             }, 't')
+        ));
+    }
+
+    public function testCompileJoin()
+    {
+        $grammar = new CommonGrammar();
+
+        $this->assertStatement('
+            SELECT *
+            FROM "posts"
+            LEFT JOIN "authors" AS "a" ON "a"."id" = "posts"."author_id" AND "posts"."date" > "a"."date"
+            CROSS JOIN (
+                SELECT "name"
+                FROM "types"
+                WHERE "value" > ?
+            )
+        ', [100], $grammar->compileSelect(
+            (new Query)
+                ->table('posts')
+                ->leftJoin(['authors', 'a'], [
+                    ['a.id', 'posts.author_id'],
+                    ['posts.date', '>', 'a.date']
+                ])
+                ->crossJoin(function (Query $query) {
+                    $query
+                        ->addSelect('name')
+                        ->from('types')
+                        ->where('value', '>', 100);
+                })
         ));
     }
 
