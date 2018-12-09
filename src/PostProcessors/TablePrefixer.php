@@ -61,8 +61,10 @@ class TablePrefixer extends AbstractTableNameProcessor
     /**
      * {@inheritDoc}
      */
-    protected function processTableName(string $table): string
+    protected function processTableName(string $table, $tablesToProcess = null): string
     {
+        $table = parent::processTableName($table, $tablesToProcess);
+
         $components = explode('.', $table);
         $componentsCount = count($components);
         $components[$componentsCount - 1] = $this->tablePrefix.$components[$componentsCount - 1];
@@ -73,8 +75,10 @@ class TablePrefixer extends AbstractTableNameProcessor
     /**
      * {@inheritDoc}
      */
-    protected function processColumnName(string $column, array $tablesToProcess = null): string
+    protected function processColumnName(string $column, $tablesToProcess = null): string
     {
+        $column = parent::processColumnName($column, $tablesToProcess);
+
         $columnPosition = strrpos($column, '.');
         if ($columnPosition === false) {
             return $column;
@@ -86,6 +90,6 @@ class TablePrefixer extends AbstractTableNameProcessor
         }
 
         $column = substr($column, $columnPosition);
-        return $this->addTablePrefix($table).$column;
+        return $this->processTableName($table).$column;
     }
 }
