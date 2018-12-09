@@ -4,6 +4,7 @@ namespace Finesse\QueryScribe;
 
 use Finesse\QueryScribe\Exceptions\InvalidArgumentException;
 use Finesse\QueryScribe\Exceptions\InvalidReturnValueException;
+use Finesse\QueryScribe\QueryBricks\JoinTrait;
 use Finesse\QueryScribe\QueryBricks\OrderTrait;
 use Finesse\QueryScribe\QueryBricks\ResolvesClosuresTrait;
 use Finesse\QueryScribe\QueryBricks\InsertTrait;
@@ -24,7 +25,6 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  * a function name.
  *
  * Future features:
- *  - todo join
  *  - todo union
  *  - todo group by and having
  *  - todo distinct
@@ -35,7 +35,7 @@ use Finesse\QueryScribe\QueryBricks\WhereTrait;
  */
 class Query
 {
-    use MakeRawTrait, SelectTrait, InsertTrait, WhereTrait, OrderTrait, ResolvesClosuresTrait;
+    use MakeRawTrait, SelectTrait, InsertTrait, JoinTrait, WhereTrait, OrderTrait, ResolvesClosuresTrait;
 
     /**
      * @var string|self|StatementInterface|null Query target table name
