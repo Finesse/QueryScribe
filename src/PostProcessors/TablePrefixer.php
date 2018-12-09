@@ -25,6 +25,18 @@ class TablePrefixer extends AbstractTableNameProcessor
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function process(Query $query): Query
+    {
+        if ($this->tablePrefix === '') {
+            return $query;
+        } else {
+            return parent::process($query);
+        }
+    }
+
+    /**
      * Adds the table prefix to a table name.
      *
      * @param string $table Table name without quotes
@@ -61,7 +73,7 @@ class TablePrefixer extends AbstractTableNameProcessor
     /**
      * {@inheritDoc}
      */
-    protected function processColumnName(string $column, array $knownTables = null): string
+    protected function processColumnName(string $column, array $tablesToProcess = null): string
     {
         $columnPosition = strrpos($column, '.');
         if ($columnPosition === false) {
@@ -69,23 +81,11 @@ class TablePrefixer extends AbstractTableNameProcessor
         }
 
         $table = substr($column, 0, $columnPosition);
-        if ($knownTables !== null && !in_array($table, $knownTables)) {
+        if ($tablesToProcess !== null && !in_array($table, $tablesToProcess)) {
             return $column;
         }
 
         $column = substr($column, $columnPosition);
         return $this->addTablePrefix($table).$column;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function processQuery(Query $query, array $knownTables): Query
-    {
-        if ($this->tablePrefix === '') {
-            return $query;
-        } else {
-            return parent::processQuery($query, $knownTables);
-        }
     }
 }

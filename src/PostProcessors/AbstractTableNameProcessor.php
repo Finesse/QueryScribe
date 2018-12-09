@@ -14,6 +14,7 @@ use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
 use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
 use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
+use Finesse\QueryScribe\QueryBricks\Join;
 use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
 use Finesse\QueryScribe\QueryBricks\Orders\Order;
 use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
@@ -50,16 +51,16 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      * Processes a column name which may contain a table name or an alias.
      *
      * @param string $column Column name without quotes
-     * @param string[]|null $knownTables Known unprocessed table names. If null, every table name should be processed.
+     * @param string[] $tablesToProcess Table names that must be processed
      * @return string Column name with processed table name
      */
-    abstract protected function processColumnName(string $column, array $knownTables = null): string;
+    abstract protected function processColumnName(string $column, array $tablesToProcess): string;
 
     /**
      * Processes a Query object. DOES NOT change the given query or it's components by the link but may return it.
      *
      * @param Query $query
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return Query
      */
     public function processQuery(Query $query, array $knownTables): Query
@@ -70,11 +71,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
         $queryProperties = [];
 
         // Table
-        if (is_string($query->table)) {
-            $queryProperties['table'] = $this->processTableName($query->table);
-        } else {
-            $queryProperties['table'] = $this->processSubQuery($query->table, $knownTables);
-        }
+        $queryProperties['table'] = $this->processTable($query->table, $knownTables);
 
         // Select
         $queryProperties['select'] = [];
@@ -93,6 +90,12 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
         foreach ($query->update as $column => $update) {
             $column = $this->processColumnName($column, $knownTables);
             $queryProperties['update'][$column] = $this->processValueOrSubQuery($update, $knownTables);
+        }
+
+        // Join
+        $queryProperties['join'] = [];
+        foreach ($query->join as $index => $join) {
+            $queryProperties['join'][$index] = $this->processJoin($join, $knownTables);
         }
 
         // Where
@@ -141,10 +144,34 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      */
     protected function getTables(Query $query): array
     {
+        $tables = [];
+
         if (is_string($query->table)) {
-            return [$query->table];
+            $tables[] = $query->table;
+        }
+
+        foreach ($query->join as $join) {
+            if (is_string($join->table)) {
+                $tables[] = $join->table;
+            }
+        }
+
+        return $tables;
+    }
+
+    /**
+     * Processes a table name or table subquery
+     *
+     * @param Query|StatementInterface|string $table
+     * @param string[] $knownTables Unprocessed known table names
+     * @return Query|StatementInterface|string
+     */
+    protected function processTable($table, array $knownTables)
+    {
+        if (is_string($table)) {
+            return $this->processTableName($table);
         } else {
-            return [];
+            return $this->processSubQuery($table, $knownTables);
         }
     }
 
@@ -152,7 +179,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      * Processes a single select column.
      *
      * @param string|Aggregate|Query|StatementInterface $select
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return string|Aggregate|Query|StatementInterface
      */
     protected function processSelect($select, array $knownTables)
@@ -173,7 +200,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      * Processes a "column or subquery" value.
      *
      * @param string|Query|StatementInterface $column
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return string|Query|StatementInterface
      */
     protected function processColumnOrSubQuery($column, array $knownTables)
@@ -201,7 +228,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      * Processes a subquery. Not-subquery values are just passed through.
      *
      * @param Query|StatementInterface $subQuery
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return Query|StatementInterface
      */
     protected function processSubQuery($subQuery, array $knownTables)
@@ -217,7 +244,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      * Processes a single insert statement.
      *
      * @param mixed[]|Query[]|StatementInterface[]|InsertFromSelect $row
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return mixed[]|Query[]|StatementInterface[]|InsertFromSelect
      */
     protected function processInsert($row, array $knownTables)
@@ -250,10 +277,32 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
     }
 
     /**
+     * Processes a single join.
+     *
+     * @param Join $join
+     * @param string[] $knownTables Unprocessed known table names
+     * @return Join
+     */
+    protected function processJoin(Join $join, array $knownTables): Join
+    {
+        $table = $this->processTable($join->table, $knownTables);
+        $criteria = [];
+        foreach ($join->criteria as $index => $criterion) {
+            $criteria[$index] = $this->processCriterion($criterion, $knownTables);
+        }
+
+        if ($table === $join->table && $criteria === $join->criteria) {
+            return $join;
+        } else {
+            return new Join($join->type, $table, $join->tableAlias, $criteria);
+        }
+    }
+
+    /**
      * Processes a single criterion.
      *
      * @param Criterion $criterion
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return Criterion
      */
     protected function processCriterion(Criterion $criterion, array $knownTables): Criterion
@@ -350,7 +399,7 @@ abstract class AbstractTableNameProcessor implements PostProcessorInterface
      * Processes a single order statement.
      *
      * @param Order|OrderByIsNull|ExplicitOrder|string $order
-     * @param string[] $knownTables Known unprocessed table names
+     * @param string[] $knownTables Unprocessed known table names
      * @return Order|string
      */
     protected function processOrder($order, array $knownTables)
