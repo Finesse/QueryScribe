@@ -368,7 +368,7 @@ class CommonGrammarTest extends TestCase
         $this->assertStatement('
             SELECT *
             FROM "posts"
-            LEFT JOIN "authors" AS "a" ON "a"."id" = "posts"."author_id"
+            LEFT JOIN "authors" AS "a" ON "a"."id" = "posts"."author_id" AND "posts"."date" > "a"."date"
             CROSS JOIN (
                 SELECT "name"
                 FROM "types"
@@ -377,7 +377,10 @@ class CommonGrammarTest extends TestCase
         ', [100], $grammar->compileSelect(
             (new Query)
                 ->table('posts')
-                ->leftJoin(['authors', 'a'], 'a.id', 'posts.author_id')
+                ->leftJoin(['authors', 'a'], [
+                    ['a.id', 'posts.author_id'],
+                    ['posts.date', '>', 'a.date']
+                ])
                 ->crossJoin(function (Query $query) {
                     $query
                         ->addSelect('name')
