@@ -25,9 +25,7 @@ abstract class AbstractTableNameProcessor extends AbstractProcessor
     /**
      * {@inheritDoc}
      *
-     * @param Query $query
      * @param string[] $knownTables Unprocessed known table names
-     * @return Query
      */
     public function processQuery(Query $query, $knownTables): Query
     {

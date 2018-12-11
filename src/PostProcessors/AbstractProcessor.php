@@ -41,6 +41,8 @@ abstract class AbstractProcessor implements PostProcessorInterface
 
     /**
      * {@inheritDoc}
+     *
+     * An alias for `process`
      */
     public function __invoke(Query $query): Query
     {

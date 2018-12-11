@@ -8,7 +8,7 @@ use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\Tests\TestCase;
 
 /**
- * Tests the TablePrefixPostProcessor class
+ * Tests the TablePrefixer class
  *
  * @author Surgie
  */

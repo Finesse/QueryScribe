@@ -12,8 +12,8 @@ use Finesse\QueryScribe\QueryBricks\SelectTrait;
 use Finesse\QueryScribe\QueryBricks\WhereTrait;
 
 /**
- * Represents a built query. It contains only a basic query data, not an SQL text. All the stored identifiers are final.
- * It must not compile any SQL.
+ * Represents a built query. It only stores the query data and doesn't do anything smart like compiling an SQL text or
+ * adding prefixes to tables. All the stored identifiers are final.
  *
  * All the Closures mentioned here as a value type are a function of the following type (if other is not specified):
  *  - Takes an empty query as the first argument;
