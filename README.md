@@ -26,7 +26,7 @@ $query = (new Query)
     
 $prefixer = new TablePrefixer('demo_');
 $grammar = new MySQLGrammar();
-$compiled = $grammar->compile($prefixer->process($query));
+$compiled = $grammar->compile($query->apply($prefixer));
 
 echo $compiled->getSQL();
 /*

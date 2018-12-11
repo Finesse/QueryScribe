@@ -107,7 +107,7 @@ class Query
      * Adds values that should be updated
      *
      * @param mixed[]|\Closure[]|self[]|StatementInterface[] $values Fields to update. The indexes are the columns
-     *     names, the values are the values.
+     *  names, the values are the values.
      * @return $this
      * @throws InvalidArgumentException
      * @throws InvalidReturnValueException
@@ -213,7 +213,7 @@ class Query
      * returned query is the only query guaranteed to be a proper result query.
      *
      * @param callable $transform The function. It recieves this query object as the first argument. It must either
-     *     change the given object or return a new query object.
+     *  change the given object or return a new query object.
      * @return static Result query object
      * @throws InvalidReturnValueException If the callback return value is wrong
      */

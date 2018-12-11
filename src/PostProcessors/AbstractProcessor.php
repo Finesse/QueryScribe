@@ -40,6 +40,14 @@ abstract class AbstractProcessor implements PostProcessorInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function __invoke(Query $query): Query
+    {
+        return $this->process($query);
+    }
+
+    /**
      * Returns the initial processing context
      *
      * @param Query $query The processed query

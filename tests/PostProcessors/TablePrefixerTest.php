@@ -293,4 +293,32 @@ class TablePrefixerTest extends TestCase
             $prefixedQuery
         );
     }
+
+    /**
+     * Tests processing though invoking the object as a function
+     */
+    public function testInvoke()
+    {
+        $processor = new TablePrefixer('test_');
+
+        $query = (new Query)
+            ->addSelect('items.name')
+            ->from('items')
+            ->where('items.date', '>', 12121);
+
+        $prefixedQuery = $query->apply($processor);
+
+        $this->assertEquals(
+            (new Query)
+                ->addSelect('test_items.name')
+                ->from('test_items')
+                ->where('test_items.date', '>', 12121),
+            $prefixedQuery
+        );
+
+        // Original query must not be modified
+        $this->assertNotSame($prefixedQuery, $query);
+        $this->assertNotSame($prefixedQuery->table, $query->table);
+        $this->assertNotSame($prefixedQuery->where[0], $query->where[0]);
+    }
 }
