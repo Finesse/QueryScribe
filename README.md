@@ -78,7 +78,7 @@ If you need a dialect support please extend the `CommonGrammar` class and make a
 
 ## Documentation
 
-The documentation is located in [the `docs` directory](docs/getting-started.md).
+The documentation is available at [queryscribe.readthedocs.io](http://queryscribe.readthedocs.io).
 
 Also all the classes, methods and properties has a PHPDoc comment in the code.
 

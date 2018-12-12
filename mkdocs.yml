@@ -1,0 +1,10 @@
+site_name: Query Scribe
+repo_url: http://github.com/Finesse/QueryScribe
+theme: readthedocs
+pages:
+    - Home: index.md
+    - Getting started: getting-started.md
+    - Building queries: building-queries.md
+    - Table prefixes: table-prefixes.md
+    - Making SQL from query: making-sql.md
+    - Helpers: helpers.md

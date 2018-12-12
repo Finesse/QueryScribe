@@ -1,10 +1,3 @@
-* [Getting started](getting-started.md)
-* [Building queries](building-queries.md)
-* **Table prefixes**
-* [Making SQL from query](making-sql.md)
-* [Helpers](helpers.md)
-
-
 # Table prefixes
 
 Use the `TablePrefixer` class to add prefixes to all the tables in a query:

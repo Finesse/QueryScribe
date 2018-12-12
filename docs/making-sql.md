@@ -1,10 +1,3 @@
-* [Getting started](getting-started.md)
-* [Building queries](building-queries.md)
-* [Table prefixes](table-prefixes.md)
-* **Making SQL from query**
-* [Helpers](helpers.md)
-
-
 # Making SQL from query
 
 A `Query` object can be compiled to an SQL text with bindings using a grammar object.

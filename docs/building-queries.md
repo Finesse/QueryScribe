@@ -1,10 +1,3 @@
-* [Getting started](getting-started.md)
-* **Building queries**
-* [Table prefixes](table-prefixes.md)
-* [Making SQL from query](making-sql.md)
-* [Helpers](helpers.md)
-
-
 # Building queries
 
 ## Select

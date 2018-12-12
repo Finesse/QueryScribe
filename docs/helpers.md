@@ -1,10 +1,3 @@
-* [Getting started](getting-started.md)
-* [Building queries](building-queries.md)
-* [Table prefixes](table-prefixes.md)
-* [Making SQL from query](making-sql.md)
-* Helpers
-
-
 # Helpers
 
 ## Escape LIKE special wildcard characters
