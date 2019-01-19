@@ -4,6 +4,7 @@ namespace Finesse\QueryScribe\Grammars;
 
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\Query;
+use Finesse\QueryScribe\QueryBricks\Criteria\InCriterion;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
@@ -35,6 +36,18 @@ class SQLiteGrammar extends CommonGrammar
         }
 
         return parent::compileDelete($query);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    protected function compileEmptyInCriterion(InCriterion $criterion, array &$bindings): string
+    {
+        return sprintf(
+            '%s %sIN ()',
+            $this->compileIdentifier($criterion->column, $bindings),
+            $criterion->not ? 'NOT ' : ''
+        );
     }
 
     /**

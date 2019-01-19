@@ -425,13 +425,15 @@ class CommonGrammarTest extends TestCase
                     )
                 ) AND
                 (MONTH(date)) IN (?, ?, ?) AND
+                ? AND
+                ? AND
                 "position" IS NULL AND
                 "author_id" NOT IN (
                     SELECT "id"
                     FROM "users"
                     WHERE "deleted" = ?
                 )
-        ', [0, '%boss%', '\\', 'Important', 'Hello', 1, 4, 6, true], $grammar->compileSelect(
+        ', [0, '%boss%', '\\', 'Important', 'Hello', 1, 4, 6, 0, 1, true], $grammar->compileSelect(
             (new Query)
                 ->from('posts')
                 ->where('date', '<', new Raw('NOW()'))
@@ -455,6 +457,8 @@ class CommonGrammarTest extends TestCase
                         ->where('content', 'Hello');
                 })
                 ->whereIn(new Raw('MONTH(date)'), [1, 4, 6])
+                ->whereIn('status', [])
+                ->whereNotIn('reaction', [])
                 ->whereNull('position')
                 ->where(function () {}) // Empty group
                 ->whereNotIn('author_id', function (Query $query) {

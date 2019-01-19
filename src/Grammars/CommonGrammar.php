@@ -539,11 +539,15 @@ class CommonGrammar implements GrammarInterface
 
         if ($criterion instanceof InCriterion) {
             if (is_array($criterion->values)) {
-                $values = [];
-                foreach ($criterion->values as $value) {
-                    $values[] = $this->compileValue($value, $bindings);
+                if (empty($criterion->values)) {
+                    return $this->compileEmptyInCriterion($criterion, $bindings);
                 }
-                $subQuery = '('.implode(', ', $values).')';
+
+                $subQuery = '';
+                foreach ($criterion->values as $value) {
+                    $subQuery .= ($subQuery ? ', ' : '(') . $this->compileValue($value, $bindings);
+                }
+                $subQuery .= ')';
             } else {
                 $subQuery = $this->compileSubQuery($criterion->values, $bindings);
             }
@@ -569,6 +573,20 @@ class CommonGrammar implements GrammarInterface
         }
 
         throw new InvalidQueryException('The given criterion '.get_class($criterion).' is unknown');
+    }
+
+    /**
+     * Converts an IN criterion with zero values to an SQL query text. Some SQL dialects don't support `IN ()`.
+     *
+     * @param InCriterion $criterion Criterion
+     * @param array $bindings Bound values (array is filled by link)
+     * @return string SQL text or an empty string
+     */
+    protected function compileEmptyInCriterion(InCriterion $criterion, array &$bindings): string
+    {
+        // "In empty set" is always false, "not in empty set" is always true
+        $this->mergeBindings($bindings, [$criterion->not ? 1 : 0]);
+        return '?';
     }
 
     /**

@@ -95,4 +95,25 @@ class SQLiteGrammarTest extends TestCase
             $this->assertEquals('Table alias is not allowed in delete query', $exception->getMessage());
         });
     }
+
+    /**
+     * Tests the `compileEmptyInCriterion` method
+     */
+    public function testCompileEmptyInCriterion()
+    {
+        $grammar = new SQLiteGrammar();
+
+        $this->assertStatement('
+            SELECT *
+            FROM "posts"
+            WHERE
+              "type" IN () AND
+              "status" NOT IN ()
+        ', [], $grammar->compileSelect(
+            (new Query)
+                ->table('posts')
+                ->whereIn('type', [])
+                ->whereNotIn('status', [])
+        ));
+    }
 }
