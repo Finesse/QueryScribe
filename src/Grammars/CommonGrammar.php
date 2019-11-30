@@ -5,21 +5,9 @@ namespace Finesse\QueryScribe\Grammars;
 use Finesse\QueryScribe\Exceptions\InvalidQueryException;
 use Finesse\QueryScribe\GrammarInterface;
 use Finesse\QueryScribe\QueryBricks\Aggregate;
-use Finesse\QueryScribe\QueryBricks\Criteria\BetweenCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\ColumnsCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\CriteriaCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\ExistsCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\InCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\RawCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
-use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
 use Finesse\QueryScribe\QueryBricks\Join;
-use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
-use Finesse\QueryScribe\QueryBricks\Orders\Order;
-use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\Raw;
 use Finesse\QueryScribe\StatementInterface;
 
@@ -30,6 +18,9 @@ use Finesse\QueryScribe\StatementInterface;
  */
 class CommonGrammar implements GrammarInterface
 {
+    use CommonGrammarCriteriaTrait;
+    use CommonGrammarOrderTrait;
+
     /**
      * {@inheritDoc}
      */
@@ -195,7 +186,7 @@ class CommonGrammar implements GrammarInterface
      * Compiles a SELECT part of an SQL query.
      *
      * @param Query $query Query data
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      */
     protected function compileSelectPart(Query $query, array &$bindings): string
@@ -219,7 +210,7 @@ class CommonGrammar implements GrammarInterface
      * Compiles a FROM part of an SQL query.
      *
      * @param Query $query Query data
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      * @throws InvalidQueryException
      */
@@ -236,7 +227,7 @@ class CommonGrammar implements GrammarInterface
      * Compiles a JOIN parts of an SQL query.
      *
      * @param Query $query Query data
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      * @throws InvalidQueryException
      */
@@ -255,7 +246,7 @@ class CommonGrammar implements GrammarInterface
      * Compiles a offset'n'limit SQL query part (if the query has it).
      *
      * @param Query $query Query data
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      * @throws InvalidQueryException
      */
@@ -282,7 +273,7 @@ class CommonGrammar implements GrammarInterface
      * Compiles a WHERE part of an SQL query.
      *
      * @param Query $query Query data
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      * @throws InvalidQueryException
      */
@@ -297,34 +288,11 @@ class CommonGrammar implements GrammarInterface
     }
 
     /**
-     * Compiles a ORDER part of an SQL query.
-     *
-     * @param Query $query Query data
-     * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text
-     * @throws InvalidQueryException
-     */
-    protected function compileOrderPart(Query $query, array &$bindings): string
-    {
-        $ordersSQL = [];
-
-        foreach ($query->order as $order) {
-            $orderSQL = $this->compileOneOrder($order, $bindings);
-
-            if ($orderSQL !== '') {
-                $ordersSQL[] = $orderSQL;
-            }
-        }
-
-        return $ordersSQL ? 'ORDER BY '.implode(', ', $ordersSQL) : '';
-    }
-
-    /**
      * Compiles a values list for the SET part of a update SQL query.
      *
      * @param Query mixed[]|Query[]|StatementInterface[] Values. The indexes are the columns names, the values are the
      *     values.
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      * @throws InvalidQueryException
      */
@@ -343,7 +311,7 @@ class CommonGrammar implements GrammarInterface
      * Converts a identifier (table, column, database, etc.) to a part of an SQL query text. Screens all the stuff.
      *
      * @param string|Query|StatementInterface $identifier Identifier
-     * @param array $bindings Bound values (array is filled by link)
+     * @param array $bindings Bound values (array is filled by reference)
      * @return string SQL text
      */
     protected function compileIdentifier($identifier, array &$bindings): string
@@ -428,208 +396,6 @@ class CommonGrammar implements GrammarInterface
         }
 
         return $sql;
-    }
-
-    /**
-     * Converts an array of criteria (logical rules for WHERE, HAVING, etc.) to an SQL query text.
-     *
-     * @param Criterion[] $criteria List of criteria
-     * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or an empty string
-     * @throws InvalidQueryException
-     */
-    protected function compileCriteria(array $criteria, array &$bindings): string
-    {
-        $criteriaSQL = '';
-        $previousAppendRule = null;
-
-        foreach ($criteria as $criterion) {
-            $criterionSQL = $this->compileCriterion($criterion, $bindings);
-            if ($criterionSQL === '') {
-                continue;
-            }
-
-            $appendRule = $criterion->appendRule;
-
-            if ($previousAppendRule === null) {
-                $criteriaSQL .= $criterionSQL;
-            } else {
-                if ($appendRule === 'AND' && $previousAppendRule !== 'AND') {
-                    $criteriaSQL = '('.$criteriaSQL.') '.$appendRule.' '.$criterionSQL;
-                } else {
-                    $criteriaSQL .= ' '.$appendRule.' '.$criterionSQL;
-                }
-            }
-
-            $previousAppendRule = $appendRule;
-        }
-
-        return $criteriaSQL;
-    }
-
-    /**
-     * Converts a single criterion to an SQL query text.
-     *
-     * @param Criterion $criterion Criterion
-     * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or an empty string
-     * @throws InvalidQueryException
-     */
-    protected function compileCriterion(Criterion $criterion, array &$bindings): string
-    {
-        if ($criterion instanceof ValueCriterion) {
-            $sql = sprintf(
-                '%s %s %s',
-                $this->compileIdentifier($criterion->column, $bindings),
-                $criterion->rule,
-                $this->compileValue($criterion->value, $bindings)
-            );
-
-            if ($criterion->rule === 'LIKE' && is_string($criterion->value)) {
-                $sql .= ' ESCAPE ?';
-                $this->mergeBindings($bindings, ['\\']);
-            }
-
-            return $sql;
-        }
-
-        if ($criterion instanceof ColumnsCriterion) {
-            return sprintf(
-                '%s %s %s',
-                $this->compileIdentifier($criterion->column1, $bindings),
-                $criterion->rule,
-                $this->compileIdentifier($criterion->column2, $bindings)
-            );
-        }
-
-        if ($criterion instanceof BetweenCriterion) {
-            return sprintf(
-                '(%s %sBETWEEN %s AND %s)',
-                $this->compileIdentifier($criterion->column, $bindings),
-                $criterion->not ? 'NOT ' : '',
-                $this->compileValue($criterion->min, $bindings),
-                $this->compileValue($criterion->max, $bindings)
-            );
-        }
-
-        if ($criterion instanceof CriteriaCriterion) {
-            $groupBindings = [];
-            $groupSQL = $this->compileCriteria($criterion->criteria, $groupBindings);
-
-            if ($groupSQL === '') {
-                return '';
-            } else {
-                $this->mergeBindings($bindings, $groupBindings);
-
-                return sprintf(
-                    '%s(%s)',
-                    $criterion->not ? 'NOT ' : '',
-                    $groupSQL
-                );
-            }
-        }
-
-        if ($criterion instanceof ExistsCriterion) {
-            return sprintf(
-                '%sEXISTS %s',
-                $criterion->not ? 'NOT ' : '',
-                $this->compileSubQuery($criterion->subQuery, $bindings)
-            );
-        }
-
-        if ($criterion instanceof InCriterion) {
-            if (is_array($criterion->values)) {
-                if (empty($criterion->values)) {
-                    return $this->compileEmptyInCriterion($criterion, $bindings);
-                }
-
-                $subQuery = '';
-                foreach ($criterion->values as $value) {
-                    $subQuery .= ($subQuery ? ', ' : '(') . $this->compileValue($value, $bindings);
-                }
-                $subQuery .= ')';
-            } else {
-                $subQuery = $this->compileSubQuery($criterion->values, $bindings);
-            }
-
-            return sprintf(
-                '%s %sIN %s',
-                $this->compileIdentifier($criterion->column, $bindings),
-                $criterion->not ? 'NOT ' : '',
-                $subQuery
-            );
-        }
-
-        if ($criterion instanceof NullCriterion) {
-            return sprintf(
-                '%s IS %sNULL',
-                $this->compileIdentifier($criterion->column, $bindings),
-                $criterion->isNull ? '' : 'NOT '
-            );
-        }
-
-        if ($criterion instanceof RawCriterion) {
-            return $this->compileSubQuery($criterion->raw, $bindings);
-        }
-
-        throw new InvalidQueryException('The given criterion '.get_class($criterion).' is unknown');
-    }
-
-    /**
-     * Converts an IN criterion with zero values to an SQL query text. Some SQL dialects don't support `IN ()`.
-     *
-     * @param InCriterion $criterion Criterion
-     * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or an empty string
-     */
-    protected function compileEmptyInCriterion(InCriterion $criterion, array &$bindings): string
-    {
-        // "In empty set" is always false, "not in empty set" is always true
-        $this->mergeBindings($bindings, [$criterion->not ? 1 : 0]);
-        return '?';
-    }
-
-    /**
-     * Converts a single order to an SQL query text.
-     *
-     * @param Order|OrderByIsNull|ExplicitOrder|string $order Order. String `random` means that the order should be random.
-     * @param array $bindings Bound values (array is filled by link)
-     * @return string SQL text or an empty string
-     * @throws InvalidQueryException
-     */
-    protected function compileOneOrder($order, array &$bindings): string
-    {
-        if ($order instanceof Order) {
-            return $this->compileIdentifier($order->column, $bindings).' '.($order->isDescending ? 'DESC' : 'ASC');
-        }
-
-        if ($order instanceof OrderByIsNull) {
-            return $this->compileIdentifier($order->column, $bindings).' IS'.($order->areNullFirst ? ' NOT' : '').' NULL';
-        }
-
-        if ($order instanceof ExplicitOrder) {
-            if (!$order->order) {
-                return '';
-            }
-
-            $sql = 'CASE '.$this->compileIdentifier($order->column, $bindings);
-            foreach (array_values($order->order) as $index => $value) {
-                $sql .= ' WHEN '.$this->compileValue($value, $bindings).' THEN ?';
-                $this->mergeBindings($bindings, [$index]);
-            }
-            $sql .= ' ELSE ?';
-            $this->mergeBindings($bindings, [$order->areOtherFirst ? -1 : count($order->order)]);
-            return $sql;
-        }
-
-        if ($order === 'random') {
-            return 'RANDOM()';
-        }
-
-        throw new InvalidQueryException(sprintf(
-            'The given order `%s` is unknown',
-            is_string($order) ? $order : gettype($order)
-        ));
     }
 
     /**
