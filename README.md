@@ -3,9 +3,9 @@
 [![Latest Stable Version](https://poser.pugx.org/finesse/query-scribe/v/stable)](https://packagist.org/packages/finesse/query-scribe)
 [![Total Downloads](https://poser.pugx.org/finesse/query-scribe/downloads)](https://packagist.org/packages/finesse/query-scribe)
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/finesse/query-scribe.svg)
-[![Build Status](https://travis-ci.org/Finesse/QueryScribe.svg?branch=master)](https://travis-ci.org/Finesse/QueryScribe)
-[![Coverage Status](https://coveralls.io/repos/github/Finesse/QueryScribe/badge.svg?branch=master)](https://coveralls.io/github/Finesse/QueryScribe?branch=master)
-[![Dependency Status](https://www.versioneye.com/php/finesse:query-scribe/badge)](https://www.versioneye.com/php/finesse:query-scribe)
+[![Test Status](https://github.com/finesse/QueryScribe/workflows/Test/badge.svg)](https://github.com/Finesse/QueryScribe/actions?workflow=Test)
+[![Maintainability](https://api.codeclimate.com/v1/badges/525db13d39d7b3cec367/maintainability)](https://codeclimate.com/github/Finesse/QueryScribe/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/525db13d39d7b3cec367/test_coverage)](https://codeclimate.com/github/Finesse/QueryScribe/test_coverage)
 
 Provides a convenient object syntax to build SQL queries. Compiles the queries to an SQL text with values for binding.
 Doesn't perform queries to database.
