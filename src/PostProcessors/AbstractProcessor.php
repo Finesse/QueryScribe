@@ -5,19 +5,8 @@ namespace Finesse\QueryScribe\PostProcessors;
 use Finesse\QueryScribe\PostProcessorInterface;
 use Finesse\QueryScribe\Query;
 use Finesse\QueryScribe\QueryBricks\Aggregate;
-use Finesse\QueryScribe\QueryBricks\Criteria\BetweenCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\ColumnsCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\CriteriaCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\ExistsCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\InCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\NullCriterion;
-use Finesse\QueryScribe\QueryBricks\Criteria\ValueCriterion;
-use Finesse\QueryScribe\QueryBricks\Criterion;
 use Finesse\QueryScribe\QueryBricks\InsertFromSelect;
 use Finesse\QueryScribe\QueryBricks\Join;
-use Finesse\QueryScribe\QueryBricks\Orders\ExplicitOrder;
-use Finesse\QueryScribe\QueryBricks\Orders\Order;
-use Finesse\QueryScribe\QueryBricks\Orders\OrderByIsNull;
 use Finesse\QueryScribe\StatementInterface;
 
 /**
@@ -30,6 +19,9 @@ abstract class AbstractProcessor implements PostProcessorInterface
     /*
      * All the methods here DON'T change a given object but may return it.
      */
+
+    use AbstractProcessorCriteriaTrait;
+    use AbstractProcessorOrderTrait;
 
     /**
      * {@inheritDoc}
@@ -300,141 +292,5 @@ abstract class AbstractProcessor implements PostProcessorInterface
         } else {
             return new Join($join->type, $table, $join->tableAlias, $criteria);
         }
-    }
-
-    /**
-     * Processes a single criterion.
-     *
-     * @param Criterion $criterion
-     * @param mixed $context The processing context
-     * @return Criterion
-     */
-    protected function processCriterion(Criterion $criterion, $context): Criterion
-    {
-        if ($criterion instanceof ValueCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $context);
-            $value = $this->processValueOrSubQuery($criterion->value, $context);
-
-            if ($column === $criterion->column && $value === $criterion->value) {
-                return $criterion;
-            } else {
-                return new ValueCriterion($column, $criterion->rule, $value, $criterion->appendRule);
-            }
-        }
-
-        if ($criterion instanceof ColumnsCriterion) {
-            $column1 = $this->processColumnOrSubQuery($criterion->column1, $context);
-            $column2 = $this->processColumnOrSubQuery($criterion->column2, $context);
-
-            if ($column1 === $criterion->column1 && $column2 === $criterion->column2) {
-                return $criterion;
-            } else {
-                return new ColumnsCriterion($column1, $criterion->rule, $column2, $criterion->appendRule);
-            }
-        }
-
-        if ($criterion instanceof BetweenCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $context);
-            $min = $this->processValueOrSubQuery($criterion->min, $context);
-            $max = $this->processValueOrSubQuery($criterion->max, $context);
-
-            if ($column === $criterion->column && $min === $criterion->min && $max === $criterion->max) {
-                return $criterion;
-            } else {
-                return new BetweenCriterion($column, $min, $max, $criterion->not, $criterion->appendRule);
-            }
-        }
-
-        if ($criterion instanceof CriteriaCriterion) {
-            $criteria = [];
-            foreach ($criterion->criteria as $index => $subCriterion) {
-                $criteria[$index] = $this->processCriterion($subCriterion, $context);
-            }
-
-            if ($criteria === $criterion->criteria) {
-                return $criterion;
-            } else {
-                return new CriteriaCriterion($criteria, $criterion->not, $criterion->appendRule);
-            }
-        }
-
-        if ($criterion instanceof ExistsCriterion) {
-            $subQuery = $this->processSubQuery($criterion->subQuery, $context);
-
-            if ($subQuery === $criterion->subQuery) {
-                return $criterion;
-            } else {
-                return new ExistsCriterion($subQuery, $criterion->not, $criterion->appendRule);
-            }
-        }
-
-        if ($criterion instanceof InCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $context);
-            if (is_array($criterion->values)) {
-                $values = [];
-                foreach ($criterion->values as $index => $value) {
-                    $values[$index] = $this->processValueOrSubQuery($value, $context);
-                }
-            } else {
-                $values = $this->processSubQuery($criterion->values, $context);
-            }
-
-            if ($column === $criterion->column && $values === $criterion->values) {
-                return $criterion;
-            } else {
-                return new InCriterion($column, $values, $criterion->not, $criterion->appendRule);
-            }
-        }
-
-        if ($criterion instanceof NullCriterion) {
-            $column = $this->processColumnOrSubQuery($criterion->column, $context);
-
-            if ($column === $criterion->column) {
-                return $criterion;
-            } else {
-                return new NullCriterion($column, $criterion->isNull, $criterion->appendRule);
-            }
-        }
-
-        return $criterion;
-    }
-
-    /**
-     * Processes a single order statement.
-     *
-     * @param Order|OrderByIsNull|ExplicitOrder|string $order
-     * @param mixed $context The processing context
-     * @return Order|string
-     */
-    protected function processOrder($order, $context)
-    {
-        if ($order instanceof Order || $order instanceof OrderByIsNull) {
-            $column = $this->processColumnOrSubQuery($order->column, $context);
-
-            if ($column === $order->column) {
-                return $order;
-            } elseif ($order instanceof Order) {
-                return new Order($column, $order->isDescending);
-            } else {
-                return new OrderByIsNull($column, $order->areNullFirst);
-            }
-        }
-
-        if ($order instanceof ExplicitOrder) {
-            $column = $this->processColumnOrSubQuery($order->column, $context);
-
-            $values = [];
-            foreach ($order->order as $index => $value) {
-                $values[$index] = $this->processValueOrSubQuery($value, $context);
-            }
-
-            if ($column === $order->column && $values === $order->order) {
-                return $order;
-            } else {
-                return new ExplicitOrder($column, $values, $order->areOtherFirst);
-            }
-        }
-
-        return $order;
     }
 }
